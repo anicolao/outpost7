@@ -20,13 +20,15 @@
     return COLORS.filter(c => !taken.includes(c));
   }
 
-  function handleAdd(edge: Edge) {
-    const available = getAvailableColors();
-    if (available.length === 1) {
-      store.dispatch(addPlayer({ edge, color: available[0] }));
-    } else if (available.length > 1) {
-      store.dispatch(addPlayer({ edge, color: available[0] }));
-    }
+  let selectingStore: Edge | null = null; // Track which edge is selecting color
+
+  function handleAddClick(edge: Edge) {
+      selectingStore = edge;
+  }
+
+  function selectColor(edge: Edge, color: PlayerColor) {
+      store.dispatch(addPlayer({ edge, color }));
+      selectingStore = null;
   }
 
 
@@ -76,9 +78,20 @@
             </div>
             <span class="player-label">{player.color.toUpperCase()}</span>
         {:else}
-            <button class="add-btn" onclick={() => handleAdd(edge)} disabled={players.length >= 2}>
-              {@html PlusIcon}
-            </button>
+            {@const available = getAvailableColors()}
+            {#if selectingStore === edge}
+                <div class="color-picker" transition:fade>
+                  {#each available as color}
+                    <button class="color-btn" style:background-color={color === 'red' ? '#ff4d4d' : '#ffd700'} onclick={() => selectColor(edge, color)} title={color}>
+                    </button>
+                  {/each}
+                  <button class="close-picker" onclick={() => selectingStore = null}>{@html XIcon}</button>
+                </div>
+            {:else}
+               <button class="add-btn" onclick={() => handleAddClick(edge)} disabled={players.length >= 2 || available.length === 0}>
+                   {@html PlusIcon}
+               </button>
+            {/if}
         {/if}
       </div>
     </div>
@@ -238,5 +251,38 @@
     font-weight: bold;
     color: var(--color);
     text-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+  .color-picker {
+    display: flex;
+    gap: 8px;
+    background: rgba(0,0,0,0.8);
+    padding: 8px;
+    border-radius: 12px;
+    align-items: center;
+  }
+
+  .color-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .color-btn:hover {
+    transform: scale(1.1);
+  }
+
+  .close-picker {
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>
