@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TestStepHelper } from './helpers/test-step-helper';
+import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.beforeEach(({ page }) => {
     page.on('console', msg => console.log(`BROWSER LOG: ${msg.text()}`));
@@ -35,6 +35,8 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
 
     // Add Player 1
     await page.locator('.edge-control.bottom .add-btn').click();
+    // Select Red
+    await page.locator('.edge-control.bottom .color-btn[title="red"]').click();
 
     await tester.step('lobby-p1-joined', {
         description: 'Lobby - Player 1 Joined',
@@ -52,6 +54,8 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
 
     // Add Player 2
     await page.locator('.edge-control.top .add-btn').click();
+    // Select Yellow
+    await page.locator('.edge-control.top .color-btn[title="yellow"]').click();
 
     await tester.step('lobby-p2-joined', {
         description: 'Lobby - Player 2 Joined',
