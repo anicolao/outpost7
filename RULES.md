@@ -36,9 +36,58 @@ Each row and column in the space station has its own population, which will vote
 
 > **Tip**: For your first game, don’t worry about which specific cards to keep, just keep any combination of cards totaling 12 or 16.
 
-<img src="inputs/extracted_assets/start_1.png" alt="Start Card 1" width="170" />
-<img src="inputs/extracted_assets/start_2.png" alt="Start Card 2" width="170" />
-<img src="inputs/extracted_assets/start_3.png" alt="Start Card 3" width="170" />
+
+<table>
+  <tr>
+    <td style="border: none;"></td>
+    <td><img src="inputs/extracted_assets/start_1.png" width="100" /></td>
+    <td><img src="inputs/extracted_assets/start_3.png" width="100" /></td>
+    <td><img src="inputs/extracted_assets/start_2.png" width="100" /></td>
+    <td><img src="inputs/extracted_assets/start_1.png" width="100" /></td>
+    <td><img src="inputs/extracted_assets/start_3.png" width="100" /></td>
+  </tr>
+  <tr>
+    <td><img src="inputs/extracted_assets/start_2.png" width="100" /></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+  </tr>
+  <tr>
+    <td><img src="inputs/extracted_assets/start_3.png" width="100" /></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+  </tr>
+  <tr>
+    <td><img src="inputs/extracted_assets/start_1.png" width="100" /></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+  </tr>
+  <tr>
+    <td><img src="inputs/extracted_assets/start_2.png" width="100" /></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+  </tr>
+  <tr>
+    <td><img src="inputs/extracted_assets/start_1.png" width="100" /></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+    <td style="background-color: #f0f0f0;"></td>
+  </tr>
+</table>
+
 
 ## Gameplay
 
