@@ -11,7 +11,7 @@ Each round, you will **salvage** space station modules (picking up new cards) or
 
 Each row and column in the space station has its own population, which will vote for the player who has the most repair cubes in that row or column. Once all the modules have been played, the player with the most population tokens voting in their favor becomes the new station commander and wins the game.
 
-![Gameplay Reference Red](inputs/extracted_assets/gameplay_ref_red.png)
+<img src="inputs/extracted_assets/gameplay_ref_red.png" alt="Gameplay Reference Red" width="170" />
 
 ## Components
 
@@ -36,9 +36,9 @@ Each row and column in the space station has its own population, which will vote
 
 > **Tip**: For your first game, don’t worry about which specific cards to keep, just keep any combination of cards totaling 12 or 16.
 
-![Start Card 1](inputs/extracted_assets/start_1.png)
-![Start Card 2](inputs/extracted_assets/start_2.png)
-![Start Card 3](inputs/extracted_assets/start_3.png)
+<img src="inputs/extracted_assets/start_1.png" alt="Start Card 1" width="170" />
+<img src="inputs/extracted_assets/start_2.png" alt="Start Card 2" width="170" />
+<img src="inputs/extracted_assets/start_3.png" alt="Start Card 3" width="170" />
 
 ## Gameplay
 
@@ -75,7 +75,7 @@ Place cubes on the card you just played to represent repairs.
 -   Place **1 cube** if the module you discarded was the **same color**.
 -   Place additional cubes if you **overpaid** (discarded a card higher than the value of the card you played). Example: Play a 4, discard a 5 of same color = 1 cube (color match) + 1 cube (overpay by 1) = 2 cubes.
 
-![Blue Module Example](inputs/extracted_assets/blue_module_4.png)
+<img src="inputs/extracted_assets/blue_module_4.png" alt="Blue Module Example" width="170" />
 
 -   Cubes are filled top to bottom on empty spaces.
 -   When placing on a bonus space, place the cube on the left side.
@@ -90,15 +90,15 @@ When you place repair cubes on **bonus spaces** (spaces with icons), you must ta
 
 **Bonus Types**:
 
-1.  **Place Cube** ![Bonus Add Cube](inputs/extracted_assets/bonus_add_cube.png)
+1.  **Place Cube** <img src="inputs/extracted_assets/bonus_add_cube.png" alt="Bonus Add Cube" width="50" />
     -   Place 1 cube on each of your cards and neutral cards in the **row and column**.
     -   Place on the highest unoccupied space.
 
-2.  **Remove Cube** ![Bonus Remove Cube](inputs/extracted_assets/bonus_remove_cube.png)
+2.  **Remove Cube** <img src="inputs/extracted_assets/bonus_remove_cube.png" alt="Bonus Remove Cube" width="50" />
     -   Remove the lowest cube from each of your opponent’s cards in the **row and column**.
     -   Exception: If the lowest cube is on a bonus space, you can’t remove it.
 
-3.  **Add Population** ![Bonus Pop](inputs/extracted_assets/bonus_blue_pop.png)
+3.  **Add Population** <img src="inputs/extracted_assets/bonus_blue_pop.png" alt="Bonus Pop" width="50" />
     -   Add 1 population to the row’s population card for each same-colored card in the row.
     -   Add 1 population to the column’s population card for each same-colored card in the column.
     -   *Example*: Activating a Green bonus adds population for every Green card in that row/column.
