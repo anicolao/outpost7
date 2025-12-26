@@ -1,0 +1,74 @@
+import { type Page, type TestInfo } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
+
+export interface Verification {
+    spec: string;
+    check: () => Promise<void>;
+}
+
+export interface StepOptions {
+    description: string;
+    verifications: Verification[];
+}
+
+interface DocStep {
+    title: string;
+    image: string;
+    specs: string[];
+}
+
+export class TestStepHelper {
+    private stepCount = 0;
+    private steps: DocStep[] = [];
+    private metadata = { title: '', story: '' };
+
+    constructor(private page: Page, private testInfo: TestInfo) { }
+
+    setMetadata(title: string, story: string) {
+        this.metadata = { title, story };
+    }
+
+    async step(id: string, options: StepOptions) {
+        // 1. Run Verifications
+        for (const v of options.verifications) {
+            await v.check();
+        }
+
+        // 2. Generate Name
+        const paddedIndex = String(this.stepCount++).padStart(3, '0');
+        const filename = `${paddedIndex}-${id}.png`;
+
+        // 3. Capture
+        // Ensure the screenshots directory exists relative to the test file
+        const screenshotDir = path.join(path.dirname(this.testInfo.file), 'screenshots');
+        if (!fs.existsSync(screenshotDir)) {
+            fs.mkdirSync(screenshotDir, { recursive: true });
+        }
+        await this.page.screenshot({ path: path.join(screenshotDir, filename) });
+
+        // 4. Record for Docs
+        this.steps.push({
+            title: options.description,
+            image: `screenshots/${filename}`,
+            specs: options.verifications.map(v => v.spec)
+        });
+    }
+
+    generateDocs() {
+        const docPath = path.join(path.dirname(this.testInfo.file), 'README.md');
+        let content = `# ${this.metadata.title}\n\n${this.metadata.story}\n\n`;
+
+        for (const step of this.steps) {
+            content += `## ${step.title}\n\n`;
+            content += `![${step.title}](${step.image})\n\n`;
+            content += `**Specs:**\n`;
+            for (const spec of step.specs) {
+                content += `- ${spec}\n`;
+            }
+            content += `\n`;
+        }
+
+        fs.writeFileSync(docPath, content);
+    }
+}
