@@ -8,7 +8,26 @@ We enforce a strict **Zero-Pixel Tolerance** policy for visual regression.
 *   **Why?** In a tabletop game, visual state is the *only* state that matters to the player. If a token is 1 pixel off, it might be on the wrong tile.
 *   **Consequence**: Tests must be perfectly deterministic. Random seeds must be fixed. Animations must be completed (or effectively disabled) before ensuring snapshots.
 
+## 1.1 Handling Animations
+
+**NEVER** use `waitForTimeout` to wait for animations. It is flaky and slow.
+Instead, use the `waitForAnimations` utility which waits for all CSS animations/transitions to complete using the Web Animations API.
+
+```typescript
+// Shared Utility
+export async function waitForAnimations(page: Page) {
+  await page.evaluate(() => {
+    return Promise.all(
+      document.getAnimations().map(animation => animation.finished)
+    );
+  });
+}
+```
+
+The `TestStepHelper` automatically calls this before every screenshot.
+
 ## 2. Test Structure
+
 
 All E2E tests live in `tests/e2e/`. Each test case gets its own directory.
 
@@ -132,6 +151,7 @@ export class TestStepHelper {
     const filename = `${paddedIndex}-${id}.png`;
 
     // 3. Capture
+    await waitForAnimations(this.page); // <--- AUTOMATIC WAIT
     await this.page.screenshot({ path: this.getPath(filename) });
 
     // 4. Record for Docs
