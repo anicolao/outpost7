@@ -16,9 +16,9 @@ export interface StepOptions {
 export async function waitForAnimations(page: Page) {
     await page.evaluate(async () => {
         let stableFrames = 0;
-        // Wait for 5 consecutive frames with no active animations to ensure steady state.
+        // Wait for 2 consecutive frames with no active animations to ensure steady state.
         // This catches cases where animations start a few frames after DOM insertion.
-        const requiredStableFrames = 5;
+        const requiredStableFrames = 2;
 
         while (stableFrames < requiredStableFrames) {
             const animations = document.getAnimations().filter(a => a.playState !== 'finished');
