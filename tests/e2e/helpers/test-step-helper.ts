@@ -14,10 +14,25 @@ export interface StepOptions {
 
 // Shared Utility
 export async function waitForAnimations(page: Page) {
-    await page.evaluate(() => {
-        return Promise.all(
-            document.getAnimations().map(animation => animation.finished)
-        );
+    await page.evaluate(async () => {
+        let stableFrames = 0;
+        // Wait for 5 consecutive frames with no active animations to ensure steady state.
+        // This catches cases where animations start a few frames after DOM insertion.
+        const requiredStableFrames = 5;
+
+        while (stableFrames < requiredStableFrames) {
+            const animations = document.getAnimations().filter(a => a.playState !== 'finished');
+
+            if (animations.length > 0) {
+                // If animations are running, wait for them to finish
+                stableFrames = 0;
+                await Promise.all(animations.map(a => a.finished));
+            } else {
+                // If quiet, count this frame
+                stableFrames++;
+                await new Promise(resolve => requestAnimationFrame(resolve));
+            }
+        }
     });
 }
 
