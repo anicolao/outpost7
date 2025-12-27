@@ -140,15 +140,15 @@
 
   .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
     padding-bottom: 2rem;
   }
 
   .card-item {
     background: #1a1a1a;
     border-radius: 8px;
-    padding: 0.5rem;
+    padding: 0.25rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -157,18 +157,21 @@
 
   .card-preview {
     width: 100%;
-    aspect-ratio: 1; /* Approximate, cards are usually rect but let's see */
-    position: relative;
+    /* Remove fixed aspect-ratio if cards vary, or use it with object-fit: contain */
+    /* aspect-ratio: 2/3; Standard card ratio? Let's use auto height but constrained width of the grid */
+    min-height: 140px; 
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+    overflow: hidden;
   }
 
   .card-image {
-    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     max-height: 200px;
-    border-radius: 4px;
   }
 
   .card-info {
