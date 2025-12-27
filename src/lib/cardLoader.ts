@@ -13,9 +13,12 @@ export interface CardData {
 
 export async function loadCards(): Promise<CardData[]> {
     try {
-        const response = await fetch('/cards.csv');
+        const baseUrl = import.meta.env.BASE_URL || '/';
+        const url = baseUrl.endsWith('/') ? `${baseUrl}cards.csv` : `${baseUrl}/cards.csv`;
+
+        const response = await fetch(url);
         if (!response.ok) {
-            console.error('Failed to load cards.csv');
+            console.error(`Failed to load cards.csv from ${url}`);
             return [];
         }
         const text = await response.text();
@@ -23,13 +26,6 @@ export async function loadCards(): Promise<CardData[]> {
         if (lines.length < 2) return [];
 
         const headers = lines[0].split(',').map(h => h.trim().replace('@', ''));
-
-        // Header mapping:
-        // index -> index
-        // @background -> background
-        // @module_resource_1 -> module_resource_1
-        // text_module_resource_1 -> text_module_resource_1
-        // @cube_1 -> cube_1
 
         const cards: CardData[] = [];
 
@@ -40,7 +36,6 @@ export async function loadCards(): Promise<CardData[]> {
 
             const card: any = {};
             headers.forEach((header, index) => {
-                // Handle potential comma in values? Assuming simple CSV for now based on fileView
                 card[header] = values[index]?.trim();
             });
             cards.push(card as CardData);
@@ -54,6 +49,10 @@ export async function loadCards(): Promise<CardData[]> {
 
 export function getAssetUrl(filename: string): string {
     if (!filename || filename === 'empty.pdf' || filename === '') return '';
-    // Input is like 'blue_module_3.pdf', output should be '/assets/blue_module_3.png'
-    return '/assets/' + filename.replace('.pdf', '.png');
+
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const prefix = baseUrl.endsWith('/') ? `${baseUrl}assets/` : `${baseUrl}/assets/`;
+
+    // Input is like 'blue_module_3.pdf', output should be '/<base>/assets/blue_module_3.png'
+    return prefix + filename.replace('.pdf', '.png');
 }
