@@ -32,7 +32,12 @@ export class TestStepHelper {
     private steps: DocStep[] = [];
     private metadata = { title: '', story: '' };
 
-    constructor(private page: Page, private testInfo: TestInfo) { }
+    constructor(private page: Page, private testInfo: TestInfo) {
+        const screenshotDir = path.join(path.dirname(this.testInfo.file), 'screenshots');
+        if (fs.existsSync(screenshotDir)) {
+            fs.rmSync(screenshotDir, { recursive: true, force: true });
+        }
+    }
 
     setMetadata(title: string, story: string) {
         this.metadata = { title, story };
