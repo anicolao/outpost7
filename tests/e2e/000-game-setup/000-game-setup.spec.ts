@@ -42,7 +42,7 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
             {
                 spec: 'Color picker should appear for bottom player',
                 check: async () => {
-                    await expect(page.locator('.edge-control.bottom .join-btn')).toBeHidden();
+                    await expect(page.locator('.edge-control.bottom .add-btn')).toBeHidden();
                     await expect(page.locator('.edge-control.bottom .color-picker')).toBeVisible();
                 }
             }
@@ -75,7 +75,7 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
             {
                 spec: 'Color picker should appear for top player',
                 check: async () => {
-                    await expect(page.locator('.edge-control.top .join-btn')).toBeHidden();
+                    await expect(page.locator('.edge-control.top .add-btn')).toBeHidden();
                     const picker = page.locator('.edge-control.top .color-picker');
                     await expect(picker).toBeVisible();
                 }
