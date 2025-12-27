@@ -12,6 +12,15 @@ export interface StepOptions {
     verifications: Verification[];
 }
 
+// Shared Utility
+export async function waitForAnimations(page: Page) {
+    await page.evaluate(() => {
+        return Promise.all(
+            document.getAnimations().map(animation => animation.finished)
+        );
+    });
+}
+
 interface DocStep {
     title: string;
     image: string;
@@ -45,6 +54,7 @@ export class TestStepHelper {
         if (!fs.existsSync(screenshotDir)) {
             fs.mkdirSync(screenshotDir, { recursive: true });
         }
+        await waitForAnimations(this.page);
         await this.page.screenshot({ path: path.join(screenshotDir, filename) });
 
         // 4. Record for Docs
