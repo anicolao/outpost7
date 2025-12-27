@@ -35,6 +35,17 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
 
     // Add Player 1
     await page.locator('.edge-control.bottom .add-btn').click();
+
+    await tester.step('lobby-p1-selecting', {
+        description: 'Lobby - Player 1 Choosing Color',
+        verifications: [
+            {
+                spec: 'Color picker should appear for bottom player',
+                check: async () => await expect(page.locator('.edge-control.bottom .color-picker')).toBeVisible()
+            }
+        ]
+    });
+
     // Select Red
     await page.locator('.edge-control.bottom .color-btn[title="red"]').click();
 
@@ -54,6 +65,17 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
 
     // Add Player 2
     await page.locator('.edge-control.top .add-btn').click();
+
+    await tester.step('lobby-p2-selecting', {
+        description: 'Lobby - Player 2 Choosing Color',
+        verifications: [
+            {
+                spec: 'Color picker should appear for top player',
+                check: async () => await expect(page.locator('.edge-control.top .color-picker')).toBeVisible()
+            }
+        ]
+    });
+
     // Select Yellow
     await page.locator('.edge-control.top .color-btn[title="yellow"]').click();
 
