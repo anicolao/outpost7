@@ -113,7 +113,6 @@
     border-bottom: 1px solid #444;
     display: flex;
     justify-content: space-between;
-    align-items: center;
     background: #333;
     flex-shrink: 0;
   }
