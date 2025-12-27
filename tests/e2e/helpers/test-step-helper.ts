@@ -14,9 +14,7 @@ export interface StepOptions {
 
 // Shared Utility
 export async function waitForAnimations(page: Page) {
-    await page.evaluate(async () => {
-        await new Promise(requestAnimationFrame);
-        await new Promise(requestAnimationFrame);
+    await page.evaluate(() => {
         return Promise.all(
             document.getAnimations().map(animation => animation.finished)
         );
