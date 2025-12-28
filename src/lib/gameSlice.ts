@@ -9,11 +9,9 @@ export interface Player {
     edge: Edge;
 }
 
-export interface Card {
-    id: string;
-    type: string; // 'scout', 'settler', etc. or filename
-    cost: number;
-}
+// Re-export CardData as Card for consistency, or extend it
+import type { CardData } from './cardLoader';
+export type Card = CardData & { id: string };
 
 export interface PopulationCard {
     card: string; // filename
@@ -65,7 +63,7 @@ const gameSlice = createSlice({
         removePlayer: (state, action: PayloadAction<Edge>) => {
             state.players = state.players.filter(p => p.edge !== action.payload);
         },
-        startGame: (state, action: PayloadAction<{ rows: number, cols: number }>) => {
+        startGame: (state, action: PayloadAction<{ rows: number, cols: number, deck?: Card[] }>) => {
             if (state.players.length === 2) {
                 state.phase = 'playing';
 
@@ -111,19 +109,11 @@ const gameSlice = createSlice({
                 state.rowHeaders = headersWithOwners.slice(5, 10);
 
                 // --- Card Deck Initialization ---
-                // For now, generate a dummy deck since we don't have specifics
-                const deckCards: Card[] = [];
-                const types = ['scout', 'settler', 'merchant', 'diplomat', 'general'];
-                for (let i = 0; i < 60; i++) {
-                    const type = types[i % types.length];
-                    deckCards.push({
-                        id: `card_${i}`,
-                        type: type,
-                        cost: Math.floor(Math.random() * 4) + 1 // 1-4 cost
-                    });
-                }
+                // Use provided deck or fallback (though fallback will be empty/invalid with new type)
+                // We assume action.payload.deck is provided and shuffled, or we shuffle here.
+                let deckCards: Card[] = action.payload.deck ? [...action.payload.deck] : [];
 
-                // Shuffle Deck
+                // Shuffle Deck if passed in, or if we want to ensure randomness here
                 for (let i = deckCards.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [deckCards[i], deckCards[j]] = [deckCards[j], deckCards[i]];
@@ -133,11 +123,11 @@ const gameSlice = createSlice({
                 state.discard = deckCards.slice(0, 10);
                 let currentDeck = deckCards.slice(10);
 
-                // Deal Offer (5 cards for now?)
+                // Deal Offer (5 cards)
                 state.offer = currentDeck.slice(0, 5);
                 currentDeck = currentDeck.slice(5);
 
-                // Deal Hands (5 cards each for now? Requirements didn't specify initial hand size, assuming 5)
+                // Deal Hands (5 cards each)
                 state.hands.red = currentDeck.slice(0, 5);
                 state.hands.yellow = currentDeck.slice(5, 10);
                 state.deck = currentDeck.slice(10);

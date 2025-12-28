@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gameState } from '../lib/redux-svelte';
+  import Card from './Card.svelte';
   
   $: offer = $gameState.game.offer;
 </script>
@@ -8,9 +9,8 @@
   <h3>Offer</h3>
   <div class="cards">
     {#each offer as card}
-      <div class="card">
-        <span class="type">{card.type}</span>
-        <span class="cost">{card.cost}</span>
+      <div class="card-wrapper">
+        <Card {card} />
       </div>
     {/each}
   </div>
@@ -39,26 +39,9 @@
     gap: 10px;
   }
 
-  .card {
+  .card-wrapper {
     width: 60px;
-    height: 90px;
-    background: white;
-    color: black;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-  }
-
-  .type {
-    font-size: 10px;
-    font-weight: bold;
-  }
-  
-  .cost {
-    font-size: 14px;
-    color: red;
+    height: 90px; /* Aspect 2.5/3.5 matches card component roughly? Card is aspect based width. */
+    /* Card component is width:100% of parent. Parent is 60px wide. */
   }
 </style>

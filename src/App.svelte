@@ -1,5 +1,10 @@
 <script lang="ts">
+  import { createEventDispatcher, onMount } from 'svelte';
   import { gameState } from './lib/redux-svelte';
+  import { store } from './lib/store';
+  import { startGame, type Card } from './lib/gameSlice';
+  import { loadCards } from './lib/cardLoader';
+  
   import Lobby from './components/Lobby.svelte';
   import Board from './components/Board.svelte';
   import SettingsModal from './components/SettingsModal.svelte';
@@ -7,8 +12,43 @@
 
   $: phase = $gameState.game.phase;
 
+  const dispatch = createEventDispatcher();
+  
   let showSettings = false;
   let showCards = false;
+
+  let deck: Card[] = [];
+
+  onMount(async () => {
+      const cardsData = await loadCards();
+      // Add IDs
+      deck = cardsData.map((c, i) => ({ ...c, id: `card_${i}` }));
+  });
+
+  function handleSettings() {
+      showSettings = true;
+  }
+
+  function handleCardsRequest() {
+      showCards = true;
+  }
+
+  function closeSettings() {
+      showSettings = false;
+  }
+
+  function start() {
+      // Dispatch startGame with loaded deck
+      if (deck.length > 0) {
+          store.dispatch(startGame({
+              rows: 5, // Default or from settings
+              cols: 5,
+              deck: deck
+          }));
+      } else {
+          console.error("Deck not loaded yet!");
+      }
+  }
 
   // Icons
 
@@ -16,7 +56,7 @@
 
 <main>
   {#if phase === 'lobby'}
-    <Lobby on:requestSettings={() => showSettings = true} />
+    <Lobby on:requestSettings={handleSettings} on:startGame={start} />
   {:else if phase === 'playing'}
     <Board />
   {/if}

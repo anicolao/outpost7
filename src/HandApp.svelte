@@ -1,17 +1,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { Peer, type DataConnection } from 'peerjs';
+  import CardDisplay from './components/Card.svelte';
+  import type { Card } from './lib/gameSlice';
 
   let hostId: string | null = null;
   let playerColor: 'red' | 'yellow' | null = null;
   let peer: Peer;
   let conn: DataConnection;
   
-  interface Card {
-      id: string;
-      type: string;
-      cost: number;
-  }
 
   let hand: Card[] = [];
   let status = 'Initializing...';
@@ -145,20 +142,19 @@
   {/if}
 
   <main class="card-list">
-      {#each hand as card (card.id)}
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <div 
-            class="card" 
-            class:selected={selectedCards.has(card.id)}
-            class:selectable={isOverLimit}
-            on:click={() => toggleSelect(card.id)}
-          >
-              <div class="card-inner">
-                  <div class="card-type">{card.type}</div>
-                  <div class="card-cost">{card.cost}</div>
-              </div>
-          </div>
+      {#each hand as card}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div 
+          class="card-wrapper" 
+          class:selected={selectedCards.has(card.id)}
+          on:click={() => toggleSelect(card.id)}
+        >
+            <CardDisplay {card} />
+            {#if selectedCards.has(card.id)}
+                <div class="selected-overlay">✓</div>
+            {/if}
+        </div>
       {/each}
   </main>
 
@@ -255,6 +251,33 @@
       transition: transform 0.2s, border 0.2s;
       border: 3px solid transparent;
       user-select: none;
+  }
+
+  .card-wrapper {
+    position: relative;
+    width: 80px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  }
+
+  .card-wrapper.selected {
+    transform: translateY(-10px);
+    box-shadow: 0 0 10px #ffea00;
+    outline: 2px solid #ffea00;
+  }
+  
+  .selected-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      color: #ffea00;
+      text-shadow: 0 0 5px black;
+      pointer-events: none;
+      z-index: 20;
   }
 
   .card.selectable {

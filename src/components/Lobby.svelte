@@ -40,10 +40,7 @@
   }
 
   function handleStart() {
-    store.dispatch(startGame({
-      rows: $settingsStore.GRID_ROWS,
-      cols: $settingsStore.GRID_COLS
-    }));
+    dispatch('startGame');
   }
 
   // Icons

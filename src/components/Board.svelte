@@ -7,7 +7,7 @@
   import { settingsStore } from '../lib/settingsStore';
   import { store } from '../lib/store';
   import Offer from './Offer.svelte';
-  import QRDisplay from './QRDisplay.svelte';
+  import PlayerQR from './PlayerQR.svelte';
 
   $: orientation = $gameState.game.orientation;
   $: rows = $settingsStore.GRID_ROWS;
@@ -125,8 +125,23 @@
   {/if}
 
   <Offer />
+  
   {#if hostPeerId}
-    <QRDisplay {hostPeerId} />
+    {@const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`}
+    <div class="qr-zone top">
+        <PlayerQR 
+            url={`${window.location.origin}${baseUrl}hand?host=${hostPeerId}&color=yellow`} 
+            label="Yellow Player" 
+            color="#ffd700" 
+        />
+    </div>
+    <div class="qr-zone bottom">
+        <PlayerQR 
+            url={`${window.location.origin}${baseUrl}hand?host=${hostPeerId}&color=red`} 
+            label="Red Player" 
+            color="#ff4d4d" 
+        />
+    </div>
   {/if}
 </div>
 
@@ -219,6 +234,25 @@
   .cell:hover {
       background: rgba(255, 255, 255, 0.05);
       border-color: rgba(255,255,255,0.2);
+  }
+
+  .qr-zone {
+      position: absolute;
+      z-index: 50;
+  }
+
+  /* Board is rotated 90deg inside .board-container */
+  /* Top corresponds to Yellow (Edge Top) */
+  .qr-zone.top {
+      top: 10px;
+      /* Center horizontally relative to the rotated container? No, vertically since it's flex row.. wait. */
+      /* .board-container is flex centered. */
+      top: -120px; /* Outside the grid */
+  }
+
+  /* Bottom corresponds to Red (Edge Bottom) */
+  .qr-zone.bottom {
+      bottom: -120px; /* Outside the grid */
   }
 
 </style>
