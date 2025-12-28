@@ -47,7 +47,7 @@
 
 **Specs:**
 - Board container should be visible
-- Board orientation should be 0°
+- Board orientation should be 90°
 - Should have 10 header cells (5 cols + 5 rows)
 - Should have 25 empty grid cells
 - Headers should have population badges with counts
