@@ -88,21 +88,30 @@
   <!-- Rotated Board Container -->
   <div class="board-container" style:transform={`rotate(${rotation}deg)`}>
     {#if rows && cols}
-      <div class="board-grid" style:grid-template-columns={`repeat(${cols}, 1fr)`}>
-        <!-- Headers (Population) -->
-        <div class="header-cell empty"></div> <!-- Top-left corner -->
+    {#if rows && cols}
+      <div class="game-layout" style:--rows={rows} style:--cols={cols}>
+        
+        <!-- Top Left Spacer -->
+        <div class="spacer"></div>
+        
+        <!-- Column Headers (Top) -->
         {#each Array(cols) as _, colIndex}
           <div class="header-cell top-header">
-            <span class="star-icon">★</span> {population[colIndex]}
+            <span class="star-icon">★</span> {population[colIndex] || '?'}
           </div>
         {/each}
 
         <!-- Rows -->
         {#each Array(rows) as _, rowIndex}
-           <!-- Row Header (Red Player meeple count needed? No, purely grid logic here) -->
-           <!-- Wait, the design has headers on left too? Based on screenshot, yes on right side. -->
-           <!-- Let's check screenshot again. Stars on top. Meeples on Right. -->
-           <!-- The grid logic below iterates cells. -->
+           <!-- Row Header (Left) -->
+           <div class="header-cell row-header">
+              <div class="population-badge">
+                  {@html MeepleIcon('red')} 
+                  <span class="pop-count">{roundCount[rowIndex]}</span>
+              </div>
+           </div>
+
+           <!-- Grid Cells -->
              {#each Array(cols) as _, colIndex}
                 {@const cellId = `${rowIndex}-${colIndex}`}
                 {@const cell = grid[cellId]}
@@ -121,13 +130,9 @@
                   {/if}
                  </div>
              {/each}
-             <!-- Right Header for Row -->
-             <div class="header-cell right-header">
-                {@html MeepleIcon('red')} {rowIndex % 2 === 0 ? 2 : 1} <!-- Dummy logic or from state? -->
-                <span class="header-value">{roundCount[rowIndex]}</span>
-             </div>
         {/each}
       </div>
+    {/if}
     {/if}
     
     <!-- QR Zones inside rotated container to match player edges -->
@@ -255,15 +260,14 @@
   /* Board is rotated 90deg inside .board-container */
   /* Top corresponds to Yellow (Edge Top) */
   .qr-zone.top {
-      top: 10px;
-      /* Center horizontally relative to the rotated container? No, vertically since it's flex row.. wait. */
-      /* .board-container is flex centered. */
-      top: -120px; /* Outside the grid */
+      /* Bring inside the visible area */
+      top: 20px; 
   }
 
   /* Bottom corresponds to Red (Edge Bottom) */
   .qr-zone.bottom {
-      bottom: -120px; /* Outside the grid */
+      /* Bring inside the visible area */
+      bottom: 20px; 
   }
 
 </style>

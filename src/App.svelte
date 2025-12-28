@@ -4,6 +4,7 @@
   import { store } from './lib/store';
   import { startGame, type Card } from './lib/gameSlice';
   import { loadCards } from './lib/cardLoader';
+  import { settingsStore } from './lib/settingsStore';
   
   import Lobby from './components/Lobby.svelte';
   import Board from './components/Board.svelte';
@@ -17,14 +18,21 @@
   let showSettings = false;
   let showCards = false;
 
-  let deck: Card[] = [];
+  let deck: any[] = [];
+  let headerDeck: any[] = [];
 
   onMount(async () => {
       const cardsData = await loadCards();
-      // Filter for module cards and add IDs
+      
+      // Filter for module cards (deck)
       deck = cardsData
         .filter(c => c.background.toLowerCase().includes('module'))
         .map((c, i) => ({ ...c, id: `card_${i}` }));
+
+      // Filter for start cards (headers)
+      headerDeck = cardsData
+        .filter(c => c.background.toLowerCase().includes('start'))
+        .map((c, i) => ({ ...c, id: `start_${i}` }));
   });
 
   function handleSettings() {
@@ -42,11 +50,12 @@
   function start() {
       // Dispatch startGame with loaded deck
       if (deck.length > 0) {
-          store.dispatch(startGame({
-              rows: 5, // Default or from settings
-              cols: 5,
-              deck: deck
-          }));
+          store.dispatch(startGame({ 
+        rows: $settingsStore.GRID_ROWS, 
+        cols: $settingsStore.GRID_COLS,
+        deck: deck,
+        headers: headerDeck
+      }));
       } else {
           console.error("Deck not loaded yet!");
       }

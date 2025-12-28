@@ -19,10 +19,10 @@
 <style>
   .offer-container {
     position: absolute;
-    left: 0;
+    left: 20px; /* Spacing from edge */
     top: 50%;
-    transform: translateY(-50%) rotate(-90deg);
-    transform-origin: left center;
+    transform: translateY(-50%) rotate(90deg);
+    /* transform-origin: center center; Default is center */
     background: rgba(0, 0, 0, 0.5);
     padding: 10px;
     border-radius: 8px;
@@ -30,13 +30,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Adjust positioning after rotation */
-    margin-left: 20px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
   }
 
   .cards {
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Side by side */
     gap: 10px;
   }
 

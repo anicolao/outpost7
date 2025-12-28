@@ -68,7 +68,8 @@ test.describe('Hand and Phone UI', () => {
                     check: async () => {
                         const [popup] = await Promise.all([
                             page.waitForEvent('popup'),
-                            page.locator('.qr-zone.bottom .qr-item').click()
+                            // Click the Red Player QR code (Bottom) to join
+                            page.locator('.qr-zone.bottom .qr-item').click({ force: true })
                         ]);
                         await popup.waitForLoadState();
                         redPopup = popup;

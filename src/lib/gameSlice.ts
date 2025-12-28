@@ -63,7 +63,7 @@ const gameSlice = createSlice({
         removePlayer: (state, action: PayloadAction<Edge>) => {
             state.players = state.players.filter(p => p.edge !== action.payload);
         },
-        startGame: (state, action: PayloadAction<{ rows: number, cols: number, deck?: Card[] }>) => {
+        startGame: (state, action: PayloadAction<{ rows: number, cols: number, deck?: Card[], headers?: Card[] }>) => {
             if (state.players.length === 2) {
                 state.phase = 'playing';
 
@@ -83,23 +83,35 @@ const gameSlice = createSlice({
                 state.grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
 
                 // Initialize Headers
-                const deck: { card: string, count: number }[] = [];
-                for (let i = 0; i < 15; i++) {
-                    const n = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
-                    deck.push({ card: `start_${n}.svg`, count: n });
+                const availableHeaders: { card: string, count: number }[] = [];
+
+                if (action.payload.headers && action.payload.headers.length > 0) {
+                    // Use provided headers
+                    // Extract count from filename "start_N.pdf" -> N
+                    availableHeaders.push(...action.payload.headers.map(h => {
+                        const match = h.background.match(/start_(\d+)/);
+                        const count = match ? parseInt(match[1], 10) : 1;
+                        return { card: h.background, count };
+                    }));
+                } else {
+                    // Fallback Dummy Headers
+                    for (let i = 0; i < 15; i++) {
+                        const n = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+                        availableHeaders.push({ card: `start_${n}.svg`, count: n });
+                    }
                 }
 
-                // Shuffle (simple Fisher-Yates)
-                for (let i = deck.length - 1; i > 0; i--) {
+                // Shuffle Headers
+                for (let i = availableHeaders.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                    [availableHeaders[i], availableHeaders[j]] = [availableHeaders[j], availableHeaders[i]];
                 }
 
                 // Draw 10
-                const drawn = deck.slice(0, 10);
+                const drawnHeaders = availableHeaders.slice(0, 10);
 
                 // Assign Owners
-                const headersWithOwners: PopulationCard[] = drawn.map((d, i) => ({
+                const headersWithOwners: PopulationCard[] = drawnHeaders.map((d, i) => ({
                     ...d,
                     owner: (i % 2 === 0) ? 'red' : 'yellow'
                 }));
