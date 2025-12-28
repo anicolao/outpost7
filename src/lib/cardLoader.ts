@@ -48,11 +48,11 @@ export async function loadCards(): Promise<CardData[]> {
 }
 
 export function getAssetUrl(filename: string): string {
-    if (!filename || filename === 'empty.pdf' || filename === '') return '';
+    if (!filename || filename === '') return '';
 
     const baseUrl = import.meta.env.BASE_URL || '/';
     const prefix = baseUrl.endsWith('/') ? `${baseUrl}assets/` : `${baseUrl}/assets/`;
 
-    // Input is like 'blue_module_3.pdf', output should be '/<base>/assets/blue_module_3.png'
-    return prefix + filename.replace('.pdf', '.png');
+    // Input is like 'blue_module_3.pdf', output should be '/<base>/assets/blue_module_3.svg'
+    return prefix + filename.replace('.pdf', '.svg');
 }
