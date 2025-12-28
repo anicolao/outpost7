@@ -3,6 +3,7 @@
   import { gameState } from '../lib/redux-svelte';
   import { store } from '../lib/store';
   import { addPlayer, removePlayer, startGame, type Edge, type PlayerColor } from '../lib/gameSlice';
+  import { settingsStore } from '../lib/settingsStore';
   import { fade } from 'svelte/transition';
 
   // Derived state from store
@@ -39,7 +40,10 @@
   }
 
   function handleStart() {
-    store.dispatch(startGame());
+    store.dispatch(startGame({
+      rows: $settingsStore.GRID_ROWS,
+      cols: $settingsStore.GRID_COLS
+    }));
   }
 
   // Icons

@@ -115,8 +115,34 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
                 check: async () => await expect(page.locator('.board-container')).toBeVisible()
             },
             {
-                spec: 'Orientation should be 0°',
-                check: async () => await expect(page.getByText('Orientation: 0°')).toBeVisible()
+                spec: 'Board orientation should be 0° (transform style)',
+                check: async () => await expect(page.locator('.board-container')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)') // 0 deg
+            },
+            {
+                spec: 'Grid should be populated with 25 cells (5x5)',
+                check: async () => await expect(page.locator('.cell')).toHaveCount(25)
+            },
+            {
+                spec: 'Row 0 cells should be owned by Red (Player 1)',
+                check: async () => {
+                    const firstCell = page.locator('.cell').first();
+                    await expect(firstCell).toHaveClass(/red/);
+                }
+            },
+            {
+                spec: 'Row 1 cells should be owned by Yellow (Player 2)',
+                check: async () => {
+                    const cell = page.locator('.cell').nth(5);
+                    await expect(cell).toHaveClass(/yellow/);
+                }
+            },
+            {
+                spec: 'Cells should contain start card images',
+                check: async () => {
+                    const img = page.locator('.cell img').first();
+                    await expect(img).toBeVisible();
+                    await expect(img).toHaveAttribute('src', /start_[1-3]\.svg/);
+                }
             }
         ]
     });
