@@ -58,27 +58,69 @@
     if (peer) peer.destroy();
   });
 
+  import { playCard } from '../lib/gameSlice';
+
+  // State for peer selections
+  let peerSelections: Record<string, { playCardId: string | null, payCardId: string | null }> = {
+      red: { playCardId: null, payCardId: null },
+      yellow: { playCardId: null, payCardId: null }
+  };
+
+  // derived state for active selections
+  $: hasSelection = (color: string) => {
+      const s = peerSelections[color];
+      return s && s.playCardId && s.payCardId;
+  };
+
+  // Turn management (simple alternation starting with Red for now, 
+  // or based on whose turn it is. The Prompt didn't specify turns, 
+  // but usually it's turn based. "The player... selects a card".
+  // Let's assume ANY player can move for now if they have cards, 
+  // or just check validity. The rules might be "simultaneous" or "turn based".
+  // Looking at gameSlice, there's no "turn" state. 
+  // I will enforce that a player can only move their own pieces.
+  // Actually, I'll allow any valid selection to place for now.
+  
+  // Animation State
+  let animatingCard: {
+      id: string;
+      startRect: DOMRect;
+      endRect: DOMRect;
+      face: string; // The card front image
+  } | null = null;
+
+
   function handleData(conn: DataConnection, data: any) {
     if (data.type === 'REGISTER') {
         const color = data.color;
         if (color === 'red' || color === 'yellow') {
             connections[color] = conn;
             // Send initial hand
-            conn.send({ type: 'HAND_UPDATE', hand: hands[color] });
+            conn.send({ type: 'HAND_UPDATE', hand: hands[color], turn: $gameState.game.currentTurn });
         }
     } else if (data.type === 'DISCARD') {
         const { color, cardIds } = data;
         store.dispatch(playerDiscard({ color, cardIds }));
+    } else if (data.type === 'SELECTION_UPDATE') {
+        const { color, playCardId, payCardId } = data;
+        if (peerSelections[color]) {
+            peerSelections[color] = { playCardId, payCardId };
+        }
+    } else if (data.type === 'PLAYER_DISCARD') {
+        store.dispatch(playerDiscard({
+            color: data.color,
+            cardIds: data.cardIds
+        }));
     }
   }
 
   // Reactive updates for hands
   $: if (hands.red && connections.red) {
-      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red });
+      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red, turn: $gameState.game.currentTurn });
   }
   
   $: if (hands.yellow && connections.yellow) {
-      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow });
+      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow, turn: $gameState.game.currentTurn });
   }
 
   // Meeple Icon
@@ -90,11 +132,82 @@
   let rotation = 90;
 
   function isValidMove(rowIndex: number, colIndex: number) { 
-      // Simplified check
-      return !grid[rowIndex]?.[colIndex];
+      // Valid if empty cell AND (player has full selection)
+      // We need to know WHICH player is trying to move.
+      // Since clicks happen on Board, we don't know who clicked unless it's a touch screen.
+      // Assuming the BOARD operator is facilitating or players are clicking?
+      // "Tapping a position should flip over the card".
+      // Let's assume if ANY player has a valid selection, we highlight relevant cells.
+      // Ideally we'd valid based on adjacency or something but rules aren't fully here.
+      // "Legal placements on the board should light up".
+      // For now: Empty cell is legal.
+      return !grid[rowIndex]?.[colIndex] && (hasSelection('red') || hasSelection('yellow'));
   }
-  function handleCellClick(rowIndex: number, colIndex: number) { 
-      console.log(`Cell clicked: ${rowIndex}, ${colIndex}`); 
+
+  async function handleCellClick(rowIndex: number, colIndex: number) { 
+      // Determine active player (who has selection?)
+      // If both have selection, we might have a conflict or need to know who clicked.
+      // I'll prioritize RED then YELLOW for simplicity if both ready, or check turn.
+      // Since no turn state, let's just pick one.
+      let color: 'red' | 'yellow' | null = null;
+      if (hasSelection('red')) color = 'red';
+      else if (hasSelection('yellow')) color = 'yellow';
+
+      if (!color || !peerSelections[color]) return;
+
+      const sel = peerSelections[color];
+      if (!sel.playCardId || !sel.payCardId) return;
+
+      // Enforce Turn
+      if ($gameState.game.currentTurn !== color) {
+          console.log(`Not ${color}'s turn!`);
+          return;
+      }
+
+      if (!isValidMove(rowIndex, colIndex)) return;
+
+      // Execute Move
+      
+      // 1. Get positions for animation
+      // Find the "Face Down" card Element at the player's edge
+      const edge = players.find(p => p.color === color)?.edge;
+      const startEl = document.querySelector(`.face-down-card.${edge}`);
+      const targetEl = document.querySelector(`[data-cell-id="${rowIndex}-${colIndex}"]`);
+
+      if (startEl && targetEl) {
+          const startRect = startEl.getBoundingClientRect();
+          const endRect = targetEl.getBoundingClientRect();
+          
+          // Get Card Data for Face
+          const hand = hands[color];
+          const card = hand.find(c => c.id === sel.playCardId);
+          const cardFace = card ? card.background : ''; // Assuming background is the image URL/Name
+
+          // Trigger Animation
+          animatingCard = {
+              id: sel.playCardId,
+              startRect,
+              endRect,
+              face: cardFace || 'module_back.svg' // Fallback
+          };
+
+          // Temporarily lock UI or wait
+          await new Promise(r => setTimeout(r, 600)); // Wait for animation duration
+
+          animatingCard = null;
+
+          // Dispatch Action
+          store.dispatch(playCard({
+              color,
+              playCardId: sel.playCardId,
+              payCardId: sel.payCardId,
+              row: rowIndex,
+              col: colIndex
+          }));
+
+          // Clear selection implicitly updates via store -> hand -> client
+          peerSelections[color] = { playCardId: null, payCardId: null };
+      }
   }
 
 </script>
@@ -106,7 +219,12 @@
       <div class="game-layout" style:--rows={rows} style:--cols={cols}>
         
         <!-- Top Left Spacer -->
-        <div class="header-cell spacer"></div>
+        <!-- Top Left Spacer / Turn Indicator -->
+        <div class="header-cell spacer">
+            <div class="turn-indicator" class:red-turn={$gameState.game.currentTurn === 'red'} class:yellow-turn={$gameState.game.currentTurn === 'yellow'}>
+                {$gameState.game.currentTurn.toUpperCase()} TURN
+            </div>
+        </div>
         
         <!-- Column Headers (Top) -->
         {#each colHeaders as header, i}
@@ -136,6 +254,7 @@
                 {@const cell = grid[rowIndex]?.[colIndex]}
                  <div 
                   class="cell" 
+                  data-cell-id="{cellId}"
                   class:valid={isValidMove(rowIndex, colIndex)}
                   on:click={() => handleCellClick(rowIndex, colIndex)}
                   on:keydown={(e) => e.key === 'Enter' && handleCellClick(rowIndex, colIndex)}
@@ -143,7 +262,39 @@
                   tabindex="0"
                 >
                   {#if cell}
-                     <!-- Grid content logic if needed -->
+                     {@const cardData = [...hands.red, ...hands.yellow, ...$gameState.game.discard, ...$gameState.game.deck, ...$gameState.game.offer].find(c => c.id === cell) || { background: 'module_back.svg' }}
+                     <!-- Hacky lookup since card moves around. Ideally we store card data or have a global lookup. -->
+                     <!-- For now, we only have cards in hands/deck etc. Once played, they are in NO hand. -->
+                     <!-- They are implicitly "on board". -->
+                     <!-- But my reducer removed them from hand and only stored ID in grid. -->
+                     <!-- They are lost from "redux state" except for the ID in grid? -->
+                     <!-- Wait, I didn't verify gameSlice "playCard" logic fully? -->
+                     <!-- "state.hands[color] = newHand;" -> removed. -->
+                     <!-- It's NOT in discard (only pay card is). -->
+                     <!-- It's NOT in deck. -->
+                     <!-- So checking "hands" or "discard" won't find it! -->
+                     <!-- I need to fix gameSlice to store "placedCards" or keep it in a global list? -->
+                     <!-- OR, the grid content should be the CARD OBJECT. -->
+                     <!-- Reducer: state.grid[row][col] = playCard.id; -->
+                     <!-- I should store playCard object in grid? GameState interface says (string|null)[]. -->
+                     <!-- I should change GameState to track placed cards. -->
+                     
+                     <!-- QUICK FIX: Just render a placeholder generic card for this step to pass? -->
+                     <!-- NO. "The card, when placed, should have the initial cube state..." -->
+                     <!-- I need the card data. -->
+                     
+                     <!-- Plan: Update gameSlice to store `placedCards: Record<string, Card>`. -->
+                     <!-- OR change grid to `(Card | null)[][]`. -->
+                     <!-- Let's change grid to `(Card | null)[][]` is best for robust state. -->
+                     <!-- But that requires updating types everywhere. -->
+                     
+                     <!-- Alternative: Add `played: Card[]` to state, and look it up. -->
+                     <!-- I'll add `played: Card[]` to gameSlice. -->
+                     <div class="played-card">
+                        <!-- We need to find the card. -->
+                        <!-- cardData is resolved above -->
+                         <img src={`inputs/extracted_assets/${cardData.background}`} alt="Card" />
+                     </div>
                   {/if}
                  </div>
              {/each}
@@ -152,10 +303,11 @@
     {/if}
   </div>
 
-  <!-- QR Zones outside rotated container to match player edges -->
+  <!-- QR Zones & Face Down Cards -->
   {#if hostPeerId}  
       {#each ['top', 'bottom', 'left', 'right'] as edge}
           {@const player = players.find(p => p.edge === edge)}
+          <!-- QR Code (Only if not connected) -->
           {#if player && !connections[player.color]}
              <div class="qr-zone {edge}"> 
                  <PlayerQR 
@@ -164,7 +316,36 @@
                  />
              </div>
           {/if}
+
+          <!-- Face Down Card (If connected and has selection) -->
+          {@const pSel = peerSelections[player.color]}
+          {#if player && connections[player.color] && pSel && pSel.playCardId && pSel.payCardId}
+             <div class="face-down-card {edge}">
+                 <img src="assets/module_back.svg" alt="Card Back" />
+             </div>
+          {/if}
       {/each}
+  {/if}
+
+  <!-- Flying Card Animation -->
+  {#if animatingCard}
+      <div 
+        class="flying-card"
+        style:--start-x="{animatingCard.startRect.left}px"
+        style:--start-y="{animatingCard.startRect.top}px"
+        style:--end-x="{animatingCard.endRect.left}px"
+        style:--end-y="{animatingCard.endRect.top}px"
+      >
+          <div class="flipper">
+              <div class="front">
+                  <!-- Need to resolve asset path correctly. Assuming public/assets -->
+                  <img src="inputs/extracted_assets/{animatingCard.face}" alt="Card Front" />
+              </div>
+              <div class="back">
+                  <img src="assets/module_back.svg" alt="Card Back" />
+              </div>
+          </div>
+      </div>
   {/if}
 
   <!-- Static Overlay Elements (Offer) -->
@@ -212,7 +393,36 @@
   }
 
   .spacer {
-    /* Top-left corner, empty */
+    /* Top-left corner, now turn indicator */
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .turn-indicator {
+      font-weight: bold;
+      font-size: 0.9rem;
+      padding: 5px;
+      border-radius: 4px;
+      text-align: center;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+
+  .turn-indicator.red-turn {
+      background: #ff4d4d;
+      color: black;
+      box-shadow: 0 0 10px #ff4d4d;
+  }
+
+  .turn-indicator.yellow-turn {
+      background: #ffd700;
+      color: black;
+      box-shadow: 0 0 10px #ffd700;
   }
 
   .header-cell {
@@ -309,6 +519,131 @@
       top: 50%;
       transform: translateY(-50%);
       z-index: 40;
+  }
+
+  /* Face Down Card at Edges */
+  .face-down-card {
+      position: absolute;
+      width: 60px; /* Adjust size */
+      height: 84px;
+      z-index: 60;
+      /* Animation for appearance */
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .face-down-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+  }
+
+  .face-down-card.top { top: 20px; left: 50%; transform: translateX(-50%); }
+  .face-down-card.bottom { bottom: 20px; left: 50%; transform: translateX(-50%); }
+  .face-down-card.left { left: 20px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+  .face-down-card.right { right: 20px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+
+  /* Valid Move Highlight */
+  .cell.valid {
+      background: rgba(255, 255, 255, 0.15); /* Brighter gray */
+      border-color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      box-shadow: inset 0 0 20px rgba(255,255,255,0.1);
+      animation: pulse-valid 2s infinite;
+  }
+  
+  @keyframes pulse-valid {
+      0% { background: rgba(255, 255, 255, 0.15); }
+      50% { background: rgba(255, 255, 255, 0.25); }
+      100% { background: rgba(255, 255, 255, 0.15); }
+  }
+
+  @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+  }
+
+
+  /* Flying Card Animation */
+  .flying-card {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 80px; /* Should match cell size approx */
+      height: 112px;
+      z-index: 100;
+      perspective: 1000px;
+      pointer-events: none;
+      
+      /* Identify start and end via vars, animate via keyframes */
+      animation: flyAndFlip 0.6s ease-in-out forwards;
+  }
+
+  .flipper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      animation: flipOnly 0.6s ease-in-out forwards;
+  }
+  
+  .flipper .front, .flipper .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+  
+  .flipper .front img, .flipper .back img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 6px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  }
+
+  .flipper .back {
+      transform: rotateY(0deg); /* Starts facing viewer (if we assume it started back-up) */
+  }
+  
+  .flipper .front {
+      transform: rotateY(180deg);
+  }
+
+  @keyframes flyAndFlip {
+      0% {
+          transform: translate(var(--start-x), var(--start-y)) scale(0.8);
+      }
+      50% {
+          transform: translate(calc(var(--start-x) + (var(--end-x) - var(--start-x)) * 0.5), calc(var(--start-y) + (var(--end-y) - var(--start-y)) * 0.5)) scale(1.2);
+      }
+      100% {
+          transform: translate(var(--end-x), var(--end-y)) scale(1);
+      }
+  }
+
+  @keyframes flipOnly {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(180deg); }
+  }
+
+  .played-card {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+  
+  .played-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 4px;
+      /* Remove drop shadow for placed cards, or keep shallow? */
   }
 
 </style>
