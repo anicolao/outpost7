@@ -51,6 +51,5 @@
 - Should have 10 header cells (5 cols + 5 rows)
 - Should have 25 empty grid cells
 - Headers should have population badges with counts
-- Headers should have vote tokens
-- Headers should alternate ownership (Red/Yellow)
+- Headers should alternate ownership (Red/Yellow meeple color)
 
