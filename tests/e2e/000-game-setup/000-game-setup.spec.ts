@@ -127,8 +127,13 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
                 check: async () => await expect(page.locator('.empty-cell')).toHaveCount(25)
             },
             {
-                spec: 'Headers should have population badges',
-                check: async () => await expect(page.locator('.population-badge')).toHaveCount(10)
+                spec: 'Headers should have population badges with counts',
+                check: async () => {
+                    await expect(page.locator('.population-badge')).toHaveCount(10);
+                    // Check text content of first one
+                    await expect(page.locator('.population-badge .pop-count').first()).toBeVisible();
+                    await expect(page.locator('.population-badge .pop-count').first()).toHaveText(/[1-3]/);
+                }
             },
             {
                 spec: 'Headers should have vote tokens',
