@@ -318,7 +318,7 @@
           {/if}
 
           <!-- Face Down Card (If connected and has selection) -->
-          {@const pSel = peerSelections[player.color]}
+          {@const pSel = player ? peerSelections[player.color] : null}
           {#if player && connections[player.color] && pSel && pSel.playCardId && pSel.payCardId}
              <div class="face-down-card {edge}">
                  <img src="assets/module_back.svg" alt="Card Back" />
