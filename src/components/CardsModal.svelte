@@ -41,32 +41,7 @@
                 {#each cards as card}
                     <div class="card-item">
                         <div class="card-preview">
-                            <!-- Background -->
-                            <img src={getAssetUrl(card.background)} alt="Card Background" class="card-bg" />
-                            
-                            <!-- Resource Icon (Top Left?) - The CSV defines existing visual composition roughly?
-                                 Actually, the images in assets like 'blue_module_3.png' are typically FULL cards.
-                                 If the CSV points to 'blue_module_3.pdf' as background and 'blue_resource.pdf' as resource, 
-                                 it implies the game constructs cards via layers OR uses pre-made cards.
-                                 Let's look at the filenames. 'blue_module_3.png' likely is the full card.
-                                 Wait, the CSV has 'blue_module_3.pdf' as '@background'. 
-                                 If 'blue_module_3.png' is the full card image, I just display that. 
-                                 But there are cols for '@cube_1' etc. which are for STATE? Or printed bonuses?
-                                 'bonus_add_cube.pdf' in cube_1 column implies these are Pre-Printed bonuses on the card? 
-                                 Or where to place cubes? 
-                                 The 'blue_module_3.png' file size is ~170KB. 
-                                 Let's assume 'background' column points to the main card image.
-                            -->
                              <img src={getAssetUrl(card.background)} class="card-image" alt={`Card ${card.index}`} />
-                             
-                             <!-- Overlay content if needed? 
-                                  For the "Cards..." view, just showing the base card image is usually enough if it contains the info.
-                                  The CSV describes 'text_module_resource_1' (value) etc.
-                                  If the images are "bare" and we need to composite:
-                                  Let's check if 'blue_module_3.png' has the number '3' on it. 
-                                  Filename implies yes.
-                                  So we probably just show the image from 'background' column.
-                             -->
                         </div>
                         <div class="card-info">
                             <span>ID: {card.index}</span>
