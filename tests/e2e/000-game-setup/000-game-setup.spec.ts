@@ -115,33 +115,35 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
                 check: async () => await expect(page.locator('.board-container')).toBeVisible()
             },
             {
-                spec: 'Board orientation should be 0° (transform style)',
+                spec: 'Board orientation should be 0°',
                 check: async () => await expect(page.locator('.board-container')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)') // 0 deg
             },
             {
-                spec: 'Grid should be populated with 25 cells (5x5)',
-                check: async () => await expect(page.locator('.cell')).toHaveCount(25)
+                spec: 'Should have 10 header cells (5 cols + 5 rows)',
+                check: async () => await expect(page.locator('.header-cell')).toHaveCount(10)
             },
             {
-                spec: 'Row 0 cells should be owned by Red (Player 1)',
-                check: async () => {
-                    const firstCell = page.locator('.cell').first();
-                    await expect(firstCell).toHaveClass(/red/);
-                }
+                spec: 'Should have 25 empty grid cells',
+                check: async () => await expect(page.locator('.empty-cell')).toHaveCount(25)
             },
             {
-                spec: 'Row 1 cells should be owned by Yellow (Player 2)',
-                check: async () => {
-                    const cell = page.locator('.cell').nth(5);
-                    await expect(cell).toHaveClass(/yellow/);
-                }
+                spec: 'Headers should have population badges',
+                check: async () => await expect(page.locator('.population-badge')).toHaveCount(10)
             },
             {
-                spec: 'Cells should contain start card images',
+                spec: 'Headers should have vote tokens',
+                check: async () => await expect(page.locator('.vote-token')).toHaveCount(10)
+            },
+            {
+                spec: 'Headers should alternate ownership (Red/Yellow)',
                 check: async () => {
-                    const img = page.locator('.cell img').first();
-                    await expect(img).toBeVisible();
-                    await expect(img).toHaveAttribute('src', /start_[1-3]\.svg/);
+                    const tokens = page.locator('.vote-token svg circle');
+                    // First one (Red)
+                    await expect(tokens.nth(0)).toHaveAttribute('fill', '#ff4d4d');
+                    // Second one (Yellow)
+                    await expect(tokens.nth(1)).toHaveAttribute('fill', '#ffd700');
+                    // Third one (Red)
+                    await expect(tokens.nth(2)).toHaveAttribute('fill', '#ff4d4d');
                 }
             }
         ]

@@ -8,8 +8,9 @@ export interface Player {
     edge: Edge;
 }
 
-export interface Cell {
+export interface PopulationCard {
     card: string;
+    count: number;
     owner: PlayerColor;
 }
 
@@ -19,7 +20,9 @@ interface GameState {
     players: Player[];
     phase: GamePhase;
     orientation: number;
-    grid: Cell[][];
+    grid: (string | null)[][];
+    rowHeaders: PopulationCard[];
+    colHeaders: PopulationCard[];
 }
 
 const initialState: GameState = {
@@ -27,6 +30,8 @@ const initialState: GameState = {
     phase: 'lobby',
     orientation: 0,
     grid: [],
+    rowHeaders: [],
+    colHeaders: [],
 };
 
 const gameSlice = createSlice({
@@ -60,34 +65,35 @@ const gameSlice = createSlice({
                 else if (hasTop) state.orientation = 180;
                 else if (hasLeft) state.orientation = 90;
 
-                // Initialize Grid
+                // Initialize Grid (Empty)
                 const { rows, cols } = action.payload;
-                const newGrid: Cell[][] = [];
+                state.grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
 
-                // Sort players to ensure consistent ownership assignment (e.g. by edge order or just insertion order)
-                // Using insertion order as simple "Player 1 vs Player 2"
-                const p1 = state.players[0];
-                const p2 = state.players[1];
-
-                for (let r = 0; r < rows; r++) {
-                    const row: Cell[] = [];
-                    for (let c = 0; c < cols; c++) {
-                        // Random start card (1-3)
-                        const cardNum = Math.floor(Math.random() * 3) + 1;
-
-                        // Alternating ownership by row
-                        // Row 0, 2, 4... = Player 1
-                        // Row 1, 3, 5... = Player 2
-                        const owner = (r % 2 === 0) ? p1.color : p2.color;
-
-                        row.push({
-                            card: `start_${cardNum}.svg`,
-                            owner
-                        });
-                    }
-                    newGrid.push(row);
+                // Initialize Headers
+                const deck: { card: string, count: number }[] = [];
+                for (let i = 0; i < 15; i++) {
+                    const n = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+                    deck.push({ card: `start_${n}.svg`, count: n });
                 }
-                state.grid = newGrid;
+
+                // Shuffle (simple Fisher-Yates)
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+
+                // Draw 10
+                const drawn = deck.slice(0, 10);
+
+                // Assign Owners
+                const headersWithOwners: PopulationCard[] = drawn.map((d, i) => ({
+                    ...d,
+                    owner: (i % 2 === 0) ? 'red' : 'yellow'
+                }));
+
+                // Split into Cols (Top) and Rows (Left)
+                state.colHeaders = headersWithOwners.slice(0, 5);
+                state.rowHeaders = headersWithOwners.slice(5, 10);
             }
         },
         resetGame: (state) => {
