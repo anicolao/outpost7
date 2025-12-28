@@ -1,8 +1,14 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+
+  import { Peer, type DataConnection } from 'peerjs';
   import { gameState } from '../lib/redux-svelte';
+  import { dealCards, playerDiscard } from '../lib/gameSlice';
   import { settingsStore } from '../lib/settingsStore';
-  import { getAssetUrl } from '../lib/cardLoader';
-  
+  import { store } from '../lib/store';
+  import Offer from './Offer.svelte';
+  import QRDisplay from './QRDisplay.svelte';
+
   $: orientation = $gameState.game.orientation;
   $: rows = $settingsStore.GRID_ROWS;
   $: cols = $settingsStore.GRID_COLS;
@@ -11,6 +17,60 @@
   $: grid = $gameState.game.grid;
   $: rowHeaders = $gameState.game.rowHeaders;
   $: colHeaders = $gameState.game.colHeaders;
+  $: hands = $gameState.game.hands;
+
+  let peer: Peer;
+  let hostPeerId: string | null = null;
+  let connections: Record<string, DataConnection> = {};
+
+  onMount(() => {
+    // Initialize Peer
+    peer = new Peer();
+
+    peer.on('open', (id) => {
+      hostPeerId = id;
+      console.log('Host Peer ID:', id);
+    });
+
+    peer.on('connection', (conn) => {
+      conn.on('data', (data: any) => {
+        console.log('Received data:', data);
+        handleData(conn, data);
+      });
+      
+      conn.on('close', () => {
+         // Handle disconnection if needed
+         console.log('Client disconnected');
+      });
+    });
+  });
+
+  onDestroy(() => {
+    if (peer) peer.destroy();
+  });
+
+  function handleData(conn: DataConnection, data: any) {
+    if (data.type === 'REGISTER') {
+        const color = data.color;
+        if (color === 'red' || color === 'yellow') {
+            connections[color] = conn;
+            // Send initial hand
+            conn.send({ type: 'HAND_UPDATE', hand: hands[color] });
+        }
+    } else if (data.type === 'DISCARD') {
+        const { color, cardIds } = data;
+        store.dispatch(playerDiscard({ color, cardIds }));
+    }
+  }
+
+  // Reactive updates for hands
+  $: if (hands.red && connections.red) {
+      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red });
+  }
+  
+  $: if (hands.yellow && connections.yellow) {
+      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow });
+  }
 
   // Meeple Icon
   const MeepleIcon = (color: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="${color}" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));"><path d="M9 20h-5a1 1 0 0 1 -1 -1c0 -2 3.378 -4.907 4 -6c-1 0 -4 -.5 -4 -2c0 -2 4 -3.5 6 -4c0 -1.5 .5 -4 3 -4s3 2.5 3 4c2 .5 6 2 6 4c0 1.5 -3 2 -4 2c.622 1.093 4 4 4 6a1 1 0 0 1 -1 1h-5c-1 0 -2 -4 -3 -4s-2 4 -3 4z" /></svg>`;
@@ -62,6 +122,11 @@
     {/each}
 
   </div>
+  {/if}
+
+  <Offer />
+  {#if hostPeerId}
+    <QRDisplay {hostPeerId} />
   {/if}
 </div>
 

@@ -3,13 +3,20 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 export type PlayerColor = 'red' | 'yellow';
 export type Edge = 'bottom' | 'top' | 'left' | 'right';
 
+
 export interface Player {
     color: PlayerColor;
     edge: Edge;
 }
 
+export interface Card {
+    id: string;
+    type: string; // 'scout', 'settler', etc. or filename
+    cost: number;
+}
+
 export interface PopulationCard {
-    card: string;
+    card: string; // filename
     count: number;
     owner: PlayerColor;
 }
@@ -23,6 +30,10 @@ interface GameState {
     grid: (string | null)[][];
     rowHeaders: PopulationCard[];
     colHeaders: PopulationCard[];
+    deck: Card[];
+    offer: Card[];
+    discard: Card[];
+    hands: Record<PlayerColor, Card[]>;
 }
 
 const initialState: GameState = {
@@ -32,6 +43,10 @@ const initialState: GameState = {
     grid: [],
     rowHeaders: [],
     colHeaders: [],
+    deck: [],
+    offer: [],
+    discard: [],
+    hands: { red: [], yellow: [] },
 };
 
 const gameSlice = createSlice({
@@ -94,7 +109,54 @@ const gameSlice = createSlice({
                 // Split into Cols (Top) and Rows (Left)
                 state.colHeaders = headersWithOwners.slice(0, 5);
                 state.rowHeaders = headersWithOwners.slice(5, 10);
+
+                // --- Card Deck Initialization ---
+                // For now, generate a dummy deck since we don't have specifics
+                const deckCards: Card[] = [];
+                const types = ['scout', 'settler', 'merchant', 'diplomat', 'general'];
+                for (let i = 0; i < 60; i++) {
+                    const type = types[i % types.length];
+                    deckCards.push({
+                        id: `card_${i}`,
+                        type: type,
+                        cost: Math.floor(Math.random() * 4) + 1 // 1-4 cost
+                    });
+                }
+
+                // Shuffle Deck
+                for (let i = deckCards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deckCards[i], deckCards[j]] = [deckCards[j], deckCards[i]];
+                }
+
+                // Burn 10
+                state.discard = deckCards.slice(0, 10);
+                let currentDeck = deckCards.slice(10);
+
+                // Deal Offer (5 cards for now?)
+                state.offer = currentDeck.slice(0, 5);
+                currentDeck = currentDeck.slice(5);
+
+                // Deal Hands (5 cards each for now? Requirements didn't specify initial hand size, assuming 5)
+                state.hands.red = currentDeck.slice(0, 5);
+                state.hands.yellow = currentDeck.slice(5, 10);
+                state.deck = currentDeck.slice(10);
             }
+        },
+        dealCards: (state, action: PayloadAction<{ count: number, to: PlayerColor }>) => {
+            const { count, to } = action.payload;
+            const drawn = state.deck.slice(0, count);
+            state.deck = state.deck.slice(count);
+            state.hands[to].push(...drawn);
+        },
+        playerDiscard: (state, action: PayloadAction<{ color: PlayerColor, cardIds: string[] }>) => {
+            const { color, cardIds } = action.payload;
+            const hand = state.hands[color];
+            const toDiscard = hand.filter(c => cardIds.includes(c.id));
+            const newHand = hand.filter(c => !cardIds.includes(c.id));
+
+            state.hands[color] = newHand;
+            state.discard.push(...toDiscard);
         },
         resetGame: (state) => {
             return initialState;
@@ -102,5 +164,5 @@ const gameSlice = createSlice({
     },
 });
 
-export const { addPlayer, removePlayer, startGame, resetGame } = gameSlice.actions;
+export const { addPlayer, removePlayer, startGame, dealCards, playerDiscard, resetGame } = gameSlice.actions;
 export default gameSlice.reducer;
