@@ -136,19 +136,15 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
                 }
             },
             {
-                spec: 'Headers should have vote tokens',
-                check: async () => await expect(page.locator('.vote-token')).toHaveCount(10)
-            },
-            {
-                spec: 'Headers should alternate ownership (Red/Yellow)',
+                spec: 'Headers should alternate ownership (Red/Yellow meeple color)',
                 check: async () => {
-                    const tokens = page.locator('.vote-token svg circle');
+                    const meeples = page.locator('.population-badge svg');
                     // First one (Red)
-                    await expect(tokens.nth(0)).toHaveAttribute('fill', '#ff4d4d');
+                    await expect(meeples.nth(0)).toHaveAttribute('fill', '#ff4d4d');
                     // Second one (Yellow)
-                    await expect(tokens.nth(1)).toHaveAttribute('fill', '#ffd700');
+                    await expect(meeples.nth(1)).toHaveAttribute('fill', '#ffd700');
                     // Third one (Red)
-                    await expect(tokens.nth(2)).toHaveAttribute('fill', '#ff4d4d');
+                    await expect(meeples.nth(2)).toHaveAttribute('fill', '#ff4d4d');
                 }
             }
         ]
