@@ -80,13 +80,20 @@
 
   $: handCount = hand.length;
   $: totalCost = hand.reduce((acc, c) => acc + c.cost, 0);
+  
+  // Projected state based on selection
+  $: projectedHand = hand.filter(c => !selectedCards.has(c.id));
+  $: projectedCount = projectedHand.length;
+  $: projectedValue = projectedHand.reduce((acc, c) => acc + c.cost, 0);
+
+  // Over limit based on CURRENT hand (to show alert)
   $: isOverLimit = handCount > 7 || totalCost > 12;
+  
+  // Valid discard state (projected hand is within limits)
+  $: isValidDiscard = projectedCount <= 7 && projectedValue <= 12;
 
   function toggleSelect(cardId: string) {
-    if (!isOverLimit) return; // Only allow selection if discard is needed? 
-    // Actually, maybe user wants to organize? But requirement says "prompt to discard".
-    // "they need to be prompted to discard cards and can select cards"
-    
+    // Allow toggling selection freely
     if (selectedCards.has(cardId)) {
         selectedCards.delete(cardId);
         selectedCards = selectedCards; // trigger reactivity
@@ -97,13 +104,7 @@
   }
 
   function confirmDiscard() {
-    // Validate if discard resolves the issue?
-    // Calculate remaining hand
-    const remainingHand = hand.filter(c => !selectedCards.has(c.id));
-    const newCount = remainingHand.length;
-    const newCost = remainingHand.reduce((acc, c) => acc + c.cost, 0);
-
-    if (newCount <= 7 && newCost <= 12) {
+    if (isValidDiscard) {
         // Send Discard
         conn.send({ 
             type: 'DISCARD', 
@@ -112,7 +113,7 @@
         });
         // We wait for host to send new hand
     } else {
-        alert('You must discard enough cards to meet the limits (Max 7 cards, Max 12 points).');
+        alert('You must discard enough cards to meet the limits (Max 7 cards, Max 12 value).');
     }
   }
   
@@ -131,11 +132,12 @@
         <span class="status">{status}</span>
     </div>
     <div class="stats">
-        <div class="stat" class:danger={handCount > 7}>
-            Cards: {handCount} / 7
+        <!-- Show PROJECTED values if cards are selected, otherwise current -->
+        <div class="stat" class:danger={projectedCount > 7}>
+            Cards: {projectedCount} / 7
         </div>
-        <div class="stat" class:danger={totalCost > 12}>
-            Points: {totalCost} / 12
+        <div class="stat" class:danger={projectedValue > 12}>
+            Value: {projectedValue} / 12
         </div>
     </div>
   </header>
@@ -166,7 +168,7 @@
   {#if isOverLimit}
     <footer class="actions">
         <button class="clear-btn" on:click={clearSelection} disabled={selectedCards.size === 0}>Clear</button>
-        <button class="discard-btn" on:click={confirmDiscard} disabled={selectedCards.size === 0}>Confirm Discard</button>
+        <button class="discard-btn" on:click={confirmDiscard} disabled={!isValidDiscard}>Confirm Discard</button>
     </footer>
   {/if}
 </div>

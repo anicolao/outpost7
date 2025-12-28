@@ -141,20 +141,24 @@
     <!-- QR Zones inside rotated container to match player edges -->
     {#if hostPeerId}
         {@const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`}
-        <div class="qr-zone top">
-            <PlayerQR 
-                url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=yellow`} 
-                label="Yellow Player" 
-                color="#ffd700" 
-            />
-        </div>
-        <div class="qr-zone bottom">
-            <PlayerQR 
-                url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=red`} 
-                label="Red Player" 
-                color="#ff4d4d" 
-            />
-        </div>
+        
+        {#if !connections.yellow}
+          <div class="qr-zone top">
+              <PlayerQR 
+                  url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=yellow`} 
+                  color="#ffd700" 
+              />
+          </div>
+        {/if}
+
+        {#if !connections.red}
+          <div class="qr-zone bottom">
+              <PlayerQR 
+                  url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=red`} 
+                  color="#ff4d4d" 
+              />
+          </div>
+        {/if}
     {/if}
   </div>
 
