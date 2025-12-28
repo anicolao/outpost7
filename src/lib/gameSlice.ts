@@ -8,18 +8,25 @@ export interface Player {
     edge: Edge;
 }
 
+export interface Cell {
+    card: string;
+    owner: PlayerColor;
+}
+
 export type GamePhase = 'lobby' | 'playing';
 
 interface GameState {
     players: Player[];
     phase: GamePhase;
     orientation: number;
+    grid: Cell[][];
 }
 
 const initialState: GameState = {
     players: [],
     phase: 'lobby',
     orientation: 0,
+    grid: [],
 };
 
 const gameSlice = createSlice({
@@ -27,7 +34,6 @@ const gameSlice = createSlice({
     initialState,
     reducers: {
         addPlayer: (state, action: PayloadAction<Player>) => {
-            // Prevent adding if edge is occupied or color is taken (though logic might allow duplicate colors if rule didn't say otherwise, but strictly 2 players red/yellow usually means unique)
             const { color, edge } = action.payload;
             const edgeOccupied = state.players.some(p => p.edge === edge);
             const colorTaken = state.players.some(p => p.color === color);
@@ -39,20 +45,11 @@ const gameSlice = createSlice({
         removePlayer: (state, action: PayloadAction<Edge>) => {
             state.players = state.players.filter(p => p.edge !== action.payload);
         },
-        startGame: (state) => {
+        startGame: (state, action: PayloadAction<{ rows: number, cols: number }>) => {
             if (state.players.length === 2) {
                 state.phase = 'playing';
-                // Calculate orientation based on players. 
-                // Default (0) is suitable if a player is at bottom.
-                // If players are Top/Bottom -> 0 or 180 is fine.
-                // If players are Left/Right -> 90 or 270.
-                // Simple logic: orient so first player added is at "bottom" conceptually? 
-                // Or just fixed 0 for MVP as requested "set up the grid oriented logically".
-                // Let's implement a simple heuristic: 
-                // If Bottom occupied -> 0.
-                // Else if Right occupied -> 270 (so Right becomes Bottom).
-                // Else if Top occupied -> 180 (so Top becomes Bottom).
-                // Else (Left occupied) -> 90 (so Left becomes Bottom).
+
+                // Orientation logic
                 const hasBottom = state.players.some(p => p.edge === 'bottom');
                 const hasRight = state.players.some(p => p.edge === 'right');
                 const hasTop = state.players.some(p => p.edge === 'top');
@@ -62,6 +59,35 @@ const gameSlice = createSlice({
                 else if (hasRight) state.orientation = 270;
                 else if (hasTop) state.orientation = 180;
                 else if (hasLeft) state.orientation = 90;
+
+                // Initialize Grid
+                const { rows, cols } = action.payload;
+                const newGrid: Cell[][] = [];
+
+                // Sort players to ensure consistent ownership assignment (e.g. by edge order or just insertion order)
+                // Using insertion order as simple "Player 1 vs Player 2"
+                const p1 = state.players[0];
+                const p2 = state.players[1];
+
+                for (let r = 0; r < rows; r++) {
+                    const row: Cell[] = [];
+                    for (let c = 0; c < cols; c++) {
+                        // Random start card (1-3)
+                        const cardNum = Math.floor(Math.random() * 3) + 1;
+
+                        // Alternating ownership by row
+                        // Row 0, 2, 4... = Player 1
+                        // Row 1, 3, 5... = Player 2
+                        const owner = (r % 2 === 0) ? p1.color : p2.color;
+
+                        row.push({
+                            card: `start_${cardNum}.svg`,
+                            owner
+                        });
+                    }
+                    newGrid.push(row);
+                }
+                state.grid = newGrid;
             }
         },
         resetGame: (state) => {

@@ -47,5 +47,9 @@
 
 **Specs:**
 - Board container should be visible
-- Orientation should be 0°
+- Board orientation should be 0° (transform style)
+- Grid should be populated with 25 cells (5x5)
+- Row 0 cells should be owned by Red (Player 1)
+- Row 1 cells should be owned by Yellow (Player 2)
+- Cells should contain start card images
 
