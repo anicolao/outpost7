@@ -39,7 +39,6 @@
       });
       
       conn.on('close', () => {
-         // Handle disconnection if needed
          console.log('Client disconnected');
       });
     });
@@ -75,12 +74,15 @@
   // Meeple Icon
   const MeepleIcon = (color: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="${color}" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));"><path d="M9 20h-5a1 1 0 0 1 -1 -1c0 -2 3.378 -4.907 4 -6c-1 0 -4 -.5 -4 -2c0 -2 4 -3.5 6 -4c0 -1.5 .5 -4 3 -4s3 2.5 3 4c2 .5 6 2 6 4c0 1.5 -3 2 -4 2c.622 1.093 4 4 4 6a1 1 0 0 1 -1 1h-5c-1 0 -2 -4 -3 -4s-2 4 -3 4z" /></svg>`;
 
-  // Dummy variables for the new grid structure, as they are not defined in the original code
-  let rotation = 90; // Assuming a default rotation
-  let population = [1, 2, 3, 4, 5]; // Dummy data
-  let roundCount = [1, 2, 3, 4, 5]; // Dummy data
-  function isValidMove(rowIndex: number, colIndex: number) { return (rowIndex + colIndex) % 2 === 0; } // Dummy function
-  function handleCellClick(rowIndex: number, colIndex: number) { console.log(`Cell clicked: ${rowIndex}, ${colIndex}`); } // Dummy function
+  let rotation = 90;
+
+  function isValidMove(rowIndex: number, colIndex: number) { 
+      // Simplified check
+      return !grid[rowIndex]?.[colIndex];
+  }
+  function handleCellClick(rowIndex: number, colIndex: number) { 
+      console.log(`Cell clicked: ${rowIndex}, ${colIndex}`); 
+  }
 
 </script>
 
@@ -88,16 +90,18 @@
   <!-- Rotated Board Container -->
   <div class="board-container" style:transform={`rotate(${rotation}deg)`}>
     {#if rows && cols}
-    {#if rows && cols}
       <div class="game-layout" style:--rows={rows} style:--cols={cols}>
         
         <!-- Top Left Spacer -->
-        <div class="spacer"></div>
+        <div class="header-cell spacer"></div>
         
         <!-- Column Headers (Top) -->
-        {#each Array(cols) as _, colIndex}
+        {#each colHeaders as header, i}
           <div class="header-cell top-header">
-            <span class="star-icon">★</span> {population[colIndex] || '?'}
+             <div class="population-badge">
+                 {@html MeepleIcon(header.owner)}
+                 <span class="pop-count">{header.count}</span>
+             </div>
           </div>
         {/each}
 
@@ -105,16 +109,18 @@
         {#each Array(rows) as _, rowIndex}
            <!-- Row Header (Left) -->
            <div class="header-cell row-header">
-              <div class="population-badge">
-                  {@html MeepleIcon('red')} 
-                  <span class="pop-count">{roundCount[rowIndex]}</span>
-              </div>
+              {#if rowHeaders[rowIndex]}
+                <div class="population-badge">
+                    {@html MeepleIcon(rowHeaders[rowIndex].owner)} 
+                    <span class="pop-count">{rowHeaders[rowIndex].count}</span>
+                </div>
+              {/if}
            </div>
 
            <!-- Grid Cells -->
              {#each Array(cols) as _, colIndex}
                 {@const cellId = `${rowIndex}-${colIndex}`}
-                {@const cell = grid[cellId]}
+                {@const cell = grid[rowIndex]?.[colIndex]}
                  <div 
                   class="cell" 
                   class:valid={isValidMove(rowIndex, colIndex)}
@@ -124,15 +130,12 @@
                   tabindex="0"
                 >
                   {#if cell}
-                     <div class="meeple {cell.color}">
-                        {@html MeepleIcon(cell.color)}
-                     </div>
+                     <!-- Grid content logic if needed -->
                   {/if}
                  </div>
              {/each}
         {/each}
       </div>
-    {/if}
     {/if}
     
     <!-- QR Zones inside rotated container to match player edges -->
