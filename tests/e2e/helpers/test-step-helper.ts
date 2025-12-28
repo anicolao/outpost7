@@ -30,9 +30,11 @@ export async function waitForAnimations(page: Page) {
             });
 
             if (animations.length > 0) {
-                // If animations are running, wait for them to finish
+                // If animations are running, wait for them to finish (or be cancelled)
                 stableFrames = 0;
-                await Promise.all(animations.map(a => a.finished));
+                // Animations might be cancelled (e.g. element removed), which rejects 'finished'.
+                // We should catch that.
+                await Promise.all(animations.map(a => a.finished.catch(() => { })));
             } else {
                 // If quiet, count this frame
                 stableFrames++;
@@ -58,6 +60,28 @@ export class TestStepHelper {
         if (clean && fs.existsSync(screenshotDir)) {
             fs.rmSync(screenshotDir, { recursive: true, force: true });
         }
+
+        // Strict Console Check
+        this.page.on('console', msg => {
+            if (msg.type() === 'error') {
+                console.error(`PAGE ERROR LOG: ${msg.text()}`);
+                throw new Error(`Console Error Detected: ${msg.text()}`);
+            }
+        });
+        this.page.on('pageerror', err => {
+            console.error(`PAGE EXCEPTION: ${err.message}`);
+            throw new Error(`Uncaught Exception: ${err.message}`);
+        });
+
+        this.page.on('requestfailed', request => {
+            console.log(`FAILED REQUEST: ${request.url()} - ${request.failure()?.errorText}`);
+        });
+
+        this.page.on('response', response => {
+            if (response.status() >= 400) {
+                console.log(`BAD RESPONSE: ${response.url()} - ${response.status()}`);
+            }
+        });
     }
 
     setMetadata(title: string, story: string) {

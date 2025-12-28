@@ -4,6 +4,7 @@
   import { Peer, type DataConnection } from 'peerjs';
   import { gameState } from '../lib/redux-svelte';
   import { dealCards, playerDiscard } from '../lib/gameSlice';
+  import { getAssetUrl } from '../lib/cardLoader';
   import { settingsStore } from '../lib/settingsStore';
   import { store } from '../lib/store';
   import Offer from './Offer.svelte';
@@ -105,6 +106,7 @@
         const { color, playCardId, payCardId } = data;
         if (peerSelections[color]) {
             peerSelections[color] = { playCardId, payCardId };
+            peerSelections = peerSelections; // Trigger reactivity
         }
     } else if (data.type === 'PLAYER_DISCARD') {
         store.dispatch(playerDiscard({
@@ -181,14 +183,15 @@
           // Get Card Data for Face
           const hand = hands[color];
           const card = hand.find(c => c.id === sel.playCardId);
-          const cardFace = card ? card.background : ''; // Assuming background is the image URL/Name
+          // Use getAssetUrl to ensure correct path (assets/...) and extension (.svg)
+          const cardFace = card ? getAssetUrl(card.background) : ''; 
 
           // Trigger Animation
           animatingCard = {
               id: sel.playCardId,
               startRect,
               endRect,
-              face: cardFace || 'module_back.svg' // Fallback
+              face: cardFace || 'assets/module_back.svg' // Fallback
           };
 
           // Temporarily lock UI or wait
@@ -293,7 +296,7 @@
                      <div class="played-card">
                         <!-- We need to find the card. -->
                         <!-- cardData is resolved above -->
-                         <img src={`inputs/extracted_assets/${cardData.background}`} alt="Card" />
+                         <img src={getAssetUrl(cardData.background)} alt="Card" />
                      </div>
                   {/if}
                  </div>
