@@ -49,6 +49,7 @@
                 />
 
                 <!-- Top Left: Value and Resource -->
+                {#if card.text_module_resource_1}
                 <div class="value-container">
                   <span class="card-value">{card.text_module_resource_1}</span>
                   <div class="resource-icon-wrapper">
@@ -59,6 +60,7 @@
                     />
                   </div>
                 </div>
+                {/if}
 
                 <!-- Right Side: Cube Slots -->
                 <div class="slots-container">
