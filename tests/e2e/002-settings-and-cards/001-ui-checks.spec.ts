@@ -12,6 +12,10 @@ test.describe('Settings and Cards UI Checks', () => {
         await expect(page.locator('.lobby-container')).toBeVisible();
     });
 
+    test.afterEach(async () => {
+        stepHelper.generateDocs();
+    });
+
     test('should allow opening settings, editing values, and navigating to cards', async ({ page }) => {
         // 1. Open Settings
         await stepHelper.step('open-settings', {
@@ -107,11 +111,13 @@ test.describe('Settings and Cards UI Checks', () => {
                     await expect(bottomPicker).toBeVisible();
                     await expect(bottomPicker).toHaveCSS('opacity', '1');
 
-                    // Click color
-                    await bottomPicker.locator('.color-btn').first().click();
+                    // Click color "red"
+                    await bottomPicker.locator('button[title="red"]').click();
 
                     // Wait for picker to hide (implies state update)
                     await expect(bottomPicker).toBeHidden();
+                    // Ensure add button is NOT shown (implies token must be shown or broken state)
+                    await expect(bottomEdge.locator('.add-btn')).toBeHidden();
                     // Check token
                     await expect(bottomEdge.locator('.player-token')).toBeVisible({ timeout: 10000 });
 
@@ -124,11 +130,12 @@ test.describe('Settings and Cards UI Checks', () => {
                     await expect(topPicker).toBeVisible();
                     await expect(topPicker).toHaveCSS('opacity', '1');
 
-                    // Click color
-                    await topPicker.locator('.color-btn').first().click();
+                    // Click color "yellow"
+                    await topPicker.locator('button[title="yellow"]').click();
 
                     // Wait for picker to hide
                     await expect(topPicker).toBeHidden();
+                    await expect(topEdge.locator('.add-btn')).toBeHidden();
                     // Check token
                     await expect(topEdge.locator('.player-token')).toBeVisible({ timeout: 10000 });
 

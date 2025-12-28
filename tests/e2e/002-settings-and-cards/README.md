@@ -1,42 +1,39 @@
-# Settings and Cards UI
+# Settings and Cards
 
-**As a** player, **I want** to see game settings and the card library, **so that** I can reference rules and components.
+Verify opening settings, editing values, and navigating to cards.
 
-## Main Screen with Global Controls
+## Open Settings Modal
 
-![Main Screen with Global Controls](screenshots/000-main-screen.png)
-
-**Specs:**
-- Settings button is visible
-- Cards button is visible
-
-## Settings Modal Open
-
-![Settings Modal Open](screenshots/001-settings-modal.png)
+![Open Settings Modal](screenshots/000-open-settings.png)
 
 **Specs:**
-- Modal header is visible
-- Settings values are displayed
+- Clicking corner gear icon opens settings modal
 
-## Main Screen after Closing Settings
+## Edit Game Setting
 
-![Main Screen after Closing Settings](screenshots/002-settings-closed.png)
-
-**Specs:**
-- Modal is hidden
-
-## Cards Modal Open
-
-![Cards Modal Open](screenshots/003-cards-modal.png)
+![Edit Game Setting](screenshots/001-edit-setting.png)
 
 **Specs:**
-- Modal header is visible
-- Card grid is populated
+- Clicking + updates the setting value
 
-## Main Screen after Closing Cards
+## Navigate to Card Library
 
-![Main Screen after Closing Cards](screenshots/004-cards-closed.png)
+![Navigate to Card Library](screenshots/002-nav-cards.png)
 
 **Specs:**
-- Modal is hidden
+- Clicking Open Card Library switches to Cards Modal
+
+## Close Modals
+
+![Close Modals](screenshots/003-close-cards.png)
+
+**Specs:**
+- Clicking close button dismisses modal
+
+## Verify Grid Settings Apply to Board
+
+![Verify Grid Settings Apply to Board](screenshots/004-verify-settings-effect.png)
+
+**Specs:**
+- Board grid cells reflect changed rows setting
 
