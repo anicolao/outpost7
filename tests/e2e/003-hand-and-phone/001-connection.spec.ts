@@ -103,10 +103,15 @@ test.describe('Hand and Phone UI', () => {
                             });
                         });
         
-                        // Check alert on popup
+                        // Verify we have 8 cards now (5 initial + 3 dealt)
                         // Wait for hand update to propagate
-                        await expect(redPopup.locator('.card-wrapper')).toHaveCount(8);
-        
+                        await expect(redPopup.locator('.card-wrapper')).toHaveCount(8, { timeout: 10000 });
+                        
+                        // Verify points are not NaN
+                        // Get the points text e.g. "Points: 12 / 12"
+                        const pointsText = await redPopup.locator('.stat').nth(1).innerText();
+                        expect(pointsText).not.toContain('NaN');
+                        expect(pointsText).toMatch(/Points: \d+ \/ 12/);
                         await expect(redPopup.locator('.alert-banner')).toBeVisible();
                         await expect(redPopup.locator('.alert-banner')).toContainText('Hand Limit Exceeded');
                     }

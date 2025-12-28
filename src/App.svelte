@@ -27,7 +27,12 @@
       // Filter for module cards (deck)
       deck = cardsData
         .filter(c => c.background.toLowerCase().includes('module'))
-        .map((c, i) => ({ ...c, id: `card_${i}` }));
+        .map((c, i) => ({ 
+            ...c, 
+            id: `card_${i}`,
+            // Parse cost from text_module_resource_1 (e.g. "3" -> 3)
+            cost: parseInt(c.text_module_resource_1 || '0', 10)
+        }));
 
       // Filter for start cards (headers)
       headerDeck = cardsData
