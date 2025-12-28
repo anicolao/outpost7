@@ -12,9 +12,10 @@
   $: rowHeaders = $gameState.game.rowHeaders;
   $: colHeaders = $gameState.game.colHeaders;
 
-  // Meeple and Token icons (simple SVGs for now or placeholders)
-  const MeepleIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a2 2 0 0 1 2 2v3h1a1 1 0 0 1 1 1v4h-2v3a1 1 0 0 1-2 0v-2h-3v2a1 1 0 0 1-2 0v-3H7v-4a1 1 0 0 1 1-1h1V5a2 2 0 0 1 2-2V3.73C11.6 3.39 12 2.74 12 2z"/></svg>`;
-  const TokenIcon = (color: string) => `<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" fill="${color}" stroke="black" stroke-width="2"/></svg>`;
+  // Meeple and Token icons
+  const MeepleIcon = (color: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="${color}" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));"><path d="M9 20h-5a1 1 0 0 1 -1 -1c0 -2 3.378 -4.907 4 -6c-1 0 -4 -.5 -4 -2c0 -2 4 -3.5 6 -4c0 -1.5 .5 -4 3 -4s3 2.5 3 4c2 .5 6 2 6 4c0 1.5 -3 2 -4 2c.622 1.093 4 4 4 6a1 1 0 0 1 -1 1h-5c-1 0 -2 -4 -3 -4s-2 4 -3 4z" /></svg>`;
+  
+  const TokenIcon = (color: string) => `<svg viewBox="0 0 24 24" width="28" height="28" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));"><circle cx="12" cy="12" r="10" fill="${color}" stroke="black" stroke-width="2"/></svg>`;
 
 </script>
 
@@ -31,7 +32,8 @@
         <img src={getAssetUrl(header.card)} alt="Start" draggable="false" />
         <div class="overlay">
           <div class="population-badge">
-             {@html MeepleIcon} <span>{header.count}</span>
+             {@html MeepleIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')} 
+             <span class="pop-count" class:dark-text={header.owner === 'yellow'}>{header.count}</span>
           </div>
           <div class="vote-token">
              {@html TokenIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')}
@@ -49,7 +51,8 @@
           <img src={getAssetUrl(header.card)} alt="Start" draggable="false" />
           <div class="overlay">
             <div class="population-badge">
-                {@html MeepleIcon} <span>{header.count}</span>
+                {@html MeepleIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')}
+                <span class="pop-count" class:dark-text={header.owner === 'yellow'}>{header.count}</span>
             </div>
             <div class="vote-token">
                 {@html TokenIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')}
@@ -126,26 +129,46 @@
 
   .overlay {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 5px; left: 5px; right: 5px; bottom: 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
+    justify-content: space-between; /* Space out Meeple and Vote Token */
     pointer-events: none;
   }
 
+  /* Meeple Container */
   .population-badge {
-    background: rgba(0,0,0,0.6);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 12px;
+    position: relative;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-weight: bold;
-    font-size: 0.9rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    justify-content: center;
+  }
+
+  /* Text inside Meeple */
+  .pop-count {
+    position: absolute;
+    z-index: 2;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    pointer-events: none;
+    padding-top: 4px; /* Slight adjustment to center in chest area */
+  }
+
+  .pop-count.dark-text {
+      color: #222;
+      text-shadow: none;
+  }
+
+  /* Vote Token Container */
+  .vote-token {
+      display: flex;
+      align-items: center;
+      justify-content: center;
   }
 
   .cell {
