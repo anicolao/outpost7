@@ -122,12 +122,12 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
                 }
             },
             {
-                spec: 'Should have 10 header cells (5 cols + 5 rows)',
-                check: async () => await expect(page.locator('.header-cell')).toHaveCount(10)
+                spec: 'Should have 11 header cells (5 cols + 5 rows + 1 spacer)',
+                check: async () => await expect(page.locator('.header-cell')).toHaveCount(11)
             },
             {
                 spec: 'Should have 25 empty grid cells',
-                check: async () => await expect(page.locator('.empty-cell')).toHaveCount(25)
+                check: async () => await expect(page.locator('.cell')).toHaveCount(25)
             },
             {
                 spec: 'Headers should have population badges with counts',
