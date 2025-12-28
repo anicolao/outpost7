@@ -14,7 +14,10 @@
   let status = 'Initializing...';
   
   // Selection logic
-  let selectedCards: Set<string> = new Set();
+  let playCardId: string | null = null;
+  let payCardId: string | null = null;
+  let discardSelection: Set<string> = new Set();
+  let currentTurn: string | null = null;
 
   onMount(() => {
     // Parse query params from hash
@@ -62,10 +65,21 @@
 
     conn.on('data', (data: any) => {
         if (data.type === 'HAND_UPDATE') {
-            hand = data.hand;
-            // Clear selection on new hand if invalid? Or keep? 
-            // Better to clear to avoid stale state
-            selectedCards = new Set();
+            const newHand = data.hand;
+            // Only clear selection if hand IDs changed
+            const currentIds = hand.map(c => c.id).sort().join(',');
+            const newIds = newHand.map((c: any) => c.id).sort().join(',');
+            
+            if (currentIds !== newIds) {
+                hand = newHand;
+                playCardId = null;
+                payCardId = null;
+                discardSelection = new Set();
+            } else {
+                // Just update hand data (in case costs/images changed - unlikely)
+                hand = newHand;
+            }
+            if (data.turn) currentTurn = data.turn;
         }
     });
 
@@ -81,44 +95,94 @@
   $: handCount = hand.length;
   $: totalCost = hand.reduce((acc, c) => acc + c.cost, 0);
   
-  // Projected state based on selection
-  $: projectedHand = hand.filter(c => !selectedCards.has(c.id));
-  $: projectedCount = projectedHand.length;
-  $: projectedValue = projectedHand.reduce((acc, c) => acc + c.cost, 0);
+  // Logic for Play/Pay State
+  $: {
+      if (conn && conn.open) {
+          conn.send({ 
+              type: 'SELECTION_UPDATE', 
+              color: playerColor, 
+              playCardId, 
+              payCardId 
+          });
+      }
+  }
 
   // Over limit based on CURRENT hand (to show alert)
+  // For basic game flow, let's keep the play/pay focus for now.
+  // We can re-enable discard logic if needed, but the prompt focuses on Play/Pay.
+  // The 'discard to pay' is part of the move. 
+  // Let's hide the old manual discard for now unless user needs it (prompt implies move-driven discard).
+  // Actually, user prompt says: "When the player doesn't need to discard and selects a card..." 
+  // This implies we ARE in the Play phase.
   $: isOverLimit = handCount > 7 || totalCost > 12;
   
-  // Valid discard state (projected hand is within limits)
-  $: isValidDiscard = projectedCount <= 7 && projectedValue <= 12;
+  function handleCardTap(cardId: string) {
+      if (isOverLimit) {
+          // Discard Mode: Just toggle selection for discard
+          // We can reuse playCardId/payCardId slots or add a new 'discardSelection' set.
+          // Since we might need to discard multiple cards (e.g. if limit is 7 and we have 9),
+          // we should support multi-select.
+          // BUT, to keep it simple and reuse existing UI cues:
+          // Let's use a `discardSelection` Set.
+          if (discardSelection.has(cardId)) {
+              discardSelection.delete(cardId);
+          } else {
+              discardSelection.add(cardId);
+          }
+          discardSelection = discardSelection; // Trigger reactivity
+          return;
+      }
 
-  function toggleSelect(cardId: string) {
-    // Allow toggling selection freely
-    if (selectedCards.has(cardId)) {
-        selectedCards.delete(cardId);
-        selectedCards = selectedCards; // trigger reactivity
-    } else {
-        selectedCards.add(cardId);
-        selectedCards = selectedCards;
-    }
+      console.log('Tapped card:', cardId);
+      if (playCardId && payCardId) {
+          // If both selected, any tap resets
+          console.log('Both selected, resetting.');
+          playCardId = null;
+          payCardId = null;
+          return;
+      }
+
+      if (!playCardId) {
+          // Select to Play
+          console.log('Selecting PLAY:', cardId);
+          playCardId = cardId;
+      } else if (playCardId === cardId) {
+          // Toggle off Play
+          console.log('Deselecting PLAY');
+          playCardId = null;
+      } else {
+          // Play is selected, this is a different card -> Select to Pay
+          if (payCardId === cardId) {
+              console.log('Deselecting PAY');
+              payCardId = null; // Toggle off Pay
+          } else {
+              console.log('Selecting PAY:', cardId);
+              payCardId = cardId;
+          }
+      }
+      console.log('State:', { playCardId, payCardId });
+  }
+
+  function clearSelection() {
+      playCardId = null;
+      payCardId = null;
+      discardSelection = new Set();
   }
 
   function confirmDiscard() {
-    if (isValidDiscard) {
-        // Send Discard
-        conn.send({ 
-            type: 'DISCARD', 
-            color: playerColor, 
-            cardIds: Array.from(selectedCards) 
-        });
-        // We wait for host to send new hand
-    } else {
-        alert('You must discard enough cards to meet the limits (Max 7 cards, Max 12 value).');
-    }
-  }
-  
-  function clearSelection() {
-      selectedCards = new Set();
+      if (discardSelection.size === 0) return;
+      
+      // Send message to host to discard
+      if (conn && conn.open) {
+          conn.send({
+              type: 'PLAYER_DISCARD',
+              color: playerColor,
+              cardIds: Array.from(discardSelection)
+          });
+          // Clear locally immediately or wait for update? 
+          // Wait for update is safer, but clear selection now.
+          discardSelection = new Set();
+      }
   }
 
 </script>
@@ -132,13 +196,13 @@
         <span class="status">{status}</span>
     </div>
     <div class="stats">
-        <!-- Show PROJECTED values if cards are selected, otherwise current -->
-        <div class="stat" class:danger={projectedCount > 7}>
-            Cards: {projectedCount} / 7
-        </div>
-        <div class="stat" class:danger={projectedValue > 12}>
-            Value: {projectedValue} / 12
-        </div>
+        {#if currentTurn}
+            <div class="stat turn-stat" class:my-turn={currentTurn === playerColor}>
+                {currentTurn === playerColor ? 'YOUR TURN' : 'OPPONENT TURN'}
+            </div>
+        {/if}
+        <div class="stat">Cards: {handCount}</div>
+        <div class="stat">Value: {totalCost}</div>
     </div>
   </header>
 
@@ -154,12 +218,20 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div 
           class="card-wrapper" 
-          class:selected={selectedCards.has(card.id)}
-          on:click={() => toggleSelect(card.id)}
+          class:play-selected={!isOverLimit && playCardId === card.id}
+          class:pay-selected={!isOverLimit && payCardId === card.id}
+          class:discard-selected={isOverLimit && discardSelection.has(card.id)}
+          on:click={() => handleCardTap(card.id)}
         >
             <CardDisplay {card} />
-            {#if selectedCards.has(card.id)}
-                <div class="selected-overlay">✓</div>
+            {#if !isOverLimit && playCardId === card.id}
+                <div class="selected-overlay play">✓</div>
+            {/if}
+            {#if !isOverLimit && payCardId === card.id}
+                <div class="selected-overlay pay">✕</div>
+            {/if}
+            {#if isOverLimit && discardSelection.has(card.id)}
+                <div class="selected-overlay discard">🗑️</div>
             {/if}
         </div>
       {/each}
@@ -167,8 +239,8 @@
 
   {#if isOverLimit}
     <footer class="actions">
-        <button class="clear-btn" on:click={clearSelection} disabled={selectedCards.size === 0}>Clear</button>
-        <button class="discard-btn" on:click={confirmDiscard} disabled={!isValidDiscard}>Confirm Discard</button>
+        <button class="clear-btn" on:click={clearSelection} disabled={discardSelection.size === 0}>Clear</button>
+        <button class="discard-btn" on:click={confirmDiscard} disabled={discardSelection.size === 0}>Confirm Discard</button>
     </footer>
   {/if}
 </div>
@@ -226,6 +298,18 @@
       animation: pulse 2s infinite;
   }
 
+  .turn-stat {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #444;
+      font-size: 0.8rem;
+  }
+  .turn-stat.my-turn {
+      background: #00ff00;
+      color: black;
+      animation: pulse 2s infinite;
+  }
+
   .alert-banner {
       background: #ff4d4d;
       color: white;
@@ -269,10 +353,24 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   }
 
-  .card-wrapper.selected {
-    transform: translateY(-10px);
-    box-shadow: 0 0 10px #ffea00;
-    outline: 2px solid #ffea00;
+  .card-wrapper.play-selected {
+    transform: translateY(-20px);
+    box-shadow: 0 0 15px #00ff00;
+    outline: 3px solid #00ff00;
+  }
+  
+  .card-wrapper.pay-selected {
+    transform: translateY(10px) scale(0.9);
+    filter: grayscale(0.5);
+    box-shadow: 0 0 10px #ff0000;
+    outline: 3px solid #ff0000;
+  }
+
+  .card-wrapper.discard-selected {
+    transform: translateY(10px);
+    opacity: 0.7;
+    box-shadow: 0 0 10px #ff4d4d;
+    outline: 3px dashed #ff4d4d;
   }
   
   .selected-overlay {
@@ -280,11 +378,23 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 2rem;
-      color: #ffea00;
+      font-size: 3rem;
       text-shadow: 0 0 5px black;
       pointer-events: none;
       z-index: 20;
+      font-weight: bold;
+  }
+
+  .selected-overlay.play {
+      color: #00ff00;
+  }
+
+  .selected-overlay.pay {
+      color: #ff0000;
+  }
+
+  .selected-overlay.discard {
+      color: #ffcccc;
   }
 
   .card.selectable {
