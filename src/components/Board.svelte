@@ -1,14 +1,17 @@
 <script lang="ts">
   import { gameState } from '../lib/redux-svelte';
+  import { settingsStore } from '../lib/settingsStore';
   
   $: orientation = $gameState.game.orientation;
+  $: rows = $settingsStore.GRID_ROWS;
+  $: cols = $settingsStore.GRID_COLS;
   
-  // Simple grid generation
-  const grid = Array(5).fill(null).map(() => Array(5).fill(null));
+  // Reactive grid generation
+  $: grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
 </script>
 
 <div class="board-container" style:transform="rotate({orientation}deg)">
-  <div class="grid">
+  <div class="grid" style:--rows={rows} style:--cols={cols}>
     {#each grid as row, y}
       {#each row as cell, x}
         <div class="cell">
@@ -35,13 +38,20 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-template-rows: repeat(var(--rows), 1fr);
     gap: 10px;
     background: #333;
     padding: 10px;
     border-radius: 8px;
-    width: 80vmin;
-    height: 80vmin;
+    
+    /* Responsive sizing maintaining aspect ratio */
+    width: 100%;
+    height: 100%;
+    max-width: 85vw;
+    max-height: 85vh;
+    aspect-ratio: var(--cols) / var(--rows);
+    margin: auto;
   }
 
   .cell {

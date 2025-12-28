@@ -1,95 +1,153 @@
 import { test, expect } from '@playwright/test';
-import { TestStepHelper } from '../helpers/test-step-helper';
+import { TestStepHelper, waitForAnimations } from '../helpers/test-step-helper';
 
-test('User can view Settings and Cards', async ({ page }, testInfo) => {
-    const tester = new TestStepHelper(page, testInfo);
+test.describe('Settings and Cards UI Checks', () => {
+    let stepHelper: TestStepHelper;
 
-    tester.setMetadata(
-        'Settings and Cards UI',
-        '**As a** player, **I want** to see game settings and the card library, **so that** I can reference rules and components.'
-    );
-
-    // 1. Initial Load
-    await page.goto('/');
-    await tester.step('main-screen', {
-        description: 'Main Screen with Global Controls',
-        verifications: [
-            {
-                spec: 'Settings button is visible',
-                check: async () => await expect(page.locator('button[title="Settings"]')).toBeVisible()
-            },
-            {
-                spec: 'Cards button is visible',
-                check: async () => await expect(page.locator('button[title="View Cards"]')).toBeVisible()
-            }
-        ]
+    test.beforeEach(async ({ page }, testInfo) => {
+        stepHelper = new TestStepHelper(page, testInfo);
+        stepHelper.setMetadata('Settings and Cards', 'Verify opening settings, editing values, and navigating to cards.');
+        await page.goto('/');
+        await waitForAnimations(page); // Wait for app to hydrate/stabilize
+        await expect(page.locator('.lobby-container')).toBeVisible();
     });
 
-    // 2. Open Settings
-    await page.click('button[title="Settings"]');
-    await tester.step('settings-modal', {
-        description: 'Settings Modal Open',
-        verifications: [
-            {
-                spec: 'Modal header is visible',
-                check: async () => await expect(page.locator('.header h2')).toHaveText('Game Settings')
-            },
-            {
-                spec: 'Settings values are displayed',
+    test('should allow opening settings, editing values, and navigating to cards', async ({ page }) => {
+        // 1. Open Settings
+        await stepHelper.step('open-settings', {
+            description: 'Open Settings Modal',
+            verifications: [{
+                spec: 'Clicking corner gear icon opens settings modal',
                 check: async () => {
-                    // Check for the description text defined in settings.ts
-                    await expect(page.locator('text=Max cost of cards')).toBeVisible();
-                    await expect(page.locator('.value', { hasText: '12' })).toBeVisible();
+                    const settingsBtn = page.locator('.settings-btn.top-left');
+                    await expect(settingsBtn).toBeVisible();
+                    await settingsBtn.click();
+
+                    const modal = page.locator('.modal');
+                    await expect(modal).toBeVisible();
+                    await expect(page.locator('.header h2')).toHaveText('Game Settings');
                 }
-            }
-        ]
+            }]
+        });
+
+        // 2. Edit a Setting
+        await stepHelper.step('edit-setting', {
+            description: 'Edit Game Setting',
+            verifications: [{
+                spec: 'Clicking + updates the setting value',
+                check: async () => {
+                    const settingItem = page.locator('.setting-item', { hasText: 'Cubes gained for color match' });
+                    const valueSpan = settingItem.locator('.value');
+                    const plusBtn = settingItem.locator('button', { hasText: '+' });
+
+                    await expect(valueSpan).toHaveText('1');
+                    await plusBtn.click();
+                    await expect(valueSpan).toHaveText('2');
+                }
+            }]
+        });
+
+        // 3. Navigate to Cards
+        await stepHelper.step('nav-cards', {
+            description: 'Navigate to Card Library',
+            verifications: [{
+                spec: 'Clicking Open Card Library switches to Cards Modal',
+                check: async () => {
+                    const cardsBtn = page.locator('button', { hasText: 'Open Card Library...' });
+                    await expect(cardsBtn).toBeVisible();
+                    await cardsBtn.click();
+
+                    const cardHeader = page.locator('.header h2', { hasText: 'Card Library' });
+                    await expect(cardHeader).toBeVisible();
+                    await expect(page.locator('.card-grid')).toBeVisible();
+                }
+            }]
+        });
+
+        // 4. Close Cards
+        await stepHelper.step('close-cards', {
+            description: 'Close Modals',
+            verifications: [{
+                spec: 'Clicking close button dismisses modal',
+                check: async () => {
+                    const closeBtn = page.locator('.close-btn');
+                    await closeBtn.click();
+                    await expect(page.locator('.modal')).toBeHidden();
+                }
+            }]
+        });
+
+        // 5. Verify Settings Effect (Grid Dimensions)
+        await stepHelper.step('verify-settings-effect', {
+            description: 'Verify Grid Settings Apply to Board',
+            verifications: [{
+                spec: 'Board grid cells reflect changed rows setting',
+                check: async () => {
+                    // Open Settings again
+                    await page.locator('.settings-btn.top-left').click();
+
+                    // Change Grid Rows to 4 (default 5)
+                    const rowsRow = page.locator('.setting-item', { hasText: 'Grid Rows' });
+                    const rowsVal = rowsRow.locator('.value');
+                    const minusBtn = rowsRow.locator('button', { hasText: '-' });
+
+                    await expect(rowsVal).toHaveText('5');
+                    await minusBtn.click();
+                    await expect(rowsVal).toHaveText('4');
+
+                    // Close Settings
+                    await page.locator('.close-btn').click();
+
+                    // Start Game (Add 2 players)
+                    const bottomEdge = page.locator('.edge-control.bottom');
+                    await bottomEdge.locator('.add-btn').click();
+
+                    // Wait for picker to appear and stabilize
+                    const bottomPicker = bottomEdge.locator('.color-picker');
+                    await expect(bottomPicker).toBeVisible();
+                    await expect(bottomPicker).toHaveCSS('opacity', '1');
+
+                    // Click color
+                    await bottomPicker.locator('.color-btn').first().click();
+
+                    // Wait for picker to hide (implies state update)
+                    await expect(bottomPicker).toBeHidden();
+                    // Check token
+                    await expect(bottomEdge.locator('.player-token')).toBeVisible({ timeout: 10000 });
+
+
+                    const topEdge = page.locator('.edge-control.top');
+                    await topEdge.locator('.add-btn').click();
+
+                    // Wait for picker to appear and stabilize
+                    const topPicker = topEdge.locator('.color-picker');
+                    await expect(topPicker).toBeVisible();
+                    await expect(topPicker).toHaveCSS('opacity', '1');
+
+                    // Click color
+                    await topPicker.locator('.color-btn').first().click();
+
+                    // Wait for picker to hide
+                    await expect(topPicker).toBeHidden();
+                    // Check token
+                    await expect(topEdge.locator('.player-token')).toBeVisible({ timeout: 10000 });
+
+                    // Click Play
+                    const playBtn = page.locator('.play-btn');
+                    await expect(playBtn).toBeVisible({ timeout: 5000 });
+                    await playBtn.click();
+
+                    // Verify Board
+                    await expect(page.locator('.board-container')).toBeVisible();
+
+                    // Grid should have --rows: 4
+                    const grid = page.locator('.grid');
+                    await expect(grid).toHaveAttribute('style', /--rows:\s*4/);
+
+                    // Cell count should be 4 * 5 = 20
+                    await expect(page.locator('.cell')).toHaveCount(20);
+                }
+            }]
+        });
     });
-
-    // 3. Close Settings
-    await page.click('.close-btn');
-    await tester.step('settings-closed', {
-        description: 'Main Screen after Closing Settings',
-        verifications: [
-            {
-                spec: 'Modal is hidden',
-                check: async () => await expect(page.locator('.modal')).not.toBeVisible()
-            }
-        ]
-    });
-
-    // 4. Open Cards
-    await page.click('button[title="View Cards"]');
-    // Wait for cards to load if async
-    await expect(page.locator('.card-grid')).toBeVisible();
-
-    await tester.step('cards-modal', {
-        description: 'Cards Modal Open',
-        verifications: [
-            {
-                spec: 'Modal header is visible',
-                check: async () => await expect(page.locator('.header h2')).toHaveText('Card Library')
-            },
-            {
-                spec: 'Card grid is populated',
-                check: async () => await expect(page.locator('.card-item').first()).toBeVisible()
-            }
-        ]
-    });
-
-    // 5. Close Cards
-    await page.click('.close-btn'); // Note: if multiple close-btns exist (e.g. from previous modal in DOM?), might be ambiguous if not fully unmounted. Playwright strict mode checks this.
-    // The first modal should be destroyed by `if showSettings` block in App.svelte when closed.
-    // So only one close-button should be visible now.
-
-    await tester.step('cards-closed', {
-        description: 'Main Screen after Closing Cards',
-        verifications: [
-            {
-                spec: 'Modal is hidden',
-                check: async () => await expect(page.locator('.modal')).not.toBeVisible()
-            }
-        ]
-    });
-
-    tester.generateDocs();
 });
