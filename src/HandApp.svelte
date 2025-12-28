@@ -17,9 +17,14 @@
   let selectedCards: Set<string> = new Set();
 
   onMount(() => {
-    const params = new URLSearchParams(window.location.search);
-    hostId = params.get('host');
-    const colorParam = params.get('color');
+    // Parse query params from hash
+    // Hash format: #/hand?host=...&color=...
+    const hash = window.location.hash;
+    const queryPart = hash.split('?')[1];
+    const urlParams = new URLSearchParams(queryPart);
+    
+    hostId = urlParams.get('host');
+    const colorParam = urlParams.get('color');
 
     if (colorParam === 'red' || colorParam === 'yellow') {
         playerColor = colorParam;

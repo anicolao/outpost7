@@ -3,12 +3,12 @@ import './app.css'
 import App from './App.svelte'
 import HandApp from './HandApp.svelte'
 
-// Simple client-side routing based on path
-const pathname = window.location.pathname;
+// Simple client-side routing based on hash
+const hash = window.location.hash;
 
 let component;
 
-if (pathname === '/hand') {
+if (hash.startsWith('#/hand')) {
     component = HandApp;
 } else {
     component = App;

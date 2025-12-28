@@ -21,8 +21,10 @@
 
   onMount(async () => {
       const cardsData = await loadCards();
-      // Add IDs
-      deck = cardsData.map((c, i) => ({ ...c, id: `card_${i}` }));
+      // Filter for module cards and add IDs
+      deck = cardsData
+        .filter(c => c.background.toLowerCase().includes('module'))
+        .map((c, i) => ({ ...c, id: `card_${i}` }));
   });
 
   function handleSettings() {

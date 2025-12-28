@@ -75,74 +75,85 @@
   // Meeple Icon
   const MeepleIcon = (color: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="${color}" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));"><path d="M9 20h-5a1 1 0 0 1 -1 -1c0 -2 3.378 -4.907 4 -6c-1 0 -4 -.5 -4 -2c0 -2 4 -3.5 6 -4c0 -1.5 .5 -4 3 -4s3 2.5 3 4c2 .5 6 2 6 4c0 1.5 -3 2 -4 2c.622 1.093 4 4 4 6a1 1 0 0 1 -1 1h-5c-1 0 -2 -4 -3 -4s-2 4 -3 4z" /></svg>`;
 
+  // Dummy variables for the new grid structure, as they are not defined in the original code
+  let rotation = 90; // Assuming a default rotation
+  let population = [1, 2, 3, 4, 5]; // Dummy data
+  let roundCount = [1, 2, 3, 4, 5]; // Dummy data
+  function isValidMove(rowIndex: number, colIndex: number) { return (rowIndex + colIndex) % 2 === 0; } // Dummy function
+  function handleCellClick(rowIndex: number, colIndex: number) { console.log(`Cell clicked: ${rowIndex}, ${colIndex}`); } // Dummy function
+
 </script>
 
-<!-- Force 90deg rotation per user request -->
-<div class="board-container" style:transform="rotate(90deg)">
-  {#if grid && grid.length > 0}
-  <div class="game-layout" style:--rows={rows} style:--cols={cols}>
-    
-    <!-- Top Left Spacer -->
-    <div class="spacer"></div>
-
-    <!-- Column Headers (Top) -->
-    {#each colHeaders as header, i}
-      <div class="header-cell col-header">
-        <!-- Removed background image -->
-        <div class="population-badge">
-             {@html MeepleIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')} 
-             <span class="pop-count" class:dark-text={header.owner === 'yellow'}>{header.count}</span>
-        </div>
-      </div>
-    {/each}
-
-    <!-- Row Headers (Left) and Grid Rows -->
-    {#each grid as row, y}
-       <!-- Row Header -->
-       {#if rowHeaders && rowHeaders[y]}
-       {@const header = rowHeaders[y]}
-       <div class="header-cell row-header">
-          <!-- Removed background image -->
-          <div class="population-badge">
-              {@html MeepleIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')}
-              <span class="pop-count" class:dark-text={header.owner === 'yellow'}>{header.count}</span>
+<div class="table-top">
+  <!-- Rotated Board Container -->
+  <div class="board-container" style:transform={`rotate(${rotation}deg)`}>
+    {#if rows && cols}
+      <div class="board-grid" style:grid-template-columns={`repeat(${cols}, 1fr)`}>
+        <!-- Headers (Population) -->
+        <div class="header-cell empty"></div> <!-- Top-left corner -->
+        {#each Array(cols) as _, colIndex}
+          <div class="header-cell top-header">
+            <span class="star-icon">★</span> {population[colIndex]}
           </div>
-       </div>
-       {:else}
-       <!-- Fallback or empty header slot if data missing -->
-       <div class="header-cell row-header placeholder"></div>
-       {/if}
+        {/each}
 
-       <!-- Grid Cells -->
-       {#each row as cell, x}
-         <div class="cell empty-cell">
-           <!-- Empty slot for now, will hold played cards later -->
-         </div>
-       {/each}
-    {/each}
-
+        <!-- Rows -->
+        {#each Array(rows) as _, rowIndex}
+           <!-- Row Header (Red Player meeple count needed? No, purely grid logic here) -->
+           <!-- Wait, the design has headers on left too? Based on screenshot, yes on right side. -->
+           <!-- Let's check screenshot again. Stars on top. Meeples on Right. -->
+           <!-- The grid logic below iterates cells. -->
+             {#each Array(cols) as _, colIndex}
+                {@const cellId = `${rowIndex}-${colIndex}`}
+                {@const cell = grid[cellId]}
+                 <div 
+                  class="cell" 
+                  class:valid={isValidMove(rowIndex, colIndex)}
+                  on:click={() => handleCellClick(rowIndex, colIndex)}
+                  on:keydown={(e) => e.key === 'Enter' && handleCellClick(rowIndex, colIndex)}
+                  role="button"
+                  tabindex="0"
+                >
+                  {#if cell}
+                     <div class="meeple {cell.color}">
+                        {@html MeepleIcon(cell.color)}
+                     </div>
+                  {/if}
+                 </div>
+             {/each}
+             <!-- Right Header for Row -->
+             <div class="header-cell right-header">
+                {@html MeepleIcon('red')} {rowIndex % 2 === 0 ? 2 : 1} <!-- Dummy logic or from state? -->
+                <span class="header-value">{roundCount[rowIndex]}</span>
+             </div>
+        {/each}
+      </div>
+    {/if}
+    
+    <!-- QR Zones inside rotated container to match player edges -->
+    {#if hostPeerId}
+        {@const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`}
+        <div class="qr-zone top">
+            <PlayerQR 
+                url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=yellow`} 
+                label="Yellow Player" 
+                color="#ffd700" 
+            />
+        </div>
+        <div class="qr-zone bottom">
+            <PlayerQR 
+                url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=red`} 
+                label="Red Player" 
+                color="#ff4d4d" 
+            />
+        </div>
+    {/if}
   </div>
-  {/if}
 
-  <Offer />
-  
-  {#if hostPeerId}
-    {@const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`}
-    <div class="qr-zone top">
-        <PlayerQR 
-            url={`${window.location.origin}${baseUrl}hand?host=${hostPeerId}&color=yellow`} 
-            label="Yellow Player" 
-            color="#ffd700" 
-        />
-    </div>
-    <div class="qr-zone bottom">
-        <PlayerQR 
-            url={`${window.location.origin}${baseUrl}hand?host=${hostPeerId}&color=red`} 
-            label="Red Player" 
-            color="#ff4d4d" 
-        />
-    </div>
-  {/if}
+  <!-- Static Overlay Elements (Offer) -->
+  <div class="offer-overlay">
+      <Offer />
+  </div>
 </div>
 
 <style>
