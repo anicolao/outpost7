@@ -276,23 +276,32 @@
   .qr-zone {
       position: absolute;
       z-index: 50;
-      /* Center Vertically */
+      /* Default Center Horizontal */
+      left: 50%;
+      transform: translateX(-50%);
+  }
+
+  .qr-zone.top {
+      top: 20px; 
+      /* Ensure left/transform are kept or reset if needed */
+  }
+
+  .qr-zone.bottom {
+      bottom: 20px; 
+  }
+
+  /* Support Left/Right just in case */
+  .qr-zone.left {
+      left: 20px;
       top: 50%;
       transform: translateY(-50%);
-  }
-
-  /* Top corresponds to Yellow (Right Edge when 90deg) */
-  .qr-zone.top {
-      right: 20px;
-      /* Override previous top positioning */
-      left: auto; 
-  }
-
-  /* Bottom corresponds to Red (Left Edge when 90deg) */
-  .qr-zone.bottom {
-      left: 20px;
-      /* Override previous */
       right: auto;
+  }
+  .qr-zone.right {
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      left: auto;
   }
   
   .offer-overlay {

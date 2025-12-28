@@ -48,7 +48,17 @@ test.describe('Hand and Phone UI', () => {
                 {
                     spec: 'Verify board and QR codes visible',
                     check: async () => {
-                        await expect(page.locator('.board-container')).toBeVisible();
+                        try {
+                            await expect(page.locator('.board-container')).toBeVisible({ timeout: 5000 });
+                        } catch (e) {
+                            console.log('DEBUG: Board container not visible.');
+                            console.log('DEBUG HTML:', await page.content());
+                            throw e;
+                        }
+
+                        // Wait for Peer ID
+                        // We can't easily access variable, but we can verify QRs
+                        await expect(page.locator('.qr-zone.bottom .qr-item')).toBeVisible(); // Red
                         await expect(page.locator('.qr-zone.bottom .qr-item')).toBeVisible(); // Red
                         await expect(page.locator('.qr-zone.top .qr-item')).toBeVisible(); // Yellow
                     }
