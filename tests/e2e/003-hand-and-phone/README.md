@@ -11,17 +11,25 @@ Verify peer connection and hand syncing
 - Configure and start game
 - Verify board and QR codes visible
 
-## Connect Red player via QR code
+## Initiate connection
 
-![Connect Red player via QR code](screenshots/001-002-connect-client.png)
+![Initiate connection](screenshots/001-002-connect-init.png)
 
 **Specs:**
 - Click Red QR code and wait for popup
+
+
+
+## Verify Red player connected (Client View)
+
+![Verify Red player connected (Client View)](screenshots/000-002-connect-client-verify.png)
+
+**Specs:**
 - Verify Red player connected
 
 ## Force hand limit and verify discard flow
 
-![Force hand limit and verify discard flow](screenshots/002-003-discard-logic.png)
+![Force hand limit and verify discard flow](screenshots/001-003-discard-logic.png)
 
 **Specs:**
 - Force draw to exceed limit

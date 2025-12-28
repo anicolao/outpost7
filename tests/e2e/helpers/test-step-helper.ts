@@ -21,7 +21,13 @@ export async function waitForAnimations(page: Page) {
         const requiredStableFrames = 2;
 
         while (stableFrames < requiredStableFrames) {
-            const animations = document.getAnimations().filter(a => a.playState !== 'finished');
+            const animations = document.getAnimations().filter(a => {
+                if (a.playState === 'finished') return false;
+                // Ignore infinite animations
+                const timing = a.effect && a.effect.getTiming();
+                if (timing && timing.iterations === Infinity) return false;
+                return true;
+            });
 
             if (animations.length > 0) {
                 // If animations are running, wait for them to finish
@@ -47,9 +53,9 @@ export class TestStepHelper {
     private steps: DocStep[] = [];
     private metadata = { title: '', story: '' };
 
-    constructor(private page: Page, private testInfo: TestInfo) {
+    constructor(private page: Page, private testInfo: TestInfo, clean = true) {
         const screenshotDir = path.join(path.dirname(this.testInfo.file), 'screenshots');
-        if (fs.existsSync(screenshotDir)) {
+        if (clean && fs.existsSync(screenshotDir)) {
             fs.rmSync(screenshotDir, { recursive: true, force: true });
         }
     }
@@ -85,9 +91,17 @@ export class TestStepHelper {
         });
     }
 
-    generateDocs() {
+    generateDocs(append = false) {
         const docPath = path.join(path.dirname(this.testInfo.file), 'README.md');
-        let content = `# ${this.metadata.title}\n\n${this.metadata.story}\n\n`;
+        let content = '';
+
+        if (!append) {
+            content += `# ${this.metadata.title}\n\n${this.metadata.story}\n\n`;
+        } else if (fs.existsSync(docPath)) {
+            content = fs.readFileSync(docPath, 'utf-8') + '\n\n';
+        } else {
+            content += `# ${this.metadata.title}\n\n${this.metadata.story}\n\n`;
+        }
 
         for (const step of this.steps) {
             content += `## ${step.title}\n\n`;

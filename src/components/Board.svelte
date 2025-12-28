@@ -137,30 +137,30 @@
         {/each}
       </div>
     {/if}
-    
-    <!-- QR Zones inside rotated container to match player edges -->
-    {#if hostPeerId}
-        {@const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`}
-        
-        {#if !connections.yellow}
-          <div class="qr-zone top">
-              <PlayerQR 
-                  url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=yellow`} 
-                  color="#ffd700" 
-              />
-          </div>
-        {/if}
-
-        {#if !connections.red}
-          <div class="qr-zone bottom">
-              <PlayerQR 
-                  url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=red`} 
-                  color="#ff4d4d" 
-              />
-          </div>
-        {/if}
-    {/if}
   </div>
+
+  <!-- QR Zones outside rotated container to match player edges -->
+  {#if hostPeerId}
+      {@const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`}
+      
+      {#if !connections.yellow}
+        <div class="qr-zone top">
+            <PlayerQR 
+                url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=yellow`} 
+                color="#ffd700" 
+            />
+        </div>
+      {/if}
+
+      {#if !connections.red}
+        <div class="qr-zone bottom">
+            <PlayerQR 
+                url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=red`} 
+                color="#ff4d4d" 
+            />
+        </div>
+      {/if}
+  {/if}
 
   <!-- Static Overlay Elements (Offer) -->
   <div class="offer-overlay">
@@ -168,15 +168,23 @@
   </div>
 </div>
 
+
 <style>
+  .table-top {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #1a1a1a;
+  }
+
   .board-container {
     width: 100%;
-    height: 100vh;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: transform 1s ease-in-out;
-    background: #1a1a1a;
   }
 
   /* 
@@ -262,19 +270,27 @@
   .qr-zone {
       position: absolute;
       z-index: 50;
+      /* Center horizontally */
+      left: 50%;
+      transform: translateX(-50%);
   }
 
-  /* Board is rotated 90deg inside .board-container */
   /* Top corresponds to Yellow (Edge Top) */
   .qr-zone.top {
-      /* Bring inside the visible area */
       top: 20px; 
   }
 
   /* Bottom corresponds to Red (Edge Bottom) */
   .qr-zone.bottom {
-      /* Bring inside the visible area */
       bottom: 20px; 
+  }
+  
+  .offer-overlay {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 40;
   }
 
 </style>
