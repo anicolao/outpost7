@@ -18,6 +18,9 @@
   $: rowHeaders = $gameState.game.rowHeaders;
   $: colHeaders = $gameState.game.colHeaders;
   $: hands = $gameState.game.hands;
+  $: players = $gameState.game.players;
+
+  const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 
   let peer: Peer;
   let hostPeerId: string | null = null;
@@ -43,6 +46,7 @@
          // Find and remove connection to restore QR
          const color = Object.keys(connections).find(c => connections[c] === conn);
          if (color) {
+             console.log(`Restoring QR for ${color}`);
              delete connections[color];
              connections = connections; // trigger reactivity
          }
@@ -146,26 +150,18 @@
   </div>
 
   <!-- QR Zones outside rotated container to match player edges -->
-  {#if hostPeerId}
-      {@const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`}
-      
-      {#if !connections.yellow}
-        <div class="qr-zone top">
-            <PlayerQR 
-                url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=yellow`} 
-                color="#ffd700" 
-            />
-        </div>
-      {/if}
-
-      {#if !connections.red}
-        <div class="qr-zone bottom">
-            <PlayerQR 
-                url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=red`} 
-                color="#ff4d4d" 
-            />
-        </div>
-      {/if}
+  {#if hostPeerId}  
+      {#each ['top', 'bottom', 'left', 'right'] as edge}
+          {@const player = players.find(p => p.edge === edge)}
+          {#if player && !connections[player.color]}
+             <div class="qr-zone {edge}"> 
+                 <PlayerQR 
+                     url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=${player.color}`} 
+                     color={player.color === 'yellow' ? '#ffd700' : '#ff4d4d'} 
+                 />
+             </div>
+          {/if}
+      {/each}
   {/if}
 
   <!-- Static Overlay Elements (Offer) -->
