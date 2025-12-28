@@ -40,6 +40,12 @@
       
       conn.on('close', () => {
          console.log('Client disconnected');
+         // Find and remove connection to restore QR
+         const color = Object.keys(connections).find(c => connections[c] === conn);
+         if (color) {
+             delete connections[color];
+             connections = connections; // trigger reactivity
+         }
       });
     });
   });
@@ -270,19 +276,23 @@
   .qr-zone {
       position: absolute;
       z-index: 50;
-      /* Center horizontally */
-      left: 50%;
-      transform: translateX(-50%);
+      /* Center Vertically */
+      top: 50%;
+      transform: translateY(-50%);
   }
 
-  /* Top corresponds to Yellow (Edge Top) */
+  /* Top corresponds to Yellow (Right Edge when 90deg) */
   .qr-zone.top {
-      top: 20px; 
+      right: 20px;
+      /* Override previous top positioning */
+      left: auto; 
   }
 
-  /* Bottom corresponds to Red (Edge Bottom) */
+  /* Bottom corresponds to Red (Left Edge when 90deg) */
   .qr-zone.bottom {
-      bottom: 20px; 
+      left: 20px;
+      /* Override previous */
+      right: auto;
   }
   
   .offer-overlay {
