@@ -115,8 +115,11 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
                 check: async () => await expect(page.locator('.board-container')).toBeVisible()
             },
             {
-                spec: 'Board orientation should be 0°',
-                check: async () => await expect(page.locator('.board-container')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)') // 0 deg
+                spec: 'Board orientation should be 90°',
+                check: async () => {
+                    // matrix(0, 1, -1, 0, 0, 0) corresponds to 90deg, but 0 might be represented as very small number
+                    await expect(page.locator('.board-container')).toHaveCSS('transform', /matrix\(.*, 1, -1, .*, 0, 0\)/);
+                }
             },
             {
                 spec: 'Should have 10 header cells (5 cols + 5 rows)',

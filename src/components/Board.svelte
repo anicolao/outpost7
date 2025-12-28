@@ -13,11 +13,12 @@
   $: colHeaders = $gameState.game.colHeaders;
 
   // Meeple Icon
-  const MeepleIcon = (color: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="${color}" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));"><path d="M9 20h-5a1 1 0 0 1 -1 -1c0 -2 3.378 -4.907 4 -6c-1 0 -4 -.5 -4 -2c0 -2 4 -3.5 6 -4c0 -1.5 .5 -4 3 -4s3 2.5 3 4c2 .5 6 2 6 4c0 1.5 -3 2 -4 2c.622 1.093 4 4 4 6a1 1 0 0 1 -1 1h-5c-1 0 -2 -4 -3 -4s-2 4 -3 4z" /></svg>`;
+  const MeepleIcon = (color: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="${color}" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));"><path d="M9 20h-5a1 1 0 0 1 -1 -1c0 -2 3.378 -4.907 4 -6c-1 0 -4 -.5 -4 -2c0 -2 4 -3.5 6 -4c0 -1.5 .5 -4 3 -4s3 2.5 3 4c2 .5 6 2 6 4c0 1.5 -3 2 -4 2c.622 1.093 4 4 4 6a1 1 0 0 1 -1 1h-5c-1 0 -2 -4 -3 -4s-2 4 -3 4z" /></svg>`;
 
 </script>
 
-<div class="board-container" style:transform="rotate({orientation}deg)">
+<!-- Force 90deg rotation per user request -->
+<div class="board-container" style:transform="rotate(90deg)">
   {#if grid && grid.length > 0}
   <div class="game-layout" style:--rows={rows} style:--cols={cols}>
     
@@ -27,12 +28,10 @@
     <!-- Column Headers (Top) -->
     {#each colHeaders as header, i}
       <div class="header-cell col-header">
-        <img src={getAssetUrl(header.card)} alt="Start" draggable="false" />
-        <div class="overlay">
-          <div class="population-badge">
+        <!-- Removed background image -->
+        <div class="population-badge">
              {@html MeepleIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')} 
-             <span class="pop-count">{header.count}</span>
-          </div>
+             <span class="pop-count" class:dark-text={header.owner === 'yellow'}>{header.count}</span>
         </div>
       </div>
     {/each}
@@ -43,12 +42,10 @@
        {#if rowHeaders && rowHeaders[y]}
        {@const header = rowHeaders[y]}
        <div class="header-cell row-header">
-          <img src={getAssetUrl(header.card)} alt="Start" draggable="false" />
-          <div class="overlay">
-            <div class="population-badge">
-                {@html MeepleIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')}
-                <span class="pop-count">{header.count}</span>
-            </div>
+          <!-- Removed background image -->
+          <div class="population-badge">
+              {@html MeepleIcon(header.owner === 'red' ? '#ff4d4d' : '#ffd700')}
+              <span class="pop-count" class:dark-text={header.owner === 'yellow'}>{header.count}</span>
           </div>
        </div>
        {:else}
@@ -104,52 +101,37 @@
 
   .header-cell {
     position: relative;
-    background: #333;
+    background: #333; /* Gray background */
     border-radius: 6px;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    border: 1px solid #444;
   }
 
-  .header-cell img {
+  /* Meeple Container - Side by Side */
+  .population-badge {
+    display: flex;
+    flex-direction: row; /* Side-by-side */
+    align-items: center;
+    justify-content: center;
+    gap: 0; /* Tight spacing as requested (or minor gap if needed) */
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Start cards often imply filling the space */
-    opacity: 0.7;
-  }
-
-  .overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-  }
-
-  /* Meeple Container */
-  .population-badge {
-    position: relative;
-    width: 64px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   /* Text inside Meeple */
   .pop-count {
-    position: absolute;
-    z-index: 2;
     font-weight: 900;
-    font-size: 1.5rem;
+    font-size: 2.2rem; /* Large text */
+    color: white; /* No stroke needed if on gray bg? Or keep style? User said "black with 1px white border" */
     color: black;
     -webkit-text-stroke: 1px white;
     paint-order: stroke fill;
-    pointer-events: none;
-    padding-top: 4px; /* Slight adjustment to center in chest area */
+    margin-left: 2px; /* Slight offset from meeple */
+    line-height: 1;
   }
 
   .cell {
