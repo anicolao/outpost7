@@ -48,7 +48,7 @@
 <style>
   .card-preview {
     width: 100%;
-    aspect-ratio: 0.76;
+    aspect-ratio: 2.5/3.5;
     position: relative;
     overflow: hidden;
     border-radius: 6%;
