@@ -9,10 +9,10 @@
 
   $: if (url && canvas) {
     try {
-         console.log('Mocking QR code for:', url); 
-        // QRCode.toCanvas(canvas, url, { width: 100, margin: 1 }, (error: any) => {
-        //     if (error) console.error('QR Generation Error:', error);
-        // });
+        // console.log('Generating QR code for:', url); 
+        QRCode.toCanvas(canvas, url, { width: 100, margin: 1 }, (error: any) => {
+            if (error) console.error('QR Generation Error:', error);
+        });
     } catch (e) {
         console.error('QR Synchronous Error:', e);
     }
