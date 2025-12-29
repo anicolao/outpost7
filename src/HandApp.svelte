@@ -212,8 +212,18 @@
                 {currentTurn === playerColor ? 'YOUR TURN' : 'OPPONENT TURN'}
             </div>
         {/if}
-        <div class="stat">Cards: {handCount}</div>
-        <div class="stat">Value: {totalCost} {#if isOverLimit && discardSelection.size > 0} -> {totalCost - selectedCost}{/if}</div>
+        <div class="stat" class:danger={handCount > 7 && (!isOverLimit || (handCount - discardSelection.size) > 7)}>
+            Cards: {handCount}/7
+            {#if isOverLimit && discardSelection.size > 0} 
+                → {handCount - discardSelection.size}
+            {/if}
+        </div>
+        <div class="stat" class:danger={totalCost > 12 && (!isOverLimit || (totalCost - selectedCost) > 12)}>
+            Value: {totalCost}/12
+            {#if isOverLimit && discardSelection.size > 0} 
+                → {totalCost - selectedCost}
+            {/if}
+        </div>
     </div>
     <div class="mode-switch">
         <button class:active={selectionMode === 'play' && !isOverLimit} on:click={() => { selectionMode = 'play'; clearSelection(); }} disabled={isOverLimit}>Play</button>

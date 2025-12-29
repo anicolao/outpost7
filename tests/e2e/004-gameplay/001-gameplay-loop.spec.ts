@@ -6,6 +6,9 @@ test.describe('Gameplay Loop', () => {
         const helper = new TestStepHelper(page, testInfo);
         helper.setMetadata('Gameplay Loop', 'Verify full gameplay cycle: Selection -> Visuals -> Placement');
 
+        // Debug Host Logs
+        page.on('console', msg => console.log('HOST LOG:', msg.text()));
+
         // 1. Host - Start Game
         await helper.step('001-setup-host', {
             description: 'Start Game with Red Player',
@@ -175,8 +178,12 @@ test.describe('Gameplay Loop', () => {
                         // I missed rendering the placed card in the template! 
                         // I need to fix Board.svelte first.
 
-                        // Verify cell has the card image
-                        await expect(page.locator('[data-cell-id="0-0"] .played-card img')).toBeVisible({ timeout: 5000 });
+                        // Verify cell has the card content (CardDisplay)
+                        const cell = page.locator('[data-cell-id="0-0"]');
+                        // Use .card-bg to verify the card component is present
+                        await expect(cell.locator('.card-bg')).toBeVisible({ timeout: 5000 });
+
+                        console.log('Verified Card Rendered (CardDisplay)');
 
                         // Verify turn passed to Yellow
                         await expect(page.locator('.turn-indicator')).toHaveText('YELLOW TURN');
