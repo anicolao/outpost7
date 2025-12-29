@@ -121,7 +121,7 @@
   // Let's hide the old manual discard for now unless user needs it (prompt implies move-driven discard).
   // Actually, user prompt says: "When the player doesn't need to discard and selects a card..." 
   // This implies we ARE in the Play phase.
-  $: isOverLimit = handCount > 7 || totalCost > 50;
+  $: isOverLimit = handCount > 7 || totalCost > 12;
   
   function handleCardTap(cardId: string) {
       if (isOverLimit) {
@@ -174,8 +174,14 @@
       discardSelection = new Set();
   }
 
+  // Calculate potential state after discard
+  $: selectedCards = hand.filter(c => discardSelection.has(c.id));
+  $: selectedCost = selectedCards.reduce((acc, c) => acc + (c.cost || 0), 0);
+  $: remainsValid = !isOverLimit || ((handCount - discardSelection.size) <= 7 && (totalCost - selectedCost) <= 12);
+
   function confirmDiscard() {
       if (discardSelection.size === 0) return;
+      if (!remainsValid) return; // Prevent insufficient discard
       
       // Send message to host to discard
       if (conn && conn.open) {
@@ -207,7 +213,7 @@
             </div>
         {/if}
         <div class="stat">Cards: {handCount}</div>
-        <div class="stat">Value: {totalCost}</div>
+        <div class="stat">Value: {totalCost} {#if isOverLimit && discardSelection.size > 0} -> {totalCost - selectedCost}{/if}</div>
     </div>
     <div class="mode-switch">
         <button class:active={selectionMode === 'play' && !isOverLimit} on:click={() => { selectionMode = 'play'; clearSelection(); }} disabled={isOverLimit}>Play</button>
@@ -250,7 +256,7 @@
   <footer class="actions">
     {#if selectionMode === 'discard' || isOverLimit}
       <button class="clear-btn" on:click={clearSelection} disabled={discardSelection.size === 0}>Clear</button>
-      <button class="discard-btn" on:click={confirmDiscard} disabled={discardSelection.size === 0}>Confirm Discard ({discardSelection.size})</button>
+      <button class="discard-btn" on:click={confirmDiscard} disabled={discardSelection.size === 0 || !remainsValid}>Confirm Discard ({discardSelection.size})</button>
     {:else}
       <button class="clear-btn" on:click={clearSelection} disabled={!playCardId}>Clear</button>
       <div class="hint">Tap 1: Play, Tap 2: Pay</div>

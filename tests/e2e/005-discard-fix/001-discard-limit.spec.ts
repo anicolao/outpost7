@@ -67,25 +67,28 @@ test.describe('Discard Flow', () => {
             description: 'Select and Discard Cards',
             verifications: [
                 {
-                    spec: 'Select card for discard',
+                    spec: 'Select and Confirm Discard',
                     check: async () => {
-                        // Click first card
-                        await redPage.locator('.card-wrapper').first().click({ force: true });
-                        // Check for trash icon overlay
-                        await expect(redPage.locator('.card-wrapper').first().locator('.selected-overlay.discard')).toBeVisible();
-                    }
-                },
-                {
-                    spec: 'Confirm Discard',
-                    check: async () => {
-                        // Click Confirm
-                        await redPage.locator('.discard-btn').click({ force: true });
+                        const cards = redPage.locator('.card-wrapper');
+                        const confirmBtn = redPage.locator('.discard-btn');
 
-                        // Verify Count Reduced
-                        await expect(redPage.locator('.card-wrapper')).toHaveCount(7);
+                        // Select cards until Confirm is enabled
+                        let i = 0;
+                        while (await confirmBtn.isDisabled() && i < 8) {
+                            await cards.nth(i).click({ force: true });
+                            await redPage.evaluate(() => new Promise(r => setTimeout(r, 200)));
+                            i++;
+                        }
 
-                        // Banner might still be visible if Total Cost > 12 (random cards)
-                        // But count reduction proves discard worked.
+                        // Verify Confirm
+                        await confirmBtn.click({ force: true });
+
+                        // Verify Alert Gone
+                        await expect(redPage.locator('.alert-banner')).toBeHidden({ timeout: 5000 });
+
+                        // Verify Count Reduced to Limit
+                        const count = await redPage.locator('.card-wrapper').count();
+                        expect(count).toBeLessThanOrEqual(7);
                     }
                 }
             ]

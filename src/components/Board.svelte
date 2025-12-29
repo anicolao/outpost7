@@ -265,38 +265,8 @@
                   tabindex="0"
                 >
                   {#if cell}
-                     {@const cardData = [...hands.red, ...hands.yellow, ...$gameState.game.discard, ...$gameState.game.deck, ...$gameState.game.offer].find(c => c.id === cell) || { background: 'module_back.svg' }}
-                     <!-- Hacky lookup since card moves around. Ideally we store card data or have a global lookup. -->
-                     <!-- For now, we only have cards in hands/deck etc. Once played, they are in NO hand. -->
-                     <!-- They are implicitly "on board". -->
-                     <!-- But my reducer removed them from hand and only stored ID in grid. -->
-                     <!-- They are lost from "redux state" except for the ID in grid? -->
-                     <!-- Wait, I didn't verify gameSlice "playCard" logic fully? -->
-                     <!-- "state.hands[color] = newHand;" -> removed. -->
-                     <!-- It's NOT in discard (only pay card is). -->
-                     <!-- It's NOT in deck. -->
-                     <!-- So checking "hands" or "discard" won't find it! -->
-                     <!-- I need to fix gameSlice to store "placedCards" or keep it in a global list? -->
-                     <!-- OR, the grid content should be the CARD OBJECT. -->
-                     <!-- Reducer: state.grid[row][col] = playCard.id; -->
-                     <!-- I should store playCard object in grid? GameState interface says (string|null)[]. -->
-                     <!-- I should change GameState to track placed cards. -->
-                     
-                     <!-- QUICK FIX: Just render a placeholder generic card for this step to pass? -->
-                     <!-- NO. "The card, when placed, should have the initial cube state..." -->
-                     <!-- I need the card data. -->
-                     
-                     <!-- Plan: Update gameSlice to store `placedCards: Record<string, Card>`. -->
-                     <!-- OR change grid to `(Card | null)[][]`. -->
-                     <!-- Let's change grid to `(Card | null)[][]` is best for robust state. -->
-                     <!-- But that requires updating types everywhere. -->
-                     
-                     <!-- Alternative: Add `played: Card[]` to state, and look it up. -->
-                     <!-- I'll add `played: Card[]` to gameSlice. -->
                      <div class="played-card">
-                        <!-- We need to find the card. -->
-                        <!-- cardData is resolved above -->
-                         <img src={getAssetUrl(cardData.background)} alt="Card" />
+                         <img src={getAssetUrl(cell.background)} alt="Card" />
                      </div>
                   {/if}
                  </div>
@@ -341,8 +311,8 @@
       >
           <div class="flipper">
               <div class="front">
-                  <!-- Need to resolve asset path correctly. Assuming public/assets -->
-                  <img src="inputs/extracted_assets/{animatingCard.face}" alt="Card Front" />
+                  <!-- Face is already a full URL/path from getAssetUrl -->
+                  <img src={animatingCard.face} alt="Card Front" />
               </div>
               <div class="back">
                   <img src="assets/module_back.svg" alt="Card Back" />
