@@ -9,7 +9,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "peer-server": "peerjs --port 9000 --path /",
+    "peer-server": "peerjs --port 9000 --path / --ip 0.0.0.0",
     "pre-commit": "if grep -r 'waitForTimeout' src tests; then echo 'Error: waitForTimeout is banned. Use waitForAnimations instead.' && exit 1; fi",
     "prepare": "husky"
   },
