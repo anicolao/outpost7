@@ -46,7 +46,14 @@
     }
 
     status = 'Connecting to server...';
-    peer = new Peer();
+    
+    const peerConfig = import.meta.env.VITE_PEER_HOST ? {
+        host: import.meta.env.VITE_PEER_HOST,
+        port: parseInt(import.meta.env.VITE_PEER_PORT || '9000'),
+        path: '/'
+    } : undefined;
+
+    peer = new Peer(peerConfig);
 
     peer.on('open', (id) => {
         console.log('Client Peer ID:', id);
