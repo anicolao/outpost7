@@ -18,7 +18,7 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement
 
 ## Red Player Discards if Over Limit
 
-![Red Player Discards if Over Limit](screenshots/002-002.5-initial-discard.png)
+![Red Player Discards if Over Limit](screenshots/002-002_5-initial-discard.png)
 
 **Specs:**
 - Discard down to limit
