@@ -10,6 +10,7 @@ export interface Verification {
 export interface StepOptions {
     description: string;
     verifications: Verification[];
+    page?: Page; // Optional override for multi-page tests
 }
 
 // Shared Utility
@@ -90,6 +91,9 @@ export class TestStepHelper {
 
     async step(id: string, options: StepOptions) {
         // 1. Run Verifications
+        // Use the override page if provided, otherwise default helper page
+        const targetPage = options.page || this.page;
+
         for (const v of options.verifications) {
             await v.check();
         }
@@ -104,8 +108,10 @@ export class TestStepHelper {
         if (!fs.existsSync(screenshotDir)) {
             fs.mkdirSync(screenshotDir, { recursive: true });
         }
-        await waitForAnimations(this.page);
-        await this.page.screenshot({ path: path.join(screenshotDir, filename) });
+
+        // Wait for animations on the TARGET page
+        await waitForAnimations(targetPage);
+        await targetPage.screenshot({ path: path.join(screenshotDir, filename) });
 
         // 4. Record for Docs
         this.steps.push({

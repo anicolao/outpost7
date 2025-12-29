@@ -63,6 +63,7 @@ test.describe('Gameplay Loop', () => {
         // 2.5 Client - Handle Initial Discard (if over limit)
         await helper.step('002.5-initial-discard', {
             description: 'Red Player Discards if Over Limit',
+            page: redPage, // Use Client Page for screenshot
             verifications: [
                 {
                     spec: 'Discard down to limit',
@@ -102,6 +103,7 @@ test.describe('Gameplay Loop', () => {
         // But we automate it here.
         await helper.step('003-client-selection', {
             description: 'Red Player Selects Play and Pay Cards',
+            page: redPage, // Use Client Page for screenshot
             verifications: [
                 {
                     spec: 'Select Valid Play/Pay Pair',
