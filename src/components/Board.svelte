@@ -37,7 +37,8 @@
     const peerConfig = import.meta.env.VITE_PEER_HOST ? {
         host: import.meta.env.VITE_PEER_HOST,
         port: parseInt(import.meta.env.VITE_PEER_PORT || '9000'),
-        path: '/'
+        path: '/',
+        config: { iceServers: [] }
     } : undefined;
 
     peer = forcedId ? new Peer(forcedId, peerConfig) : new Peer(peerConfig);
