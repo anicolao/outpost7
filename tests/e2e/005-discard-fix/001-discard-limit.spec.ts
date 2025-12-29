@@ -13,7 +13,7 @@ test.describe('Discard Flow', () => {
                 {
                     spec: 'Start Game',
                     check: async () => {
-                        await page.goto('/?seed=e2e_test');
+                        await page.goto('/?seed=e2e_test&hostId=e2e_host_discard');
                         await page.locator('.bottom .add-btn').click({ force: true });
                         await page.locator('.color-picker button[title="red"]').click({ force: true });
                         await page.locator('.top .add-btn').click({ force: true });

@@ -27,16 +27,20 @@
   let peer: Peer;
   let hostPeerId: string | null = null;
   let connections: Record<string, DataConnection> = {};
+  let forcedId: string | null = null;
 
   onMount(() => {
     // Initialize Peer
+    const urlParams = new URLSearchParams(window.location.search);
+    forcedId = urlParams.get('hostId');
+
     const peerConfig = import.meta.env.VITE_PEER_HOST ? {
         host: import.meta.env.VITE_PEER_HOST,
         port: parseInt(import.meta.env.VITE_PEER_PORT || '9000'),
         path: '/'
     } : undefined;
 
-    peer = new Peer(peerConfig);
+    peer = forcedId ? new Peer(forcedId, peerConfig) : new Peer(peerConfig);
 
     peer.on('open', (id) => {
       hostPeerId = id;
@@ -271,7 +275,7 @@
           {#if player && !connections[player.color]}
              <div class="qr-zone {edge}"> 
                  <PlayerQR 
-                     url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=${player.color}`} 
+                     url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=${player.color}${forcedId ? `&clientId=${hostPeerId}_${player.color}` : ''}`} 
                      color={player.color === 'yellow' ? '#ffd700' : '#ff4d4d'} 
                  />
              </div>

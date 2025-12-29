@@ -16,7 +16,7 @@ test.describe('Hand and Phone UI', () => {
                 {
                     spec: 'Open game page',
                     check: async () => {
-                        await page.goto('/?seed=e2e_test');
+                        await page.goto('/?seed=e2e_test&hostId=e2e_host_conn&clientId=e2e_client_red_ignored');
                         await expect(page.locator('.lobby-container')).toBeVisible();
                     }
                 },
@@ -69,7 +69,7 @@ test.describe('Hand and Phone UI', () => {
         // 2. Client - Connect as Red
         // We need to keep the popup reference for subsequent steps
         let redPopup: Page;
-        let clientHelper: TestStepHelper;
+        let clientHelper: TestStepHelper = null as any;
 
         // Use main helper for the connection initiation (on host page)
         // But we want to Verify Red Player Connected ON THE POPUP.

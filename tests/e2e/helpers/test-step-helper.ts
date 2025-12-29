@@ -128,10 +128,7 @@ export class TestStepHelper {
         await waitForAnimations(targetPage);
 
         // Assert equality (Pixel Perfect)
-        // Mask the QR code zone as it contains a random Peer ID that cannot be seeded
-        await expect(targetPage).toHaveScreenshot(filename, {
-            mask: [targetPage.locator('.qr-zone')]
-        });
+        await expect(targetPage).toHaveScreenshot(filename);
 
         // 4. Record for Docs
         this.steps.push({
