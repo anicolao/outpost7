@@ -279,10 +279,13 @@
           <!-- QR Code (Only if not connected) -->
           {#if player && !connections[player.color]}
              <div class="qr-zone {edge}"> 
-                 <PlayerQR 
+                 <!-- <PlayerQR 
                      url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=${player.color}${forcedId ? `&clientId=${hostPeerId}_${player.color}` : ''}`} 
                      color={player.color === 'yellow' ? '#ffd700' : '#ff4d4d'} 
-                 />
+                 /> -->
+                 <div class="qr-placeholder" style="border: 2px solid {player.color}; padding: 10px; background: white; color: black;">
+                     [QR Placeholder for {player.color}]
+                 </div>
              </div>
           {/if}
 
