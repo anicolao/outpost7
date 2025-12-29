@@ -130,15 +130,15 @@
 
   .player-cube {
       position: absolute;
-      width: 35%;
+      width: 25%;
       height: 50%;
       border-radius: 2px;
       box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
       border: 1px solid rgba(255,255,255,0.4);
       
-      /* Default: Top 7.5%, Centered Left 32.5% */
-      top: 7.5%;
-      left: 32.5%;
+      /* User Request: 25%w, 50%h, 20%t, 60%l */
+      top: 20%;
+      left: 60%;
   }
 
   /* Bonus Slots: Top 30%, Left 5% */
