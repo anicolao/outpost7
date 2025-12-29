@@ -274,7 +274,7 @@
 
   <!-- QR Zones & Face Down Cards -->
   {#if hostPeerId}  
-      {#each ['top', 'bottom', 'left', 'right'] as edge}
+      {#each ['top', 'bottom', 'left', 'right'] as edge (edge)}
           {@const player = players.find(p => p.edge === edge)}
           <!-- QR Code (Only if not connected) -->
           {#if player && !connections[player.color]}
