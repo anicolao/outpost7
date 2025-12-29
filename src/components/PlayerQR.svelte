@@ -8,9 +8,14 @@
   let canvas: HTMLCanvasElement;
 
   $: if (url && canvas) {
-    QRCode.toCanvas(canvas, url, { width: 100, margin: 1 }, (error: any) => {
-      if (error) console.error(error);
-    });
+    try {
+        // console.log('Generating QR code for:', url); 
+        QRCode.toCanvas(canvas, url, { width: 100, margin: 1 }, (error: any) => {
+            if (error) console.error('QR Generation Error:', error);
+        });
+    } catch (e) {
+        console.error('QR Synchronous Error:', e);
+    }
   }
 
   function openHand() {
