@@ -75,13 +75,38 @@
     });
   });
 
+  let connectionRetryTimeout: NodeJS.Timeout;
+  let retryCount = 0;
+  const RETRY_DELAY = 3000; // User requested 3000ms
+  const MAX_RETRIES = 5;
+
   function connectToHost() {
     if (!hostId || !peer) return;
 
+    if (retryCount > 0) {
+       status = `Connecting... (Attempt ${retryCount + 1})`;
+    }
+
     conn = peer.connect(hostId);
 
+    // clear any existing retry timer
+    clearTimeout(connectionRetryTimeout);
+
+    // Set a timeout to retry if connection doesn't open
+    connectionRetryTimeout = setTimeout(() => {
+        if (status !== 'Connected' && retryCount < MAX_RETRIES) {
+             console.log(`Connection attempt ${retryCount + 1} timed out or failed. Retrying in ${RETRY_DELAY}ms...`);
+             retryCount++;
+             connectToHost();
+        } else if (retryCount >= MAX_RETRIES) {
+             status = 'Connection Failed: Timeout';
+        }
+    }, RETRY_DELAY);
+
     conn.on('open', () => {
+        clearTimeout(connectionRetryTimeout);
         status = 'Connected';
+        retryCount = 0;
         // Register this player
         conn.send({ type: 'REGISTER', color: playerColor });
     });
