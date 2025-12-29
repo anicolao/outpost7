@@ -16,7 +16,7 @@ test.describe('Hand and Phone UI', () => {
                 {
                     spec: 'Open game page',
                     check: async () => {
-                        await page.goto('/?seed=e2e_test&hostId=e2e_host_conn_v2&clientId=e2e_client_red_ignored');
+                        await page.goto('/?seed=e2e_test&hostId=e2e_host_conn_v2');
                         await expect(page.locator('.lobby-container')).toBeVisible();
                     }
                 },
