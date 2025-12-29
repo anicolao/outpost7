@@ -56,11 +56,9 @@ test.describe('Hand and Phone UI', () => {
                             throw e;
                         }
 
-                        // Wait for Peer ID
-                        // We can't easily access variable, but we can verify QRs
-                        await expect(page.locator('.qr-zone.bottom .qr-item')).toBeVisible(); // Red
-                        await expect(page.locator('.qr-zone.bottom .qr-item')).toBeVisible(); // Red
-                        await expect(page.locator('.qr-zone.top .qr-item')).toBeVisible(); // Yellow
+                        // Wait for Peer ID and QR Rendering
+                        await expect(page.locator('.qr-zone.bottom .qr-item')).toHaveAttribute('data-status', 'ready'); // Red
+                        await expect(page.locator('.qr-zone.top .qr-item')).toHaveAttribute('data-status', 'ready'); // Yellow
                     }
                 }
             ]
