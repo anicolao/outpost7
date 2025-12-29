@@ -141,10 +141,10 @@
       left: 60%;
   }
 
-  /* Bonus Slots: Top 30%, Left 5% */
+  /* Bonus Slots: Top 20%, Left 10% */
   .slot-wrapper.bonus .player-cube {
-      top: 30%;
-      left: 5%;
+      top: 20%;
+      left: 10%;
   }
 
   .player-cube.red {
