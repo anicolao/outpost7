@@ -9,17 +9,23 @@ Verify player can discard when over hand limit
 **Specs:**
 - Start Game
 
-## Connect and Deal Cards to Exceed Limit
+## Connect Red Player
 
-![Connect and Deal Cards to Exceed Limit](screenshots/001-002-force-limit.png)
+![Connect Red Player](screenshots/001-002_0-connect-red.png)
 
 **Specs:**
 - Connect Red
+
+## Deal Cards to Exceed Limit
+
+![Deal Cards to Exceed Limit](screenshots/002-002_1-force-limit.png)
+
+**Specs:**
 - Force Deal to 8 Cards
 
 ## Select and Discard Cards
 
-![Select and Discard Cards](screenshots/002-003-perform-discard.png)
+![Select and Discard Cards](screenshots/003-003-perform-discard.png)
 
 **Specs:**
 - Select and Confirm Discard
