@@ -127,10 +127,10 @@
 
   .player-cube {
       position: absolute;
-      top: 15%;
-      left: 15%;
-      width: 70%;
-      height: 70%;
+      top: 32.5%; /* Center vertically (100 - 35) / 2 */
+      left: 32.5%; /* Center horizontally */
+      width: 35%;
+      height: 35%;
       border-radius: 2px;
       box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
       border: 1px solid rgba(255,255,255,0.4);

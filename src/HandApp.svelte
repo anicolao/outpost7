@@ -151,13 +151,33 @@
           return;
       }
 
+      const card = hand.find(c => c.id === cardId);
+      if (!card) return;
+
       if (!playCardId) {
+          // Selecting PLAY card
+          // Must have at least one OTHER card with cost >= this card's cost
+          const hasValidPayer = hand.some(c => c.id !== cardId && c.cost >= card.cost);
+          if (!hasValidPayer) {
+              console.log('Cannot Play: No valid payer in hand');
+              return;
+          }
           console.log('Selecting PLAY:', cardId);
           playCardId = cardId;
       } else if (playCardId === cardId) {
           console.log('Deselecting PLAY');
           playCardId = null;
       } else {
+          // Selecting PAY card
+          // Must be >= Play Card Cost
+          const playCard = hand.find(c => c.id === playCardId);
+          if (!playCard) return;
+
+          if (card.cost < playCard.cost) {
+              console.log('Cannot Pay: Cost too low');
+              return;
+          }
+
           if (payCardId === cardId) {
               console.log('Deselecting PAY');
               payCardId = null; 
@@ -239,13 +259,17 @@
   <main class="card-list">
       {#each hand as card}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        {@const isPlayable = selectionMode === 'play' && !isOverLimit && !playCardId && hand.some(c => c.id !== card.id && c.cost >= card.cost)}
+        {@const isPayable = selectionMode === 'play' && !isOverLimit && playCardId && playCardId !== card.id && (card.cost >= (hand.find(c => c.id === playCardId)?.cost || 99))}
+        {@const isDisabled = selectionMode === 'play' && !isOverLimit && ((!playCardId && !isPlayable) || (playCardId && playCardId !== card.id && !isPayable))}
+        
         <div 
           class="card-wrapper" 
           class:play-selected={selectionMode === 'play' && !isOverLimit && playCardId === card.id}
           class:pay-selected={selectionMode === 'play' && !isOverLimit && payCardId === card.id}
           class:discard-selected={(selectionMode === 'discard' || isOverLimit) && discardSelection.has(card.id)}
-          on:click={() => handleCardTap(card.id)}
+          class:disabled={isDisabled}
+          on:click={() => !isDisabled && handleCardTap(card.id)}
         >
             <CardDisplay {card} />
             {#if selectionMode === 'play' && !isOverLimit && playCardId === card.id}
@@ -418,6 +442,12 @@
     opacity: 0.7;
     box-shadow: 0 0 10px #ff4d4d;
     outline: 3px dashed #ff4d4d;
+  }
+
+  .card-wrapper.disabled {
+      opacity: 0.3;
+      filter: grayscale(1);
+      cursor: not-allowed;
   }
   
   .selected-overlay {
