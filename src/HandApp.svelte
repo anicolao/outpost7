@@ -120,7 +120,6 @@
     
     if (pc) {
         pc.onicecandidate = (event: any) => {
-        (conn as any).peerConnection.onicecandidate = (event: any) => {
             if (event.candidate) {
                 console.log('Gathered ICE Candidate:', event.candidate.candidate);
             }
