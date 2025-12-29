@@ -177,7 +177,12 @@
   // Calculate potential state after discard
   $: selectedCards = hand.filter(c => discardSelection.has(c.id));
   $: selectedCost = selectedCards.reduce((acc, c) => acc + (c.cost || 0), 0);
-  $: remainsValid = !isOverLimit || ((handCount - discardSelection.size) <= 7 && (totalCost - selectedCost) <= 12);
+  
+  // Dynamic Limits for Display
+  $: remainingHandCount = handCount - discardSelection.size;
+  $: remainingCost = totalCost - selectedCost;
+
+  $: remainsValid = !isOverLimit || (remainingHandCount <= 7 && remainingCost <= 12);
 
   function confirmDiscard() {
       if (discardSelection.size === 0) return;
@@ -212,17 +217,11 @@
                 {currentTurn === playerColor ? 'YOUR TURN' : 'OPPONENT TURN'}
             </div>
         {/if}
-        <div class="stat" class:danger={handCount > 7 && (!isOverLimit || (handCount - discardSelection.size) > 7)}>
-            Cards: {handCount}/7
-            {#if isOverLimit && discardSelection.size > 0} 
-                → {handCount - discardSelection.size}
-            {/if}
+        <div class="stat" class:danger={remainingHandCount > 7}>
+            Cards: {remainingHandCount}/7
         </div>
-        <div class="stat" class:danger={totalCost > 12 && (!isOverLimit || (totalCost - selectedCost) > 12)}>
-            Value: {totalCost}/12
-            {#if isOverLimit && discardSelection.size > 0} 
-                → {totalCost - selectedCost}
-            {/if}
+        <div class="stat" class:danger={remainingCost > 12}>
+            Value: {remainingCost}/12
         </div>
     </div>
     <div class="mode-switch">
