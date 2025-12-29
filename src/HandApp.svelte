@@ -88,9 +88,10 @@
        status = `Connecting... (Attempt ${retryCount + 1})`;
     }
 
-    conn = peer.connect(hostId);
+    // Close previous connection if exists
+    if (conn) conn.close();
 
-    // clear any existing retry timer
+    conn = peer.connect(hostId);
     clearTimeout(connectionRetryTimeout);
 
     // Set a timeout to retry if connection doesn't open
@@ -111,6 +112,16 @@
         // Register this player
         conn.send({ type: 'REGISTER', color: playerColor });
     });
+
+    // Debug ICE Candidates
+    // Note: peerConnection is loosely typed in PeerJS definition, cast to any
+    if ((conn as any).peerConnection) {
+        (conn as any).peerConnection.onicecandidate = (event: any) => {
+            if (event.candidate) {
+                console.log('Gathered ICE Candidate:', event.candidate.candidate);
+            }
+        };
+    }
 
     conn.on('error', (err) => {
         console.error('DataConnection Error:', err);
