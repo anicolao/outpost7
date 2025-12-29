@@ -61,7 +61,7 @@ test.describe('Gameplay Loop', () => {
         });
 
         // 2.5 Client - Handle Initial Discard (if over limit)
-        await helper.step('002.5-initial-discard', {
+        await helper.step('002_5-initial-discard', {
             description: 'Red Player Discards if Over Limit',
             page: redPage, // Use Client Page for screenshot
             verifications: [
