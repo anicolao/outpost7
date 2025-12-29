@@ -48,7 +48,7 @@
 <style>
   .card-preview {
     width: 100%;
-    aspect-ratio: 2.5/3.5;
+    aspect-ratio: 0.76;
     position: relative;
     overflow: hidden;
     border-radius: 6%;
@@ -56,89 +56,37 @@
     background: #111;
   }
 
-  .card-bg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 0;
-  }
-
-  .value-container {
-    position: absolute;
-    top: 4%;
-    left: 4%;
-    width: 25%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 10;
-  }
-
-  .card-value {
-    font-size: 200%; /* Relative to container/parent font size */
-    font-weight: 900;
-    color: black;
-    -webkit-text-stroke: 1px white;
-    line-height: 1;
-    margin-bottom: -3px;
-    font-family: sans-serif;
-    text-align: center;
-  }
-
-  .resource-icon-wrapper {
-    width: 80%;
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .resource-icon {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .slots-container {
-    position: absolute;
-    top: 6%;
-    right: 8%;
-    width: 30%;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    z-index: 10;
-  }
+  /* ... */
 
   .slot-wrapper {
       position: relative;
       width: 100%;
-      /* Remove aspect-ratio: 1 to fix excess vertical space */
+      /* Remove aspect-ratio: 1 */
+      display: flex; /* Ensure tight fit */
+      justify-content: center;
   }
 
   .slot-icon {
     width: 100%;
-    /* Remove height 100% to allow natural height */
+    /* wrapper fits width, height is auto */
     object-fit: contain;
+    display: block; /* Remove inline whitespace */
   }
 
   .player-cube {
       position: absolute;
       width: 35%;
-      height: 35%;
+      height: 50%;
       border-radius: 2px;
       box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
       border: 1px solid rgba(255,255,255,0.4);
       
-      /* Default (one-cube/empty slots): Top 55%, Centered Left 32.5% */
-      top: 55%;
+      /* Default: Top 7.5%, Centered Left 32.5% */
+      top: 7.5%;
       left: 32.5%;
   }
 
-  /* Bonus Slots (2-space actions): Top 30%, Left 5% */
+  /* Bonus Slots: Top 30%, Left 5% */
   .slot-wrapper.bonus .player-cube {
       top: 30%;
       left: 5%;
