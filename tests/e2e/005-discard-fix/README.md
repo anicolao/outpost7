@@ -11,14 +11,14 @@ Verify player can discard when over hand limit
 
 ## Connect Red Player
 
-![Connect Red Player](screenshots/001-002_0-connect-red.png)
+![Connect Red Player](screenshots/001-002-0-connect-red.png)
 
 **Specs:**
 - Connect Red
 
 ## Deal Cards to Exceed Limit
 
-![Deal Cards to Exceed Limit](screenshots/002-002_1-force-limit.png)
+![Deal Cards to Exceed Limit](screenshots/002-002-1-force-limit.png)
 
 **Specs:**
 - Force Deal to 8 Cards

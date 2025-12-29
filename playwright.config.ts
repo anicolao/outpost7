@@ -7,6 +7,8 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     workers: process.env.CI ? 1 : undefined,
     reporter: 'html',
+    // Store snapshots in "screenshots" directory next to test file
+    snapshotPathTemplate: 'tests/{testFileDir}/screenshots/{arg}.png',
     expect: {
         timeout: 1000,
     },

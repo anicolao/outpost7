@@ -1,4 +1,4 @@
-import { type Page, type TestInfo } from '@playwright/test';
+import { type Page, type TestInfo, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -58,8 +58,10 @@ export class TestStepHelper {
 
     constructor(private page: Page, private testInfo: TestInfo, clean = true) {
         const screenshotDir = path.join(path.dirname(this.testInfo.file), 'screenshots');
-        if (clean && fs.existsSync(screenshotDir)) {
-            fs.rmSync(screenshotDir, { recursive: true, force: true });
+
+        // Ensure directory exists
+        if (!fs.existsSync(screenshotDir)) {
+            fs.mkdirSync(screenshotDir, { recursive: true });
         }
 
         // Strict Console Check
@@ -100,7 +102,7 @@ export class TestStepHelper {
 
         // 2. Generate Name
         const paddedIndex = String(this.stepCount++).padStart(3, '0');
-        const filename = `${paddedIndex}-${id}.png`;
+        const filename = `${paddedIndex}-${id}`.replace(/_/g, '-'); // Sanitize for Playwright
 
         // 3. Capture
         // Ensure the screenshots directory exists relative to the test file
@@ -111,12 +113,16 @@ export class TestStepHelper {
 
         // Wait for animations on the TARGET page
         await waitForAnimations(targetPage);
-        await targetPage.screenshot({ path: path.join(screenshotDir, filename) });
+
+        // Assert equality (Pixel Perfect)
+        // This will compare against the existing file in 'screenshots/' (configured in playwright.config.ts)
+        // If the file doesn't exist, it will fail (unless --update-snapshots is used)
+        await expect(targetPage).toHaveScreenshot(filename);
 
         // 4. Record for Docs
         this.steps.push({
             title: options.description,
-            image: `screenshots/${filename}`,
+            image: `screenshots/${filename}.png`,
             specs: options.verifications.map(v => v.spec)
         });
     }
