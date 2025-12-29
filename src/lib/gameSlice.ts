@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import seedrandom from 'seedrandom';
 
 export type PlayerColor = 'red' | 'yellow';
 export type Edge = 'bottom' | 'top' | 'left' | 'right';
@@ -66,9 +67,12 @@ const gameSlice = createSlice({
         removePlayer: (state, action: PayloadAction<Edge>) => {
             state.players = state.players.filter(p => p.edge !== action.payload);
         },
-        startGame: (state, action: PayloadAction<{ rows: number, cols: number, deck?: Card[], headers?: Card[] }>) => {
+        startGame: (state, action: PayloadAction<{ rows: number, cols: number, deck?: Card[], headers?: Card[], seed?: string }>) => {
             if (state.players.length === 2) {
                 state.phase = 'playing';
+
+                // Initialize RNG
+                const rng = seedrandom(action.payload.seed);
 
                 // Orientation logic
                 const hasBottom = state.players.some(p => p.edge === 'bottom');
@@ -99,14 +103,14 @@ const gameSlice = createSlice({
                 } else {
                     // Fallback Dummy Headers
                     for (let i = 0; i < 15; i++) {
-                        const n = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+                        const n = Math.floor(rng() * 3) + 1; // 1, 2, or 3
                         availableHeaders.push({ card: `start_${n}.svg`, count: n });
                     }
                 }
 
                 // Shuffle Headers
                 for (let i = availableHeaders.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
+                    const j = Math.floor(rng() * (i + 1));
                     [availableHeaders[i], availableHeaders[j]] = [availableHeaders[j], availableHeaders[i]];
                 }
 
@@ -130,7 +134,7 @@ const gameSlice = createSlice({
 
                 // Shuffle Deck if passed in, or if we want to ensure randomness here
                 for (let i = deckCards.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
+                    const j = Math.floor(rng() * (i + 1));
                     [deckCards[i], deckCards[j]] = [deckCards[j], deckCards[i]];
                 }
 

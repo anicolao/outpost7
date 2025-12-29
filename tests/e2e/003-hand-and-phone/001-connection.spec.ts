@@ -16,7 +16,7 @@ test.describe('Hand and Phone UI', () => {
                 {
                     spec: 'Open game page',
                     check: async () => {
-                        await page.goto('/');
+                        await page.goto('/?seed=e2e_test');
                         await expect(page.locator('.lobby-container')).toBeVisible();
                     }
                 },
@@ -49,7 +49,7 @@ test.describe('Hand and Phone UI', () => {
                     spec: 'Verify board and QR codes visible',
                     check: async () => {
                         try {
-                            await expect(page.locator('.board-container')).toBeVisible({ timeout: 5000 });
+                            await expect(page.locator('.board-container')).toBeVisible();
                         } catch (e) {
                             console.log('DEBUG: Board container not visible.');
                             console.log('DEBUG HTML:', await page.content());
@@ -131,7 +131,7 @@ test.describe('Hand and Phone UI', () => {
 
                         // Check result on CLIENT popup
                         // Verify we have 8 cards now
-                        await expect(redPopup.locator('.card-wrapper')).toHaveCount(8, { timeout: 10000 });
+                        await expect(redPopup.locator('.card-wrapper')).toHaveCount(8);
 
                         const pointsText = await redPopup.locator('.stat', { hasText: 'Value:' }).innerText();
                         expect(pointsText).not.toContain('NaN');

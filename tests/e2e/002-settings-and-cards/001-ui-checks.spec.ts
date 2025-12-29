@@ -7,7 +7,7 @@ test.describe('Settings and Cards UI Checks', () => {
     test.beforeEach(async ({ page }, testInfo) => {
         stepHelper = new TestStepHelper(page, testInfo);
         stepHelper.setMetadata('Settings and Cards', 'Verify opening settings, editing values, and navigating to cards.');
-        await page.goto('/');
+        await page.goto('/?seed=e2e_test');
         await waitForAnimations(page); // Wait for app to hydrate/stabilize
         await expect(page.locator('.lobby-container')).toBeVisible();
     });
@@ -119,7 +119,7 @@ test.describe('Settings and Cards UI Checks', () => {
                     // Ensure add button is NOT shown (implies token must be shown or broken state)
                     await expect(bottomEdge.locator('.add-btn')).toBeHidden();
                     // Check token
-                    await expect(bottomEdge.locator('.player-token')).toBeVisible({ timeout: 10000 });
+                    await expect(bottomEdge.locator('.player-token')).toBeVisible();
 
 
                     const topEdge = page.locator('.edge-control.top');
@@ -137,11 +137,11 @@ test.describe('Settings and Cards UI Checks', () => {
                     await expect(topPicker).toBeHidden();
                     await expect(topEdge.locator('.add-btn')).toBeHidden();
                     // Check token
-                    await expect(topEdge.locator('.player-token')).toBeVisible({ timeout: 10000 });
+                    await expect(topEdge.locator('.player-token')).toBeVisible();
 
                     // Click Play
                     const playBtn = page.locator('.play-btn');
-                    await expect(playBtn).toBeVisible({ timeout: 5000 });
+                    await expect(playBtn).toBeVisible();
                     await playBtn.click();
 
                     // Verify Board

@@ -13,7 +13,7 @@ test.describe('Discard Flow', () => {
                 {
                     spec: 'Start Game',
                     check: async () => {
-                        await page.goto('/');
+                        await page.goto('/?seed=e2e_test');
                         await page.locator('.bottom .add-btn').click({ force: true });
                         await page.locator('.color-picker button[title="red"]').click({ force: true });
                         await page.locator('.top .add-btn').click({ force: true });
@@ -95,7 +95,7 @@ test.describe('Discard Flow', () => {
                         await confirmBtn.click({ force: true });
 
                         // Verify Alert Gone
-                        await expect(redPage.locator('.alert-banner')).toBeHidden({ timeout: 5000 });
+                        await expect(redPage.locator('.alert-banner')).toBeHidden();
 
                         // Verify Count Reduced to Limit
                         const count = await redPage.locator('.card-wrapper').count();
