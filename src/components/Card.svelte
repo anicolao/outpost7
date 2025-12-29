@@ -30,11 +30,16 @@
   <div class="slots-container">
     {#each [card.cube_1, card.cube_2, card.cube_3, card.cube_4, card.cube_5, card.cube_6] as cube, i}
       {#if cube}
-        <img
-          src={getAssetUrl(cube)}
-          class="slot-icon"
-          alt={`Slot ${i + 1}`}
-        />
+        <div class="slot-wrapper">
+            <img
+            src={getAssetUrl(cube)}
+            class="slot-icon"
+            alt={`Slot ${i + 1}`}
+            />
+            {#if card.cubes && i < card.cubes && card.owner}
+                <div class="player-cube" class:red={card.owner === 'red'} class:yellow={card.owner === 'yellow'}></div>
+            {/if}
+        </div>
       {/if}
     {/each}
   </div>
@@ -108,8 +113,36 @@
     z-index: 10;
   }
 
+  .slot-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1; /* Assume square slots */
+  }
+
   .slot-icon {
     width: 100%;
+    height: 100%; /* Ensure fits wrapper */
     object-fit: contain;
+  }
+
+  .player-cube {
+      position: absolute;
+      top: 15%;
+      left: 15%;
+      width: 70%;
+      height: 70%;
+      border-radius: 2px;
+      box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.4);
+  }
+
+  .player-cube.red {
+      background: linear-gradient(135deg, #ff6666, #cc0000);
+      border-color: #ff9999;
+  }
+
+  .player-cube.yellow {
+      background: linear-gradient(135deg, #ffeb3b, #fbc02d);
+      border-color: #fff176;
   }
 </style>

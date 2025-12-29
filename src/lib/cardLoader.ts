@@ -9,6 +9,9 @@ export interface CardData {
     cube_4: string;
     cube_5: string;
     cube_6: string;
+    // Derived properties
+    cost: number;
+    color: string;
 }
 
 export async function loadCards(): Promise<CardData[]> {
@@ -38,6 +41,16 @@ export async function loadCards(): Promise<CardData[]> {
             headers.forEach((header, index) => {
                 card[header] = values[index]?.trim();
             });
+
+            // Derive Cost
+            card.cost = parseInt(card.text_module_resource_1 || '0', 10);
+
+            // Derive Color
+            // Expecting 'blue_resource.pdf' -> 'blue'
+            const resource = card.module_resource_1 || '';
+            const match = resource.match(/^([a-z]+)_/);
+            card.color = match ? match[1] : 'gray';
+
             cards.push(card as CardData);
         }
         return cards;

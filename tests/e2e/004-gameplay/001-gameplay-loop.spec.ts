@@ -104,24 +104,41 @@ test.describe('Gameplay Loop', () => {
             description: 'Red Player Selects Play and Pay Cards',
             verifications: [
                 {
-                    spec: 'Select Play Card (Tap 1)',
+                    spec: 'Select Valid Play/Pay Pair',
                     check: async () => {
-                        // Wait for hand to stabilize (using evaluate to avoid lint error)
+                        // Wait for hand to stabilize
                         await redPage.evaluate(() => new Promise(r => setTimeout(r, 2000)));
+
+                        // Smart Selection Logic: Find a valid pair (Pay >= Play)
+                        const indices = await redPage.evaluate(() => {
+                            const cards = Array.from(document.querySelectorAll('.card-wrapper'));
+                            const cardData = cards.map((el, index) => {
+                                const valueText = el.querySelector('.card-value')?.textContent || '0';
+                                return { index, cost: parseInt(valueText, 10) };
+                            });
+
+                            for (let i = 0; i < cardData.length; i++) {
+                                for (let j = 0; j < cardData.length; j++) {
+                                    if (i === j) continue;
+                                    if (cardData[j].cost >= cardData[i].cost) {
+                                        return { playIndex: i, payIndex: j, playCost: cardData[i].cost, payCost: cardData[j].cost };
+                                    }
+                                }
+                            }
+                            return null;
+                        });
+
+                        if (!indices) {
+                            throw new Error('No valid Play/Pay pair found in hand!');
+                        }
+
+                        console.log(`Test Selection: Play Index ${indices.playIndex} (Cost ${indices.playCost}), Pay Index ${indices.payIndex} (Cost ${indices.payCost})`);
+
                         const cards = redPage.locator('.card-wrapper');
-                        await cards.nth(0).click({ force: true });
-                        // await expect(cards.nth(0)).toHaveClass(/play-selected/);
-                        // await expect(cards.nth(0).locator('.selected-overlay.play')).toBeVisible(); // Flaky visual check
-                        console.log('Clicked Play Card'); // Rely on Host verification in next step
-                    }
-                },
-                {
-                    spec: 'Select Pay Card (Tap 2)',
-                    check: async () => {
-                        const cards = redPage.locator('.card-wrapper');
-                        await cards.nth(1).click({ force: true });
-                        // await expect(cards.nth(1)).toHaveClass(/pay-selected/);
-                        // await expect(cards.nth(1).locator('.selected-overlay.pay')).toBeVisible();
+                        await cards.nth(indices.playIndex).click({ force: true });
+                        console.log('Clicked Play Card');
+
+                        await cards.nth(indices.payIndex).click({ force: true });
                         console.log('Clicked Pay Card');
                     }
                 }
