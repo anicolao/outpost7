@@ -48,7 +48,6 @@
 <style>
   .card-preview {
     width: 100%;
-    /* Match Board Grid Aspect Ratio (0.76) for consistency */
     aspect-ratio: 0.76;
     position: relative;
     overflow: hidden;
@@ -57,14 +56,79 @@
     background: #111;
   }
 
-  /* ... (Background styles skipped) ... */
+  .card-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+  }
 
-  /* ... */
-  
+  .value-container {
+    position: absolute;
+    top: 4%;
+    left: 4%;
+    width: 25%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+  }
+
+  .card-value {
+    font-size: 200%; /* Relative to container/parent font size */
+    font-weight: 900;
+    color: black;
+    -webkit-text-stroke: 1px white;
+    line-height: 1;
+    margin-bottom: -3px;
+    font-family: sans-serif;
+    text-align: center;
+  }
+
+  .resource-icon-wrapper {
+    width: 80%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .resource-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .slots-container {
+    position: absolute;
+    top: 6%;
+    right: 8%;
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 10;
+  }
+
+  .slot-wrapper {
+      position: relative;
+      width: 100%;
+      /* Remove aspect-ratio: 1 to fix height issue */
+  }
+
+  .slot-icon {
+    width: 100%;
+    /* Remove height 100% to let it wrap naturally */
+    object-fit: contain;
+  }
+
   .player-cube {
       position: absolute;
       width: 35%;
-      height: 50%; /* Adjusted height */
+      height: 50%;
       border-radius: 2px;
       box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
       border: 1px solid rgba(255,255,255,0.4);
@@ -74,24 +138,7 @@
       left: 32.5%;
   }
 
-  /* Bonus Slots (2-space actions): Top 30%, Left 5% - User instruction overrides or additions?
-     User said "top should now be @ 7.5%". 
-     This likely implies the previous "55%" was wrong for standard slots, or generally.
-     I will start with standard slots.
-     For Bonus slots, 7.5% might be too high if it's supposed to sit in a specific spot?
-     But "For one-cube spaces, 55% positions the cube correctly" was the PREVIOUS comment.
-     Current comment: "for cubes top should now be @ 7.5%". 
-     Maybe they mean "For the CUBE inside the slot"?
-     I'll apply to standard. For bonus, I'll keep the special positioning unless it looks wrong, 
-     but 7.5% is top-aligned.
-     I'll apply 7.5% primarily to standard as that's the "default".
-     If "bonus" needs adjustment, I'll stick to 30% or adjust if needed.
-     Actually, "top: 30% ... positions correctly for 2-space". 
-     "For one-cube spaces... 55%".
-     NEW: "top should now be @ 7.5%". 
-     This contradicts the 55%. I will update the default (one-cube) to 7.5%.
-  */
-
+  /* Bonus Slots (2-space actions): Top 30%, Left 5% */
   .slot-wrapper.bonus .player-cube {
       top: 30%;
       left: 5%;
