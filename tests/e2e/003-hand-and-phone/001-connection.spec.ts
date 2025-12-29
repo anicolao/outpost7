@@ -87,9 +87,9 @@ test.describe('Hand and Phone UI', () => {
                         redPopup = popup;
                         clientHelper = new TestStepHelper(redPopup, testInfo, false);
 
-                        // Check QR code hidden on host (Moved here to ensure connection started)
-                        // Wait a bit for connection?
-                        // Actually connection happens inside popup.
+                        // Ensure Host recognizes connection (hiding QR) before snapshot
+                        // This prevents race conditions where local captures QR before it vanishes, but CI captures it after.
+                        await expect(page.locator('.qr-zone.bottom .qr-item')).toBeHidden();
                     }
                 }
             ]
