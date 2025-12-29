@@ -115,7 +115,11 @@
 
     // Debug ICE Candidates
     // Note: peerConnection is loosely typed in PeerJS definition, cast to any
-    if ((conn as any).peerConnection) {
+    const pc = (conn as any).peerConnection;
+    console.log(`Debug: Connection created. PeerConnection exists? ${!!pc}`);
+    
+    if (pc) {
+        pc.onicecandidate = (event: any) => {
         (conn as any).peerConnection.onicecandidate = (event: any) => {
             if (event.candidate) {
                 console.log('Gathered ICE Candidate:', event.candidate.candidate);
