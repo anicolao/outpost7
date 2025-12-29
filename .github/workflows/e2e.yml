@@ -46,6 +46,10 @@ jobs:
       - name: Run e2e tests
         run: npm run test:e2e
       
+      - name: Print PeerJS Logs
+        if: failure()
+        run: cat peer-server.log
+      
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@v4
