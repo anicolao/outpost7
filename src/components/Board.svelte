@@ -273,31 +273,31 @@
   </div>
 
   <!-- QR Zones & Face Down Cards -->
-  {#if hostPeerId}  
-      {#each ['top', 'bottom', 'left', 'right'] as edge (edge)}
-          {@const player = players.find(p => p.edge === edge)}
-          <!-- QR Code (Only if not connected) -->
-          {#if player && !connections[player.color]}
-             <div class="qr-zone {edge}"> 
-                 <!-- <PlayerQR 
-                     url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=${player.color}${forcedId ? `&clientId=${hostPeerId}_${player.color}` : ''}`} 
-                     color={player.color === 'yellow' ? '#ffd700' : '#ff4d4d'} 
-                 /> -->
-                 <div class="qr-placeholder" style="border: 2px solid {player.color}; padding: 10px; background: white; color: black;">
-                     [QR Placeholder for {player.color}]
+  <!-- QR Zones & Face Down Cards -->
+  <div class="overlay-layer">
+      {#if hostPeerId}  
+          {#each ['top', 'bottom', 'left', 'right'] as edge (edge)}
+              {@const player = players.find(p => p.edge === edge)}
+              <!-- QR Code (Only if not connected) -->
+              {#if player && !connections[player.color]}
+                 <div class="qr-zone {edge}"> 
+                     <!-- <PlayerQR ... /> -->
+                     <div class="qr-placeholder" style="border: 2px solid {player.color}; padding: 10px; background: white; color: black;">
+                         [QR Placeholder for {player.color}]
+                     </div>
                  </div>
-             </div>
-          {/if}
-
-          <!-- Face Down Card (If connected and has selection) -->
-          {@const pSel = player ? peerSelections[player.color] : null}
-          {#if player && connections[player.color] && pSel && pSel.playCardId && pSel.payCardId}
-             <div class="face-down-card {edge}">
-                 <img src="assets/module_back.svg" alt="Card Back" />
-             </div>
-          {/if}
-      {/each}
-  {/if}
+              {/if}
+    
+              <!-- Face Down Card (If connected and has selection) -->
+              {@const pSel = player ? peerSelections[player.color] : null}
+              {#if player && connections[player.color] && pSel && pSel.playCardId && pSel.payCardId}
+                 <div class="face-down-card {edge}">
+                     <img src="assets/module_back.svg" alt="Card Back" />
+                 </div>
+              {/if}
+          {/each}
+      {/if}
+  </div>
 
   <!-- Flying Card Animation -->
   {#if animatingCard}
