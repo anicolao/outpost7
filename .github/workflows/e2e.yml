@@ -40,7 +40,7 @@ jobs:
       
       - name: Start PeerJS Server
         run: |
-          npm run peer-server &
+          npm run peer-server > peer-server.log 2>&1 &
           sleep 5
       
       - name: Run e2e tests
@@ -54,4 +54,5 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            peer-server.log
           retention-days: 7
