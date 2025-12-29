@@ -400,6 +400,21 @@
       align-items: center;
   }
 
+  .card {
+      min-width: 100px;
+      height: 140px;
+      background: white;
+      color: black;
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: default;
+      transition: transform 0.2s, border 0.2s;
+      border: 3px solid transparent;
+      user-select: none;
+  }
+
   .card-wrapper {
     position: relative;
     width: 80px;
