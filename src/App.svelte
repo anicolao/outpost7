@@ -24,6 +24,9 @@
   onMount(async () => {
       const cardsData = await loadCards();
       
+      // Sort deterministically to ensure seeding works consistently
+      cardsData.sort((a, b) => a.background.localeCompare(b.background));
+
       // Filter for module cards (deck)
       deck = cardsData
         .filter(c => c.background.toLowerCase().includes('module'))

@@ -52,6 +52,9 @@ test.describe('Gameplay Loop', () => {
 
                         await expect(redPage.locator('.status')).toHaveText('Connected');
                         await expect(redPage.locator('.card-wrapper')).toHaveCount(5); // Initial deal
+
+                        // Ensure Host recognizes connection (hiding QR) before snapshot
+                        await expect(page.locator('.qr-zone.bottom')).toBeHidden();
                     }
                 }
             ]
