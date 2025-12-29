@@ -30,7 +30,7 @@
   <div class="slots-container">
     {#each [card.cube_1, card.cube_2, card.cube_3, card.cube_4, card.cube_5, card.cube_6] as cube, i}
       {#if cube}
-        <div class="slot-wrapper">
+        <div class="slot-wrapper" class:bonus={cube.includes('bonus')}>
             <img
             src={getAssetUrl(cube)}
             class="slot-icon"
@@ -116,24 +116,32 @@
   .slot-wrapper {
       position: relative;
       width: 100%;
-      aspect-ratio: 1; /* Assume square slots */
+      /* Remove aspect-ratio: 1 to fix height issue */
   }
 
   .slot-icon {
     width: 100%;
-    height: 100%; /* Ensure fits wrapper */
+    /* Remove height 100% to let it wrap naturally */
     object-fit: contain;
   }
 
   .player-cube {
       position: absolute;
-      top: 32.5%; /* Center vertically (100 - 35) / 2 */
-      left: 32.5%; /* Center horizontally */
       width: 35%;
       height: 35%;
       border-radius: 2px;
       box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
       border: 1px solid rgba(255,255,255,0.4);
+      
+      /* Default (one-cube/empty slots): Top 55%, Centered Left 32.5% */
+      top: 55%;
+      left: 32.5%;
+  }
+
+  /* Bonus Slots (2-space actions): Top 30%, Left 5% */
+  .slot-wrapper.bonus .player-cube {
+      top: 30%;
+      left: 5%;
   }
 
   .player-cube.red {
