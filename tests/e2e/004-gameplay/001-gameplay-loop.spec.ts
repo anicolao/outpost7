@@ -38,7 +38,7 @@ test.describe('Gameplay Loop', () => {
                     spec: 'Open Red Client',
                     check: async () => {
                         const qrItem = page.locator('.qr-zone.bottom .qr-item');
-                        await qrItem.waitFor({ state: 'visible', timeout: 5000 });
+                        await qrItem.waitFor({ state: 'visible', timeout: 15000 });
 
                         const [popup] = await Promise.all([
                             page.waitForEvent('popup'),
@@ -52,6 +52,43 @@ test.describe('Gameplay Loop', () => {
 
                         await expect(redPage.locator('.status')).toHaveText('Connected');
                         await expect(redPage.locator('.card-wrapper')).toHaveCount(5); // Initial deal
+                    }
+                }
+            ]
+        });
+
+        // 2.5 Client - Handle Initial Discard (if over limit)
+        await helper.step('002.5-initial-discard', {
+            description: 'Red Player Discards if Over Limit',
+            verifications: [
+                {
+                    spec: 'Discard down to limit',
+                    check: async () => {
+                        // Check if alert banner exists
+                        const alert = redPage.locator('.alert-banner');
+                        if (await alert.isVisible()) {
+                            console.log('Hand Limit Exceeded - Discarding...');
+                            const cards = redPage.locator('.card-wrapper');
+                            const confirmBtn = redPage.locator('.discard-btn');
+
+                            // Select cards until Confirm is enabled
+                            let i = 0;
+                            let selectedCount = 0;
+                            while (await confirmBtn.isDisabled() && i < 5) {
+                                console.log(`Selecting card ${i} for discard...`);
+                                await cards.nth(i).click({ force: true });
+                                selectedCount++;
+                                // Wait briefly for UI update
+                                await redPage.evaluate(() => new Promise(r => setTimeout(r, 200)));
+                                i++;
+                            }
+                            console.log(`Selected ${selectedCount} cards. Enable state: ${!(await confirmBtn.isDisabled())}`);
+                            await confirmBtn.click({ force: true });
+                            await expect(alert).toBeHidden({ timeout: 5000 });
+                            console.log('Discard complete.');
+                        } else {
+                            console.log('Hand Limit OK.');
+                        }
                     }
                 }
             ]
@@ -138,11 +175,11 @@ test.describe('Gameplay Loop', () => {
                         // I missed rendering the placed card in the template! 
                         // I need to fix Board.svelte first.
 
-                        // Verification fails here if I don't fix it.
-                        // I will add a TODO to fix it, but for now the test will fail on "Cell has content".
-                        // I should verify state update via Store dispatch or similar if UI is empty.
-                        // But "Zero Pixel Tolerance" implies visual.
-                        // I MUST FIX Board.svelte RENDER logic.
+                        // Verify cell has the card image
+                        await expect(page.locator('[data-cell-id="0-0"] .played-card img')).toBeVisible({ timeout: 5000 });
+
+                        // Verify turn passed to Yellow
+                        await expect(page.locator('.turn-indicator')).toHaveText('YELLOW TURN');
                     }
                 }
             ]

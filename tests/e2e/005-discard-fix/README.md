@@ -22,6 +22,5 @@ Verify player can discard when over hand limit
 ![Select and Discard Cards](screenshots/002-003-perform-discard.png)
 
 **Specs:**
-- Select card for discard
-- Confirm Discard
+- Select and Confirm Discard
 

@@ -25,7 +25,7 @@ interface GameState {
     players: Player[];
     phase: GamePhase;
     orientation: number;
-    grid: (string | null)[][];
+    grid: (Card | null)[][];
     rowHeaders: PopulationCard[];
     colHeaders: PopulationCard[];
     deck: Card[];
@@ -177,21 +177,8 @@ const gameSlice = createSlice({
                 // Add pay card to discard
                 state.discard.push(payCard);
 
-                // Place play card on grid
-                // Ideally we'd store the full card object or a richer state, but for now matching the grid type
-                // We'll store the ID for now, or maybe a JSON string if we need more data later. 
-                // Given the prompt "initial cube state", we might need a lookup or store the whole object.
-                // Since grid is (string | null)[][], let's store the card ID. 
-                // The Board component can look up the card details from the ID if needed, 
-                // BUT the card is removed from hand and deck. 
-                // We should probably add a 'placedCards' lookup or similar if we want to retrieve stats later.
-                // For this iteration, let's assume storing the ID is sufficient or the Board can handle it.
-                // Actually, let's look at how grid is used. It's just rendered. 
-                // If we need the "cube state", we likely need the card data.
-                // Let's store a serialized representation or just the ID and rely on a 'placed' list?
-                // Simplest transparency: Store ID.
-                // Place play card on grid
-                state.grid[row][col] = playCard.id;
+                // Place play card on grid (Store Full Object)
+                state.grid[row][col] = playCard;
 
                 // Toggle Turn
                 state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';

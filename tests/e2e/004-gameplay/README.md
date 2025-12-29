@@ -16,9 +16,16 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement
 **Specs:**
 - Open Red Client
 
+## Red Player Discards if Over Limit
+
+![Red Player Discards if Over Limit](screenshots/002-002.5-initial-discard.png)
+
+**Specs:**
+- Discard down to limit
+
 ## Red Player Selects Play and Pay Cards
 
-![Red Player Selects Play and Pay Cards](screenshots/002-003-client-selection.png)
+![Red Player Selects Play and Pay Cards](screenshots/003-003-client-selection.png)
 
 **Specs:**
 - Select Play Card (Tap 1)
@@ -26,7 +33,7 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement
 
 ## Verify Face Down Card and Highlights
 
-![Verify Face Down Card and Highlights](screenshots/003-004-host-feedback.png)
+![Verify Face Down Card and Highlights](screenshots/004-004-host-feedback.png)
 
 **Specs:**
 - Face down card visible at bottom
@@ -34,7 +41,7 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement
 
 ## Click cell to place card
 
-![Click cell to place card](screenshots/004-005-execute-move.png)
+![Click cell to place card](screenshots/005-005-execute-move.png)
 
 **Specs:**
 - Click target cell (0,0)
