@@ -5,17 +5,20 @@
   export let label: string;
   export let color: string;
 
-  let canvas: HTMLCanvasElement;
-
+  let qrSrc: string = '';
   let isReady = false;
 
-  $: if (url && canvas) {
+  $: if (url) {
     try {
         isReady = false;
         // console.log('Generating QR code for:', url); 
-        QRCode.toCanvas(canvas, url, { width: 100, margin: 1 }, (error: any) => {
-            if (error) console.error('QR Generation Error:', error);
-            else isReady = true;
+        QRCode.toDataURL(url, { width: 100, margin: 1 }, (error: any, dataUrl: string) => {
+            if (error) {
+                console.error('QR Generation Error:', error);
+            } else {
+                qrSrc = dataUrl;
+                isReady = true;
+            }
         });
     } catch (e) {
         console.error('QR Synchronous Error:', e);
@@ -30,7 +33,9 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="qr-item" style:--color={color} on:click={openHand} data-status={isReady ? 'ready' : 'pending'}>
-  <canvas bind:this={canvas}></canvas>
+  {#if isReady}
+      <img src={qrSrc} alt={label} />
+  {/if}
   <span>{label}</span>
 </div>
 
@@ -46,6 +51,8 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     border: 3px solid var(--color);
     transition: transform 0.2s;
+    min-width: 100px; /* Ensure layout stability */
+    min-height: 100px;
   }
 
   .qr-item:hover {
@@ -59,7 +66,9 @@
     color: black;
   }
   
-  canvas {
+  img {
       display: block;
+      width: 100px;
+      height: 100px;
   }
 </style>
