@@ -11,7 +11,7 @@ export interface Player {
 
 // Re-export CardData as Card for consistency, or extend it
 import type { CardData } from './cardLoader';
-export type Card = CardData & { id: string };
+export type Card = CardData & { id: string; cubes?: number; owner?: PlayerColor; };
 
 export interface PopulationCard {
     card: string; // filename
@@ -171,14 +171,35 @@ const gameSlice = createSlice({
             const payCard = hand.find(c => c.id === payCardId);
 
             if (playCard && payCard) {
+                // Validate Rules
+                if (payCard.cost < playCard.cost) {
+                    console.warn(`Invalid Play: Pay Cost ${payCard.cost} < Play Cost ${playCard.cost}`);
+                    // return; // In Redux Toolkit, ensuring state validity is key. 
+                    // To handle error feedback, we might need a status field, but for now we block the action effect.
+                    // Actually, if we return, nothing happens. The UI shouldn't allow this dispatch ideally.
+                    // But good to enforce here.
+                    return;
+                }
+
+                // Calculate Cubes
+                // Rule: 1 cube if Pay Color == Play Color
+                // Rule: +1 cube for each point Overpaid
+                const colorMatch = payCard.color === playCard.color ? 1 : 0;
+                const overpay = payCard.cost - playCard.cost;
+                const cubes = colorMatch + overpay;
+
                 // Remove both from hand
                 state.hands[color] = hand.filter(c => c.id !== playCardId && c.id !== payCardId);
 
                 // Add pay card to discard
                 state.discard.push(payCard);
 
-                // Place play card on grid (Store Full Object)
-                state.grid[row][col] = playCard;
+                // Place play card on grid (Store Full Object + State)
+                state.grid[row][col] = {
+                    ...playCard,
+                    cubes, // How many cubes to place
+                    owner: color
+                };
 
                 // Toggle Turn
                 state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';

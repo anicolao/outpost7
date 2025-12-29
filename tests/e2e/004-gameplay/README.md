@@ -28,8 +28,7 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement
 ![Red Player Selects Play and Pay Cards](screenshots/003-003-client-selection.png)
 
 **Specs:**
-- Select Play Card (Tap 1)
-- Select Pay Card (Tap 2)
+- Select Valid Play/Pay Pair
 
 ## Verify Face Down Card and Highlights
 
