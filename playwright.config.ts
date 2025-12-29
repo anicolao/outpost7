@@ -4,22 +4,22 @@ export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 2 : 0,
+    retries: 0,
     workers: process.env.CI ? 1 : undefined,
     reporter: 'html',
     // Store snapshots in "screenshots" directory next to test file
     snapshotPathTemplate: 'tests/{testFileDir}/screenshots/{arg}.png',
     expect: {
-        timeout: 10000,
+        timeout: 5000,
         toHaveScreenshot: {
-            maxDiffPixelRatio: 0.05,
+            // maxDiffPixelRatio: 0, // Default is 0, explicitly strict
         },
     },
     use: {
         baseURL: 'http://localhost:5177',
         trace: 'on-first-retry',
-        actionTimeout: 10000,
-        navigationTimeout: 10000,
+        actionTimeout: 5000,
+        navigationTimeout: 5000,
     },
     projects: [
         {

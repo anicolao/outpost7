@@ -113,19 +113,6 @@
         conn.send({ type: 'REGISTER', color: playerColor });
     });
 
-    // Debug ICE Candidates
-    // Note: peerConnection is loosely typed in PeerJS definition, cast to any
-    const pc = (conn as any).peerConnection;
-    console.log(`Debug: Connection created. PeerConnection exists? ${!!pc}`);
-    
-    if (pc) {
-        pc.onicecandidate = (event: any) => {
-            if (event.candidate) {
-                console.log('Gathered ICE Candidate:', event.candidate.candidate);
-            }
-        };
-    }
-
     conn.on('error', (err) => {
         console.error('DataConnection Error:', err);
     });
