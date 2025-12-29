@@ -96,7 +96,8 @@ export class TestStepHelper {
                     caret-color: transparent !important;
                 }
             `;
-            document.head.appendChild(style);
+            const target = document.head || document.documentElement;
+            if (target) target.appendChild(style);
         });
     }
 
