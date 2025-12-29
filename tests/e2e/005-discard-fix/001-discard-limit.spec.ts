@@ -41,6 +41,9 @@ test.describe('Discard Flow', () => {
                         await popup.waitForLoadState();
                         redPage = popup;
                         await expect(redPage.locator('.status')).toHaveText('Connected');
+
+                        // Ensure Host recognizes connection (hiding QR) before snapshot
+                        await expect(page.locator('.qr-zone.bottom')).toBeHidden();
                     }
                 }
             ]
