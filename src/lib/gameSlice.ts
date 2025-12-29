@@ -11,6 +11,7 @@ export interface Player {
 
 // Re-export CardData as Card for consistency, or extend it
 import type { CardData } from './cardLoader';
+import type { GameSettings } from './settingsStore';
 export type Card = CardData & { id: string; cubes?: number; owner?: PlayerColor; };
 
 export interface PopulationCard {
@@ -162,8 +163,8 @@ const gameSlice = createSlice({
             state.hands[color] = newHand;
             state.discard.push(...toDiscard);
         },
-        playCard: (state, action: PayloadAction<{ color: PlayerColor, playCardId: string, payCardId: string, row: number, col: number }>) => {
-            const { color, playCardId, payCardId, row, col } = action.payload;
+        playCard: (state, action: PayloadAction<{ color: PlayerColor, playCardId: string, payCardId: string, row: number, col: number, settings: GameSettings }>) => {
+            const { color, playCardId, payCardId, row, col, settings } = action.payload;
             const hand = state.hands[color];
 
             // Validate cards exist in hand
@@ -182,11 +183,11 @@ const gameSlice = createSlice({
                 }
 
                 // Calculate Cubes
-                // Rule: 1 cube if Pay Color == Play Color
-                // Rule: +1 cube for each point Overpaid
-                const colorMatch = payCard.color === playCard.color ? 1 : 0;
-                const overpay = payCard.cost - playCard.cost;
-                const cubes = colorMatch + overpay;
+                // Rule: CUBES_PER_PLAY + (ColorMatch ? CUBES_PER_COLOR_MATCH : 0) + (Overpay * CUBES_PER_OVERPAYMENT)
+                const colorMatch = payCard.color === playCard.color ? settings.CUBES_PER_COLOR_MATCH : 0;
+                const overpay = Math.max(0, payCard.cost - playCard.cost);
+                const overpayBonus = overpay * settings.CUBES_PER_OVERPAYMENT;
+                const cubes = settings.CUBES_PER_PLAY + colorMatch + overpayBonus;
 
                 // Remove both from hand
                 state.hands[color] = hand.filter(c => c.id !== playCardId && c.id !== payCardId);

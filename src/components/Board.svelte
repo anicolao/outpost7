@@ -185,7 +185,8 @@
               playCardId: sel.playCardId,
               payCardId: sel.payCardId,
               row: rowIndex,
-              col: colIndex
+              col: colIndex,
+              settings: $settingsStore
           }));
 
           // Clear selection implicitly updates via store -> hand -> client

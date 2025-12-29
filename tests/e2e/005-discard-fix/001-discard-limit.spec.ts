@@ -26,8 +26,10 @@ test.describe('Discard Flow', () => {
 
         // 2. Client - Connect & Force Over Limit
         let redPage: Page;
-        await helper.step('002-force-limit', {
-            description: 'Connect and Deal Cards to Exceed Limit',
+        // 2. Client - Connect
+        // let redPage: Page; // Already declared above
+        await helper.step('002_0-connect-red', {
+            description: 'Connect Red Player',
             verifications: [
                 {
                     spec: 'Connect Red',
@@ -40,7 +42,15 @@ test.describe('Discard Flow', () => {
                         redPage = popup;
                         await expect(redPage.locator('.status')).toHaveText('Connected');
                     }
-                },
+                }
+            ]
+        });
+
+        // 2.1 Client - Force Limit
+        await helper.step('002_1-force-limit', {
+            description: 'Deal Cards to Exceed Limit',
+            page: redPage!, // Use client page
+            verifications: [
                 {
                     spec: 'Force Deal to 8 Cards',
                     check: async () => {
@@ -65,6 +75,7 @@ test.describe('Discard Flow', () => {
         // 3. Client - Discard Action
         await helper.step('003-perform-discard', {
             description: 'Select and Discard Cards',
+            page: redPage!, // Use client page
             verifications: [
                 {
                     spec: 'Select and Confirm Discard',
