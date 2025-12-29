@@ -87,6 +87,7 @@ test.describe('Hand and Phone UI', () => {
                         ]);
                         await popup.waitForLoadState();
                         redPopup = popup;
+                        redPopup.on('console', msg => console.log('CLIENT LOG:', msg.text()));
                         clientHelper = new TestStepHelper(redPopup, testInfo, false);
 
                         // Check QR code hidden on host (Moved here to ensure connection started)

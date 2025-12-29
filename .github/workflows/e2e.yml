@@ -16,7 +16,7 @@ jobs:
     
     env:
       CI: true
-      VITE_PEER_HOST: localhost
+      VITE_PEER_HOST: 127.0.0.1
       VITE_PEER_PORT: 9000
     
     steps:
