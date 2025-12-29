@@ -116,12 +116,12 @@
   .slot-wrapper {
       position: relative;
       width: 100%;
-      /* Remove aspect-ratio: 1 to fix height issue */
+      /* Remove aspect-ratio: 1 to fix excess vertical space */
   }
 
   .slot-icon {
     width: 100%;
-    /* Remove height 100% to let it wrap naturally */
+    /* Remove height 100% to allow natural height */
     object-fit: contain;
   }
 
