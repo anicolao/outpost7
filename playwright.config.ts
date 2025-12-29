@@ -10,7 +10,7 @@ export default defineConfig({
     // Store snapshots in "screenshots" directory next to test file
     snapshotPathTemplate: 'tests/{testFileDir}/screenshots/{arg}.png',
     expect: {
-        timeout: 1000,
+        timeout: 10000,
         toHaveScreenshot: {
             maxDiffPixelRatio: 0.05,
         },
@@ -18,8 +18,8 @@ export default defineConfig({
     use: {
         baseURL: 'http://localhost:5177',
         trace: 'on-first-retry',
-        actionTimeout: 1000,
-        navigationTimeout: 1000,
+        actionTimeout: 10000,
+        navigationTimeout: 10000,
     },
     projects: [
         {

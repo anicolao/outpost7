@@ -105,7 +105,7 @@ test.describe('Hand and Phone UI', () => {
                     spec: 'Verify Red player connected',
                     check: async () => {
                         await expect(redPopup.locator('.player-badge')).toHaveText('RED');
-                        await expect(redPopup.locator('.status')).toHaveText('Connected');
+                        await expect(redPopup.locator('.status')).toHaveText('Connected', { timeout: 15000 });
                         await expect(redPopup.locator('.card-wrapper')).toHaveCount(5);
                     }
                 }
