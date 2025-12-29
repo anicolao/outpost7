@@ -85,6 +85,19 @@ export class TestStepHelper {
                 console.log(`BAD RESPONSE: ${response.url()} - ${response.status()}`);
             }
         });
+
+        // Inject CSS to disable animations and cursors for pixel-perfect stability
+        this.page.addInitScript(() => {
+            const style = document.createElement('style');
+            style.innerHTML = `
+                *, *::before, *::after {
+                    transition: none !important;
+                    animation: none !important;
+                    caret-color: transparent !important;
+                }
+            `;
+            document.head.appendChild(style);
+        });
     }
 
     setMetadata(title: string, story: string) {
@@ -115,9 +128,10 @@ export class TestStepHelper {
         await waitForAnimations(targetPage);
 
         // Assert equality (Pixel Perfect)
-        // This will compare against the existing file in 'screenshots/' (configured in playwright.config.ts)
-        // If the file doesn't exist, it will fail (unless --update-snapshots is used)
-        await expect(targetPage).toHaveScreenshot(filename);
+        // Mask the QR code zone as it contains a random Peer ID that cannot be seeded
+        await expect(targetPage).toHaveScreenshot(filename, {
+            mask: [targetPage.locator('.qr-zone')]
+        });
 
         // 4. Record for Docs
         this.steps.push({
