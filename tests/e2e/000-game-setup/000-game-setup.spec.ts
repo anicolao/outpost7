@@ -14,7 +14,7 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
     );
 
     // Navigate
-    await page.goto('/');
+    await page.goto('/?seed=e2e_test');
 
     await tester.step('lobby-initial', {
         description: 'Lobby - Initial State',
