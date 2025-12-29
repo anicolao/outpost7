@@ -4,11 +4,12 @@
   import { Peer, type DataConnection } from 'peerjs';
   import { gameState } from '../lib/redux-svelte';
   import { dealCards, playerDiscard } from '../lib/gameSlice';
-  import { getAssetUrl } from '../lib/cardLoader';
+  import { getAssetUrl, type CardData } from '../lib/cardLoader';
   import { settingsStore } from '../lib/settingsStore';
   import { store } from '../lib/store';
   import Offer from './Offer.svelte';
   import PlayerQR from './PlayerQR.svelte';
+  import CardDisplay from './Card.svelte';
 
   $: orientation = $gameState.game.orientation;
   $: rows = $settingsStore.GRID_ROWS;
@@ -73,21 +74,14 @@
       return s && s.playCardId && s.payCardId;
   };
 
-  // Turn management (simple alternation starting with Red for now, 
-  // or based on whose turn it is. The Prompt didn't specify turns, 
-  // but usually it's turn based. "The player... selects a card".
-  // Let's assume ANY player can move for now if they have cards, 
-  // or just check validity. The rules might be "simultaneous" or "turn based".
-  // Looking at gameSlice, there's no "turn" state. 
-  // I will enforce that a player can only move their own pieces.
-  // Actually, I'll allow any valid selection to place for now.
+  // Turn management
   
   // Animation State
   let animatingCard: {
       id: string;
       startRect: DOMRect;
       endRect: DOMRect;
-      face: string; // The card front image
+      cardData: CardData | null; // Full card data
   } | null = null;
 
 
@@ -134,23 +128,11 @@
   let rotation = 90;
 
   function isValidMove(rowIndex: number, colIndex: number) { 
-      // Valid if empty cell AND (player has full selection)
-      // We need to know WHICH player is trying to move.
-      // Since clicks happen on Board, we don't know who clicked unless it's a touch screen.
-      // Assuming the BOARD operator is facilitating or players are clicking?
-      // "Tapping a position should flip over the card".
-      // Let's assume if ANY player has a valid selection, we highlight relevant cells.
-      // Ideally we'd valid based on adjacency or something but rules aren't fully here.
-      // "Legal placements on the board should light up".
-      // For now: Empty cell is legal.
       return !grid[rowIndex]?.[colIndex] && (hasSelection('red') || hasSelection('yellow'));
   }
 
   async function handleCellClick(rowIndex: number, colIndex: number) { 
       // Determine active player (who has selection?)
-      // If both have selection, we might have a conflict or need to know who clicked.
-      // I'll prioritize RED then YELLOW for simplicity if both ready, or check turn.
-      // Since no turn state, let's just pick one.
       let color: 'red' | 'yellow' | null = null;
       if (hasSelection('red')) color = 'red';
       else if (hasSelection('yellow')) color = 'yellow';
@@ -183,15 +165,13 @@
           // Get Card Data for Face
           const hand = hands[color];
           const card = hand.find(c => c.id === sel.playCardId);
-          // Use getAssetUrl to ensure correct path (assets/...) and extension (.svg)
-          const cardFace = card ? getAssetUrl(card.background) : ''; 
 
           // Trigger Animation
           animatingCard = {
               id: sel.playCardId,
               startRect,
               endRect,
-              face: cardFace || 'assets/module_back.svg' // Fallback
+              cardData: card || null
           };
 
           // Temporarily lock UI or wait
@@ -266,7 +246,7 @@
                 >
                   {#if cell}
                      <div class="played-card">
-                         <img src={getAssetUrl(cell.background)} alt="Card" />
+                         <CardDisplay card={cell} />
                      </div>
                   {/if}
                  </div>
@@ -311,8 +291,11 @@
       >
           <div class="flipper">
               <div class="front">
-                  <!-- Face is already a full URL/path from getAssetUrl -->
-                  <img src={animatingCard.face} alt="Card Front" />
+                  {#if animatingCard.cardData}
+                      <CardDisplay card={animatingCard.cardData} />
+                  {:else}
+                      <img src="assets/module_back.svg" alt="Card Front" />
+                  {/if}
               </div>
               <div class="back">
                   <img src="assets/module_back.svg" alt="Card Back" />
