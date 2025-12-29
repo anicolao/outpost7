@@ -64,6 +64,10 @@
              connections = connections; // trigger reactivity
          }
       });
+
+      conn.on('error', (err) => {
+          console.error('Board Connection Error:', err);
+      });
     });
   });
 

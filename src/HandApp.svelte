@@ -112,6 +112,10 @@
         conn.send({ type: 'REGISTER', color: playerColor });
     });
 
+    conn.on('error', (err) => {
+        console.error('DataConnection Error:', err);
+    });
+
     conn.on('data', (data: any) => {
         if (data.type === 'HAND_UPDATE') {
             const newHand = data.hand;
