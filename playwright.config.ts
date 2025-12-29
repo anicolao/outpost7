@@ -34,7 +34,7 @@ export default defineConfig({
                         '--disable-lcd-text',
                         '--disable-skia-runtime-opts',
                         '--disable-system-font-check',
-                        '--disable-features=FontAccess',
+                        '--disable-features=FontAccess,WebRtcHideLocalIpsWithMdns',
                         '--force-device-scale-factor=1',
                         '--disable-accelerated-2d-canvas',
                         '--disable-gpu', // Use software rendering for consistency
