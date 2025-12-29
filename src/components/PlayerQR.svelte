@@ -7,11 +7,15 @@
 
   let canvas: HTMLCanvasElement;
 
+  let isReady = false;
+
   $: if (url && canvas) {
     try {
+        isReady = false;
         // console.log('Generating QR code for:', url); 
         QRCode.toCanvas(canvas, url, { width: 100, margin: 1 }, (error: any) => {
             if (error) console.error('QR Generation Error:', error);
+            else isReady = true;
         });
     } catch (e) {
         console.error('QR Synchronous Error:', e);
@@ -25,7 +29,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="qr-item" style:--color={color} on:click={openHand}>
+<div class="qr-item" style:--color={color} on:click={openHand} data-status={isReady ? 'ready' : 'pending'}>
   <canvas bind:this={canvas}></canvas>
   <span>{label}</span>
 </div>
