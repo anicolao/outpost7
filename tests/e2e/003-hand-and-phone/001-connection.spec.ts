@@ -133,9 +133,9 @@ test.describe('Hand and Phone UI', () => {
                         // Verify we have 8 cards now
                         await expect(redPopup.locator('.card-wrapper')).toHaveCount(8, { timeout: 10000 });
 
-                        const pointsText = await redPopup.locator('.stat').nth(1).innerText();
+                        const pointsText = await redPopup.locator('.stat', { hasText: 'Value:' }).innerText();
                         expect(pointsText).not.toContain('NaN');
-                        expect(pointsText).toMatch(/Value: \d+ \/ 12/);
+                        expect(pointsText).toMatch(/Value: \d+\s*\/\s*12/);
                         await expect(redPopup.locator('.alert-banner')).toBeVisible();
                     }
                 },
