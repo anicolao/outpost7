@@ -16,7 +16,7 @@ test.describe('Gameplay Loop', () => {
                 {
                     spec: 'Add Red Player and Start',
                     check: async () => {
-                        await page.goto('/?seed=e2e_test');
+                        await page.goto('/?seed=e2e_test&hostId=e2e_host_gameplay');
                         await page.locator('.bottom .add-btn').click({ force: true });
                         await page.locator('.color-picker button[title="red"]').click({ force: true });
                         await expect(page.locator('.edge-control.bottom .player-token')).toBeVisible();
@@ -33,7 +33,7 @@ test.describe('Gameplay Loop', () => {
         });
 
         // 2. Client - Connect Red
-        let redPage: Page;
+        let redPage: Page = null as any;
         await helper.step('002-connect-red', {
             description: 'Connect Red Player via QR',
             verifications: [
@@ -49,9 +49,6 @@ test.describe('Gameplay Loop', () => {
                         ]);
                         await popup.waitForLoadState();
                         redPage = popup;
-
-                        // Debug logs
-                        redPage.on('console', msg => console.log('RED POPUP LOG:', msg.text()));
 
                         await expect(redPage.locator('.status')).toHaveText('Connected');
                         await expect(redPage.locator('.card-wrapper')).toHaveCount(5); // Initial deal

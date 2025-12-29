@@ -47,13 +47,22 @@
 
     status = 'Connecting to server...';
     
+    // Check for explicit client ID for testing
+    // note: window.location.hash logic above handles 'host' and 'color'
+    // but we might want clientId in the main search params or hash?
+    // Let's check main search params first as that's typical for test overrides
+    const searchParams = new URLSearchParams(window.location.search);
+    // Also check hash params (for QR code injection)
+    const forcedClientId = searchParams.get('clientId') || urlParams.get('clientId');
+
+
     const peerConfig = import.meta.env.VITE_PEER_HOST ? {
         host: import.meta.env.VITE_PEER_HOST,
         port: parseInt(import.meta.env.VITE_PEER_PORT || '9000'),
         path: '/'
     } : undefined;
 
-    peer = new Peer(peerConfig);
+    peer = forcedClientId ? new Peer(forcedClientId, peerConfig) : new Peer(peerConfig);
 
     peer.on('open', (id) => {
         console.log('Client Peer ID:', id);
