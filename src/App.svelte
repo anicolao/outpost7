@@ -53,12 +53,16 @@
   function start() {
       // Dispatch startGame with loaded deck
       if (deck.length > 0) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const seed = urlParams.get('seed') || undefined;
+
           store.dispatch(startGame({ 
-        rows: $settingsStore.GRID_ROWS, 
-        cols: $settingsStore.GRID_COLS,
-        deck: deck,
-        headers: headerDeck
-      }));
+            rows: $settingsStore.GRID_ROWS, 
+            cols: $settingsStore.GRID_COLS,
+            deck: deck,
+            headers: headerDeck,
+            seed
+          }));
       } else {
           console.error("Deck not loaded yet!");
       }

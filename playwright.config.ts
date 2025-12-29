@@ -7,14 +7,38 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     workers: process.env.CI ? 1 : undefined,
     reporter: 'html',
+    expect: {
+        timeout: 1000,
+    },
     use: {
         baseURL: 'http://localhost:5177',
         trace: 'on-first-retry',
+        actionTimeout: 1000,
+        navigationTimeout: 1000,
     },
     projects: [
         {
             name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: {
+                ...devices['Desktop Chrome'],
+                deviceScaleFactor: 1,
+                launchOptions: {
+                    args: [
+                        '--font-render-hinting=none',
+                        '--disable-font-subpixel-positioning',
+                        '--disable-lcd-text',
+                        '--disable-skia-runtime-opts',
+                        '--disable-system-font-check',
+                        '--disable-features=FontAccess',
+                        '--force-device-scale-factor=1',
+                        '--disable-accelerated-2d-canvas',
+                        '--disable-gpu', // Use software rendering for consistency
+                        '--use-gl=swiftshader',
+                        '--disable-smooth-scrolling',
+                        '--disable-partial-raster',
+                    ],
+                },
+            },
         },
     ],
     webServer: {

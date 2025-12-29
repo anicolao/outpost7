@@ -16,7 +16,7 @@ test.describe('Gameplay Loop', () => {
                 {
                     spec: 'Add Red Player and Start',
                     check: async () => {
-                        await page.goto('/');
+                        await page.goto('/?seed=e2e_test');
                         await page.locator('.bottom .add-btn').click({ force: true });
                         await page.locator('.color-picker button[title="red"]').click({ force: true });
                         await expect(page.locator('.edge-control.bottom .player-token')).toBeVisible();
@@ -41,7 +41,7 @@ test.describe('Gameplay Loop', () => {
                     spec: 'Open Red Client',
                     check: async () => {
                         const qrItem = page.locator('.qr-zone.bottom .qr-item');
-                        await qrItem.waitFor({ state: 'visible', timeout: 15000 });
+                        await qrItem.waitFor({ state: 'visible' });
 
                         const [popup] = await Promise.all([
                             page.waitForEvent('popup'),
@@ -88,7 +88,7 @@ test.describe('Gameplay Loop', () => {
                             }
                             console.log(`Selected ${selectedCount} cards. Enable state: ${!(await confirmBtn.isDisabled())}`);
                             await confirmBtn.click({ force: true });
-                            await expect(alert).toBeHidden({ timeout: 5000 });
+                            await expect(alert).toBeHidden();
                             console.log('Discard complete.');
                         } else {
                             console.log('Hand Limit OK.');
@@ -154,7 +154,7 @@ test.describe('Gameplay Loop', () => {
                 {
                     spec: 'Face down card visible at bottom',
                     check: async () => {
-                        await expect(page.locator('.face-down-card.bottom')).toBeVisible({ timeout: 5000 });
+                        await expect(page.locator('.face-down-card.bottom')).toBeVisible();
                     }
                 },
                 {
@@ -200,7 +200,7 @@ test.describe('Gameplay Loop', () => {
                         // Verify cell has the card content (CardDisplay)
                         const cell = page.locator('[data-cell-id="0-0"]');
                         // Use .card-bg to verify the card component is present
-                        await expect(cell.locator('.card-bg')).toBeVisible({ timeout: 5000 });
+                        await expect(cell.locator('.card-bg')).toBeVisible();
 
                         console.log('Verified Card Rendered (CardDisplay)');
 
