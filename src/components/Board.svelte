@@ -345,7 +345,7 @@
     width: 95vmin;
     max-width: 800px;
     /* Aspect ratio for standard cards (approx 5/7 or 0.71) to ensure cells aren't square */
-    aspect-ratio: 5/7; 
+    aspect-ratio: 0.76; 
   }
 
   .spacer {
