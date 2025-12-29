@@ -33,10 +33,17 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
       
+      - name: Start PeerJS Server
+        run: |
+          npm run peer-server &
+          sleep 5
+      
       - name: Run e2e tests
         run: npm run test:e2e
         env:
           CI: true
+          VITE_PEER_HOST: localhost
+          VITE_PEER_PORT: 9000
       
       - name: Upload test results
         if: failure()
