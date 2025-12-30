@@ -14,9 +14,8 @@
 ![Bonus Phase Active](screenshots/001-bonus-triggered.png)
 
 **Specs:**
-- Turn indicator says BONUS PHASE
-- Bonus Overlay Visible
-- Bonus Type is ADD_POPULATION
+- Turn indicator says BONUS ACTIONS
+- Interactive Bonus Cube Visible
 
 ## Turn Completed
 
@@ -24,5 +23,5 @@
 
 **Specs:**
 - Turn indicator says YELLOW TURN
-- Bonus Overlay Gone
+- Bonus Phase Ended
 
