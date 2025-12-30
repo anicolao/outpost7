@@ -95,22 +95,24 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
     await tester.step('bonus-triggered', {
         description: 'Bonus Phase Active',
         verifications: [
-            { spec: 'Turn indicator says BONUS PHASE', check: async () => await expect(boardPage.locator('.turn-indicator')).toHaveText('BONUS PHASE') },
-            { spec: 'Bonus Overlay Visible', check: async () => await expect(boardPage.locator('.bonus-overlay')).toBeVisible() },
-            { spec: 'Bonus Type is ADD_POPULATION', check: async () => await expect(boardPage.locator('.bonus-type')).toHaveText('ADD_POPULATION') }
+            { spec: 'Turn indicator says BONUS ACTIONS', check: async () => await expect(boardPage.locator('.turn-indicator')).toHaveText('BONUS ACTIONS') },
+            { spec: 'Interactive Bonus Cube Visible', check: async () => await expect(boardPage.locator('.player-cube.interactive')).toBeVisible() }
         ]
     });
 
     // 8. Resolve Bonus
-    // Click Resolve Button (auto-selected first bonus)
-    await boardPage.locator('.resolve-btn').click();
+    // Click Interactive Cube
+    await boardPage.locator('.player-cube.interactive').first().click();
+
+    // Wait for animation
+    await new Promise(r => setTimeout(r, 600));
 
     // 9. Verify Turn End (Red -> Yellow)
     await tester.step('turn-ended', {
         description: 'Turn Completed',
         verifications: [
             { spec: 'Turn indicator says YELLOW TURN', check: async () => await expect(boardPage.locator('.turn-indicator')).toContainText('YELLOW TURN') },
-            { spec: 'Bonus Overlay Gone', check: async () => await expect(boardPage.locator('.bonus-overlay')).not.toBeVisible() }
+            { spec: 'Bonus Phase Ended', check: async () => await expect(boardPage.locator('.turn-indicator')).not.toContainText('BONUS ACTIONS') }
         ]
     });
 
