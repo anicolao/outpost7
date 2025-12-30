@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TestStepHelper, waitForAnimations } from './helpers/test-step-helper';
+import { TestStepHelper, waitForAnimations } from '../helpers/test-step-helper';
 
 test.describe('Settings and Cards UI Checks', () => {
     let stepHelper: TestStepHelper;
