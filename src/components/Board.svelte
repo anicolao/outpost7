@@ -3,13 +3,14 @@
 
   import { Peer, type DataConnection } from 'peerjs';
   import { gameState } from '../lib/redux-svelte';
-  import { dealCards, playerDiscard } from '../lib/gameSlice';
+  import { dealCards, playerDiscard, resolveBonus, type BonusInstance } from '../lib/gameSlice';
   import { getAssetUrl, type CardData } from '../lib/cardLoader';
   import { settingsStore } from '../lib/settingsStore';
   import { store } from '../lib/store';
   import Offer from './Offer.svelte';
   import PlayerQR from './PlayerQR.svelte';
   import CardDisplay from './Card.svelte';
+  import { playCard } from '../lib/gameSlice';
 
   $: orientation = $gameState.game.orientation;
   $: rows = $settingsStore.GRID_ROWS;
@@ -21,6 +22,8 @@
   $: colHeaders = $gameState.game.colHeaders;
   $: hands = $gameState.game.hands;
   $: players = $gameState.game.players;
+  $: pendingBonuses = $gameState.game.pendingBonuses || [];
+  $: currentTurn = $gameState.game.currentTurn;
 
   const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 
@@ -75,8 +78,6 @@
     if (peer) peer.destroy();
   });
 
-  import { playCard } from '../lib/gameSlice';
-
   // State for peer selections
   let peerSelections: Record<string, { playCardId: string | null, payCardId: string | null }> = {
       red: { playCardId: null, payCardId: null },
@@ -89,8 +90,6 @@
       return s && s.playCardId && s.payCardId;
   };
 
-  // Turn management
-  
   // Animation State
   let animatingCard: {
       id: string;
@@ -106,7 +105,7 @@
         if (color === 'red' || color === 'yellow') {
             connections[color] = conn;
             // Send initial hand
-            conn.send({ type: 'HAND_UPDATE', hand: hands[color], turn: $gameState.game.currentTurn });
+            conn.send({ type: 'HAND_UPDATE', hand: hands[color], turn: currentTurn });
         }
     } else if (data.type === 'DISCARD') {
         const { color, cardIds } = data;
@@ -127,11 +126,11 @@
 
   // Reactive updates for hands
   $: if (hands.red && connections.red) {
-      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red, turn: $gameState.game.currentTurn });
+      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red, turn: currentTurn });
   }
   
   $: if (hands.yellow && connections.yellow) {
-      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow, turn: $gameState.game.currentTurn });
+      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow, turn: currentTurn });
   }
 
   // Meeple Icon
@@ -142,11 +141,67 @@
 
   let rotation = 90;
 
+  // --- BONUS LOGIC ---
+  let selectedBonusId: string | null = null;
+  $: if (pendingBonuses.length > 0 && !selectedBonusId) {
+      selectedBonusId = pendingBonuses[0].id; // Auto select first
+  }
+  $: activeBonus = pendingBonuses.find(b => b.id === selectedBonusId);
+
+  // Valid Bonus Targets
+  function isValidBonusTarget(rowIndex: number, colIndex: number): boolean {
+      if (!activeBonus) return false;
+      const { definition, sourceRow, sourceCol } = activeBonus;
+
+      const cell = grid[rowIndex]?.[colIndex];
+      // Target must correspond to bonus type
+      if (definition.type === 'ADD_CUBE') {
+          // Row/Col of source
+          if (rowIndex !== sourceRow && colIndex !== sourceCol) return false;
+          // Must be Mine or Neutral
+          if (!cell) return false;
+          // IMPORTANT: Check owner carefully. Neutral owner is undefined/null.
+          if (cell.owner && cell.owner !== currentTurn) return false;
+          // Must have empty slots (max 6)
+          if ((cell.cubes || 0) >= 6) return false;
+          return true;
+      }
+      if (definition.type === 'REMOVE_CUBE') {
+          // Row/Col of source
+          if (rowIndex !== sourceRow && colIndex !== sourceCol) return false;
+          // Must be Opponent
+          if (!cell) return false;
+          if (!cell.owner || cell.owner === currentTurn) return false;
+          // Must have cubes
+          if ((cell.cubes || 0) <= 0) return false;
+          // Bonus protection check
+          if (cell.bonuses && cell.bonuses[cell.cubes]) return false; // Protected
+          return true;
+      }
+      return false; 
+  }
+
+
   function isValidMove(rowIndex: number, colIndex: number) { 
+      if (pendingBonuses.length > 0) return false; // Block normal moves during bonus
       return !grid[rowIndex]?.[colIndex] && (hasSelection('red') || hasSelection('yellow'));
   }
 
-  async function handleCellClick(rowIndex: number, colIndex: number) { 
+  async function handleCellClick(rowIndex: number, colIndex: number) {
+      // BONUS HANDLING
+      if (pendingBonuses.length > 0) {
+          if (!activeBonus) return;
+          if (activeBonus.definition.type === 'ADD_POPULATION') return; // Handled via button
+
+          if (isValidBonusTarget(rowIndex, colIndex)) {
+              // Trigger resolve on click of any valid target
+              resolveCurrentBonus();
+          }
+          return;
+      }
+
+
+      // NORMAL MOVE HANDLING
       // Determine active player (who has selection?)
       let color: 'red' | 'yellow' | null = null;
       if (hasSelection('red')) color = 'red';
@@ -158,7 +213,7 @@
       if (!sel.playCardId || !sel.payCardId) return;
 
       // Enforce Turn
-      if ($gameState.game.currentTurn !== color) {
+      if (currentTurn !== color) {
           console.log(`Not ${color}'s turn!`);
           return;
       }
@@ -209,6 +264,12 @@
       }
   }
 
+  function resolveCurrentBonus() {
+      if (!selectedBonusId) return;
+      store.dispatch(resolveBonus({ bonusId: selectedBonusId }));
+      selectedBonusId = null; // Reset selection (next one will auto-select)
+  }
+
 </script>
 
 <div class="table-top">
@@ -220,8 +281,12 @@
         <!-- Top Left Spacer -->
         <!-- Top Left Spacer / Turn Indicator -->
         <div class="header-cell spacer">
-            <div class="turn-indicator" class:red-turn={$gameState.game.currentTurn === 'red'} class:yellow-turn={$gameState.game.currentTurn === 'yellow'}>
-                {$gameState.game.currentTurn.toUpperCase()} TURN
+            <div class="turn-indicator" class:red-turn={currentTurn === 'red'} class:yellow-turn={currentTurn === 'yellow'}>
+                {#if pendingBonuses.length > 0}
+                   BONUS PHASE
+                {:else}
+                   {currentTurn.toUpperCase()} TURN
+                {/if}
             </div>
         </div>
         
@@ -255,6 +320,7 @@
                   class="cell" 
                   data-cell-id="{cellId}"
                   class:valid={isValidMove(rowIndex, colIndex)}
+                  class:bonus-target={isValidBonusTarget(rowIndex, colIndex)}
                   on:click={() => handleCellClick(rowIndex, colIndex)}
                   on:keydown={(e) => e.key === 'Enter' && handleCellClick(rowIndex, colIndex)}
                   role="button"
@@ -271,6 +337,37 @@
       </div>
     {/if}
   </div>
+
+  <!-- Bonus Overlay Panel -->
+  {#if pendingBonuses.length > 0}
+    <div class="bonus-overlay">
+        <h3>Pending Bonuses</h3>
+        <div class="bonus-list">
+            {#each pendingBonuses as bonus (bonus.id)}
+                <div 
+                  class="bonus-item" 
+                  class:selected={selectedBonusId === bonus.id}
+                  on:click={() => selectedBonusId = bonus.id}
+                  on:keydown={() => selectedBonusId = bonus.id}
+                  role="button"
+                  tabindex="0"
+                >
+                    <span class="bonus-type">{bonus.definition.type}</span>
+                    <span class="bonus-desc">{bonus.description}</span>
+                </div>
+            {/each}
+        </div>
+        <div class="bonus-actions">
+           <button class="resolve-btn" disabled={!selectedBonusId} on:click={resolveCurrentBonus}>
+               {#if activeBonus && activeBonus.definition.type === 'ADD_POPULATION'}
+                   APPLY POPULATION
+               {:else}
+                   ACTIVATE ({activeBonus?.definition.type === 'ADD_CUBE' ? 'Scan Row/Col' : 'Scan Opponent'})
+               {/if}
+           </button>
+        </div>
+    </div>
+  {/if}
 
   <!-- QR Zones & Face Down Cards -->
   <!-- QR Zones & Face Down Cards -->
@@ -617,6 +714,83 @@
       object-fit: contain;
       border-radius: 4px;
       /* Remove drop shadow for placed cards, or keep shallow? */
+  }
+
+  /* BONUS OVERLAY STYLES */
+  .bonus-overlay {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 300px;
+      background: rgba(0,0,0,0.9);
+      border: 2px solid white;
+      border-radius: 8px;
+      padding: 15px;
+      z-index: 200;
+      color: white;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+  }
+  .bonus-overlay h3 {
+      margin-top: 0;
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+  }
+  .bonus-list {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 15px;
+  }
+  .bonus-item {
+      padding: 8px;
+      background: #333;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid transparent;
+  }
+  .bonus-item.selected {
+      background: #444;
+      border-color: #ffd700;
+  }
+  .bonus-type {
+      font-weight: bold;
+      font-size: 0.9em;
+      color: #ffd700;
+  }
+  .bonus-desc {
+      font-size: 0.8em;
+      color: #ccc;
+  }
+  .resolve-btn {
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+  }
+  .resolve-btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+  }
+
+  /* Bonus Targets */
+  .cell.bonus-target {
+      border-color: #ffd700;
+      box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.3);
+      cursor: pointer;
+      animation: pulse-bonus 1.5s infinite;
+  }
+  @keyframes pulse-bonus {
+     0% { background: rgba(255, 215, 0, 0.1); }
+     50% { background: rgba(255, 215, 0, 0.3); }
+     100% { background: rgba(255, 215, 0, 0.1); }
   }
 
 </style>
