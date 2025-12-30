@@ -10,7 +10,6 @@
   import Offer from './Offer.svelte';
   import PlayerQR from './PlayerQR.svelte';
   import CardDisplay from './Card.svelte';
-  import { playCard } from '../lib/gameSlice';
 
   $: orientation = $gameState.game.orientation;
   $: rows = $settingsStore.GRID_ROWS;
@@ -78,6 +77,8 @@
     if (peer) peer.destroy();
   });
 
+  import { playCard } from '../lib/gameSlice';
+
   // State for peer selections
   let peerSelections: Record<string, { playCardId: string | null, payCardId: string | null }> = {
       red: { playCardId: null, payCardId: null },
@@ -90,6 +91,8 @@
       return s && s.playCardId && s.payCardId;
   };
 
+  // Turn management
+  
   // Animation State
   let animatingCard: {
       id: string;
@@ -105,7 +108,7 @@
         if (color === 'red' || color === 'yellow') {
             connections[color] = conn;
             // Send initial hand
-            conn.send({ type: 'HAND_UPDATE', hand: hands[color], turn: currentTurn });
+            conn.send({ type: 'HAND_UPDATE', hand: hands[color], turn: $gameState.game.currentTurn });
         }
     } else if (data.type === 'DISCARD') {
         const { color, cardIds } = data;
@@ -126,11 +129,11 @@
 
   // Reactive updates for hands
   $: if (hands.red && connections.red) {
-      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red, turn: currentTurn });
+      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red, turn: $gameState.game.currentTurn });
   }
   
   $: if (hands.yellow && connections.yellow) {
-      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow, turn: currentTurn });
+      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow, turn: $gameState.game.currentTurn });
   }
 
   // Meeple Icon
@@ -141,119 +144,92 @@
 
   let rotation = 90;
 
-  // --- BONUS LOGIC ---
-  let selectedBonusId: string | null = null;
-  $: if (pendingBonuses.length > 0 && !selectedBonusId) {
-      selectedBonusId = pendingBonuses[0].id; // Auto select first
-  }
-  $: activeBonus = pendingBonuses.find(b => b.id === selectedBonusId);
-
-  // Valid Bonus Targets
-  function isValidBonusTarget(rowIndex: number, colIndex: number): boolean {
-      if (!activeBonus) return false;
-      const { definition, sourceRow, sourceCol } = activeBonus;
-
-      const cell = grid[rowIndex]?.[colIndex];
-      // Target must correspond to bonus type
-      if (definition.type === 'ADD_CUBE') {
-          // Row/Col of source
-          if (rowIndex !== sourceRow && colIndex !== sourceCol) return false;
-          // Must be Mine or Neutral
-          if (!cell) return false;
-          // IMPORTANT: Check owner carefully. Neutral owner is undefined/null.
-          if (cell.owner && cell.owner !== currentTurn) return false;
-          // Must have empty slots (max 6)
-          if ((cell.cubes || 0) >= 6) return false;
-          return true;
-      }
-      if (definition.type === 'REMOVE_CUBE') {
-          // Row/Col of source
-          if (rowIndex !== sourceRow && colIndex !== sourceCol) return false;
-          // Must be Opponent
-          if (!cell) return false;
-          if (!cell.owner || cell.owner === currentTurn) return false;
-          // Must have cubes
-          if ((cell.cubes || 0) <= 0) return false;
-          // Bonus protection check
-          if (cell.bonuses && cell.bonuses[cell.cubes]) return false; // Protected
-          return true;
-      }
-      return false; 
-  }
-
-
   function isValidMove(rowIndex: number, colIndex: number) { 
-      if (pendingBonuses.length > 0) return false; // Block normal moves during bonus
       return !grid[rowIndex]?.[colIndex] && (hasSelection('red') || hasSelection('yellow'));
   }
 
-  async function handleCellClick(rowIndex: number, colIndex: number) {
-      // BONUS HANDLING
-      if (pendingBonuses.length > 0) {
-          if (!activeBonus) return;
-          if (activeBonus.definition.type === 'ADD_POPULATION') return; // Handled via button
-
-          if (isValidBonusTarget(rowIndex, colIndex)) {
-              // Trigger resolve on click of any valid target
-              resolveCurrentBonus();
-          }
-          return;
-      }
-
-
-      // NORMAL MOVE HANDLING
-      // Determine active player (who has selection?)
-      let color: 'red' | 'yellow' | null = null;
-      if (hasSelection('red')) color = 'red';
-      else if (hasSelection('yellow')) color = 'yellow';
-
-      if (!color || !peerSelections[color]) return;
-
-      const sel = peerSelections[color];
-      if (!sel.playCardId || !sel.payCardId) return;
-
-      // Enforce Turn
-      if (currentTurn !== color) {
-          console.log(`Not ${color}'s turn!`);
-          return;
-      }
-
-      if (!isValidMove(rowIndex, colIndex)) return;
-
-      // Execute Move
+    async function handleCellClick(rowIndex: number, colIndex: number) {
       
+      // If pending bonuses exist, block normal play
+      if (pendingBonuses.length > 0) {
+          console.log('Blocked by pending bonuses:', pendingBonuses.length);
+          return;
+      }
+
+      const color = currentTurn;
+      // const isRed = color === 'red'; // Unused
+      // const isYellow = color === 'yellow'; // Unused
+
+      // Verify phase via store or prop? 
+      // We don't have a simple 'phase' reactive var, so access store safely
+      const phase = $gameState.game?.phase;
+      if (phase !== 'playing') {
+          console.log('Not playing phase:', phase);
+          return;
+      }
+
+      const pSel = peerSelections[color];
+      console.log('Peer Selection:', pSel);
+
+      if (!pSel || !pSel.playCardId || !pSel.payCardId) {
+          console.log('Incomplete selection');
+          return;
+      }
+      
+      const isValid = isValidMove(rowIndex, colIndex);
+      console.log(`isValidMove(${rowIndex}, ${colIndex}):`, isValid);
+
+      if (!isValid) return;
+
       // 1. Get positions for animation
       // Find the "Face Down" card Element at the player's edge
       const edge = players.find(p => p.color === color)?.edge;
       const startEl = document.querySelector(`.face-down-card.${edge}`);
       const targetEl = document.querySelector(`[data-cell-id="${rowIndex}-${colIndex}"]`);
 
+      console.log('Animation elements:', startEl, targetEl);
+
       if (startEl && targetEl) {
-          const startRect = startEl.getBoundingClientRect();
-          const endRect = targetEl.getBoundingClientRect();
+          // Clone the face-down card for animation
+          const rect = startEl.getBoundingClientRect();
+          const targetRect = targetEl.getBoundingClientRect();
+
+          const flyingCard = document.createElement('div');
+          flyingCard.className = 'flying-card';
+          flyingCard.style.top = `${rect.top}px`;
+          flyingCard.style.left = `${rect.left}px`;
+          flyingCard.style.width = `${rect.width}px`;
+          flyingCard.style.height = `${rect.height}px`;
           
-          // Get Card Data for Face
-          const hand = hands[color];
-          const card = hand.find(c => c.id === sel.playCardId);
+          document.body.appendChild(flyingCard);
 
-          // Trigger Animation
-          animatingCard = {
-              id: sel.playCardId,
-              startRect,
-              endRect,
-              cardData: card || null
-          };
+          // Force reflow
+          flyingCard.offsetHeight;
 
-          // Temporarily lock UI or wait
-          await new Promise(r => setTimeout(r, 600)); // Wait for animation duration
+          // Animate
+          flyingCard.style.top = `${targetRect.top}px`;
+          flyingCard.style.left = `${targetRect.left}px`;
+          flyingCard.style.transform = 'rotate(0deg)'; // Adjust if needed
 
-          animatingCard = null;
+          // Cleanup after animation
+          console.log('Starting animation wait...');
+          await new Promise(r => setTimeout(r, 600));
+          console.log('Animation done. Dispatching playCard.');
+          flyingCard.remove();
+      } else {
+          console.log('Animation elements missing, proceeding immediately.');
+      }
 
-          // Dispatch Action
+      // 2. Dispatch Action
+      // Use 'hands' reactive variable which is syncd with store
+      const hand = hands[color];
+      const playCardObj = hand ? hand.find(c => c.id === pSel.playCardId) : undefined;
+      
+      if (playCardObj) {
           store.dispatch(playCard({
-              color,
-              playCardId: sel.playCardId,
-              payCardId: sel.payCardId,
+              color: color as 'red' | 'yellow',
+              playCard: playCardObj,
+              payCardId: pSel.payCardId!,
               row: rowIndex,
               col: colIndex,
               settings: $settingsStore
@@ -262,13 +238,7 @@
           // Clear selection implicitly updates via store -> hand -> client
           peerSelections[color] = { playCardId: null, payCardId: null };
       }
-  }
-
-  function resolveCurrentBonus() {
-      if (!selectedBonusId) return;
-      store.dispatch(resolveBonus({ bonusId: selectedBonusId }));
-      selectedBonusId = null; // Reset selection (next one will auto-select)
-  }
+    }
 
 </script>
 
@@ -281,11 +251,14 @@
         <!-- Top Left Spacer -->
         <!-- Top Left Spacer / Turn Indicator -->
         <div class="header-cell spacer">
-            <div class="turn-indicator" class:red-turn={currentTurn === 'red'} class:yellow-turn={currentTurn === 'yellow'}>
+            <div class="turn-indicator" 
+                 class:red-turn={$gameState.game.currentTurn === 'red'} 
+                 class:yellow-turn={$gameState.game.currentTurn === 'yellow'}
+                 class:bonus-active={pendingBonuses.length > 0}>
                 {#if pendingBonuses.length > 0}
-                   BONUS PHASE
+                    BONUS ACTIONS
                 {:else}
-                   {currentTurn.toUpperCase()} TURN
+                    {$gameState.game.currentTurn.toUpperCase()} TURN
                 {/if}
             </div>
         </div>
@@ -320,7 +293,6 @@
                   class="cell" 
                   data-cell-id="{cellId}"
                   class:valid={isValidMove(rowIndex, colIndex)}
-                  class:bonus-target={isValidBonusTarget(rowIndex, colIndex)}
                   on:click={() => handleCellClick(rowIndex, colIndex)}
                   on:keydown={(e) => e.key === 'Enter' && handleCellClick(rowIndex, colIndex)}
                   role="button"
@@ -328,7 +300,12 @@
                 >
                   {#if cell}
                      <div class="played-card">
-                         <CardDisplay card={cell} />
+                         <CardDisplay 
+                             card={cell} 
+                             activeBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex).map(b => b.cubeSlot)}
+                             executingBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex && executingBonuses.has(b.id)).map(b => b.cubeSlot)}
+                             on:bonusClick={(e) => handleBonusClick(e.detail)}
+                         />
                      </div>
                   {/if}
                  </div>
@@ -337,37 +314,6 @@
       </div>
     {/if}
   </div>
-
-  <!-- Bonus Overlay Panel -->
-  {#if pendingBonuses.length > 0}
-    <div class="bonus-overlay">
-        <h3>Pending Bonuses</h3>
-        <div class="bonus-list">
-            {#each pendingBonuses as bonus (bonus.id)}
-                <div 
-                  class="bonus-item" 
-                  class:selected={selectedBonusId === bonus.id}
-                  on:click={() => selectedBonusId = bonus.id}
-                  on:keydown={() => selectedBonusId = bonus.id}
-                  role="button"
-                  tabindex="0"
-                >
-                    <span class="bonus-type">{bonus.definition.type}</span>
-                    <span class="bonus-desc">{bonus.description}</span>
-                </div>
-            {/each}
-        </div>
-        <div class="bonus-actions">
-           <button class="resolve-btn" disabled={!selectedBonusId} on:click={resolveCurrentBonus}>
-               {#if activeBonus && activeBonus.definition.type === 'ADD_POPULATION'}
-                   APPLY POPULATION
-               {:else}
-                   ACTIVATE ({activeBonus?.definition.type === 'ADD_CUBE' ? 'Scan Row/Col' : 'Scan Opponent'})
-               {/if}
-           </button>
-        </div>
-    </div>
-  {/if}
 
   <!-- QR Zones & Face Down Cards -->
   <!-- QR Zones & Face Down Cards -->
@@ -714,83 +660,6 @@
       object-fit: contain;
       border-radius: 4px;
       /* Remove drop shadow for placed cards, or keep shallow? */
-  }
-
-  /* BONUS OVERLAY STYLES */
-  .bonus-overlay {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      width: 300px;
-      background: rgba(0,0,0,0.9);
-      border: 2px solid white;
-      border-radius: 8px;
-      padding: 15px;
-      z-index: 200;
-      color: white;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.8);
-  }
-  .bonus-overlay h3 {
-      margin-top: 0;
-      border-bottom: 1px solid #444;
-      padding-bottom: 5px;
-  }
-  .bonus-list {
-      max-height: 200px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      margin-bottom: 15px;
-  }
-  .bonus-item {
-      padding: 8px;
-      background: #333;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid transparent;
-  }
-  .bonus-item.selected {
-      background: #444;
-      border-color: #ffd700;
-  }
-  .bonus-type {
-      font-weight: bold;
-      font-size: 0.9em;
-      color: #ffd700;
-  }
-  .bonus-desc {
-      font-size: 0.8em;
-      color: #ccc;
-  }
-  .resolve-btn {
-      width: 100%;
-      padding: 10px;
-      background: #007bff;
-      color: white;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 4px;
-  }
-  .resolve-btn:disabled {
-      background: #555;
-      cursor: not-allowed;
-  }
-
-  /* Bonus Targets */
-  .cell.bonus-target {
-      border-color: #ffd700;
-      box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.3);
-      cursor: pointer;
-      animation: pulse-bonus 1.5s infinite;
-  }
-  @keyframes pulse-bonus {
-     0% { background: rgba(255, 215, 0, 0.1); }
-     50% { background: rgba(255, 215, 0, 0.3); }
-     100% { background: rgba(255, 215, 0, 0.1); }
   }
 
 </style>
