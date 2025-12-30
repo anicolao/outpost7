@@ -11,7 +11,7 @@ export interface Player {
 }
 
 // Re-export CardData as Card for consistency, or extend it
-import type { CardData } from './cardLoader';
+import type { CardData, BonusDefinition } from './cardLoader';
 import type { GameSettings } from './settingsStore';
 export type Card = CardData & { id: string; cubes?: number; owner?: PlayerColor; };
 
@@ -22,6 +22,15 @@ export interface PopulationCard {
 }
 
 export type GamePhase = 'lobby' | 'playing';
+
+export interface BonusInstance {
+    id: string;
+    definition: BonusDefinition;
+    sourceCardId: string;
+    sourceRow: number;
+    sourceCol: number;
+    description: string;
+}
 
 interface GameState {
     players: Player[];
@@ -35,6 +44,7 @@ interface GameState {
     discard: Card[];
     hands: Record<PlayerColor, Card[]>;
     currentTurn: PlayerColor;
+    pendingBonuses: BonusInstance[];
 }
 
 const initialState: GameState = {
@@ -48,7 +58,8 @@ const initialState: GameState = {
     offer: [],
     discard: [],
     hands: { red: [], yellow: [] },
-    currentTurn: 'red', // Default
+    currentTurn: 'red',
+    pendingBonuses: [],
 };
 
 const gameSlice = createSlice({
@@ -179,10 +190,6 @@ const gameSlice = createSlice({
                 // Validate Rules
                 if (payCard.cost < playCard.cost) {
                     console.warn(`Invalid Play: Pay Cost ${payCard.cost} < Play Cost ${playCard.cost}`);
-                    // return; // In Redux Toolkit, ensuring state validity is key. 
-                    // To handle error feedback, we might need a status field, but for now we block the action effect.
-                    // Actually, if we return, nothing happens. The UI shouldn't allow this dispatch ideally.
-                    // But good to enforce here.
                     return;
                 }
 
@@ -193,20 +200,210 @@ const gameSlice = createSlice({
                 const overpayBonus = overpay * settings.CUBES_PER_OVERPAYMENT;
                 const cubes = settings.CUBES_PER_PLAY + colorMatch + overpayBonus;
 
+                // Neutral Card Check
+                // "If you discard a different-colored card of same value... place with no cubes. This is a neutral card."
+                // My logic: if cubes == 0, owner is undefined (neutral).
+                // Actually rule says: "discard a different-colored card of the same value". i.e. overpay=0, colorMatch=0 -> cubes=0.
+                // If cubes > 0, it's owned.
+                const newOwner = cubes > 0 ? color : undefined;
+
                 // Remove both from hand
                 state.hands[color] = hand.filter(c => c.id !== playCardId && c.id !== payCardId);
 
                 // Add pay card to discard
                 state.discard.push(payCard);
 
-                // Place play card on grid (Store Full Object + State)
-                state.grid[row][col] = {
+                // Place play card on grid
+                const newCard: Card = {
                     ...playCard,
-                    cubes, // How many cubes to place
-                    owner: color
+                    cubes,
+                    owner: newOwner
+                };
+                state.grid[row][col] = newCard;
+
+                // Check for BONUSES on the newly placed cubes
+                // Slots filled: 1 to cubes
+                if (newCard.bonuses) {
+                    for (let i = 1; i <= cubes; i++) {
+                        if (newCard.bonuses[i]) {
+                            state.pendingBonuses.push({
+                                id: Math.random().toString(36).substr(2, 9),
+                                definition: newCard.bonuses[i],
+                                sourceCardId: newCard.id,
+                                sourceRow: row,
+                                sourceCol: col,
+                                description: `Bonus from ${newCard.background} (Slot ${i})`
+                            });
+                        }
+                    }
+                }
+
+                // If NO bonuses, checks if turn ends?
+                // Actually, the prompt says "turn isn't complete until they have marked all bonuses".
+                // If 0 bonuses, turn ends immediately.
+                if (state.pendingBonuses.length === 0) {
+                    state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
+                }
+            }
+        },
+        resolveBonus: (state, action: PayloadAction<{ bonusId: string }>) => {
+            const { bonusId } = action.payload;
+            const index = state.pendingBonuses.findIndex(b => b.id === bonusId);
+            if (index === -1) return;
+
+            const bonus = state.pendingBonuses[index];
+            const { definition, sourceRow, sourceCol } = bonus;
+            const currentPlayer = state.currentTurn;
+
+            // Execute Logic based on Type
+            if (definition.type === 'ADD_CUBE') {
+                // "Place 1 cube on each of your cards and neutral cards in the row and column"
+                // Target Rows: sourceRow (all cols)
+                // Target Cols: sourceCol (all rows)
+
+                // Helper to add cube
+                const addCubeToCell = (r: number, c: number) => {
+                    const cell = state.grid[r][c];
+                    if (!cell) return;
+
+                    // "Your cards and neutral cards"
+                    // Neutral: owner undefined. Own: owner === currentPlayer.
+                    const isMine = cell.owner === currentPlayer;
+                    const isNeutral = !cell.owner;
+
+                    if (isMine || isNeutral) {
+                        // "Place on highest unoccupied space"
+                        // Check if space exists (max 6 cubes, actually depends on design but max 6 slots per cardLoader)
+                        const currentCubes = cell.cubes || 0;
+                        if (currentCubes < 6) {
+                            cell.cubes = currentCubes + 1;
+
+                            // If becoming owned (neutral -> owned)?
+                            // Rule: "Neutral card... can be taken over".
+                            // If I place a cube on a neutral card, do I become owner?
+                            // Rules imply ownership is by cubes? "votes for player with MOST cubes".
+                            // "Place 1 cube on each of your cards and neutral cards".
+                            // Does it change `owner` property?
+                            // For simplicty, let's say owner becomes currentPlayer if it was neutral?
+                            // "Neutral Card: If you discard... place... no cubes... It can be taken over".
+                            // If I add a cube, likely I claim it if it was neutral?
+                            // Let's assume yes: Adding a cube to neutral -> owner = currentPlayer (or shared? No, cards have single owner usually).
+                            // But for Voting: "most repair cubes".
+                            // If I add a cube to neutral card, effectively I am adding MY cube.
+                            // But `cell.cubes` is just a number.
+                            // If `cell.owner` means "Who played it", then neutral means "Nobody owns the card structure".
+                            // But for voting, we count cubes.
+                            // Let's assume if I add a cube to neutral, it becomes MINE (owner = currentPlayer).
+                            if (!cell.owner) {
+                                cell.owner = currentPlayer;
+                            }
+
+                            // CHECK FOR NEW BONUS
+                            // We filled slot `cell.cubes`.
+                            if (cell.bonuses && cell.bonuses[cell.cubes]) {
+                                state.pendingBonuses.push({
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    definition: cell.bonuses[cell.cubes],
+                                    sourceCardId: cell.id,
+                                    sourceRow: r,
+                                    sourceCol: c,
+                                    description: `Cascade Bonus from ${cell.background}`
+                                });
+                            }
+                        }
+                    }
                 };
 
-                // Toggle Turn
+                // Row Scan
+                for (let c = 0; c < state.grid[sourceRow].length; c++) {
+                    addCubeToCell(sourceRow, c);
+                }
+                // Col Scan
+                for (let r = 0; r < state.grid.length; r++) {
+                    // Don't double count the intersection? sourceRow/sourceCol
+                    if (r !== sourceRow) {
+                        addCubeToCell(r, sourceCol);
+                    }
+                }
+            } else if (definition.type === 'REMOVE_CUBE') {
+                // "Remove lowest cube from each of your OPPONENT'S cards in row/col"
+                const removeCubeFromCell = (r: number, c: number) => {
+                    const cell = state.grid[r][c];
+                    if (!cell) return;
+
+                    // Opponent Only
+                    if (cell.owner && cell.owner !== currentPlayer) {
+                        const currentCubes = cell.cubes || 0;
+                        if (currentCubes > 0) {
+                            // "Exception: If the lowest cube is on a bonus space, you can't remove it."
+                            // Lowest cube is slot `currentCubes`.
+                            const hasBonusProtected = cell.bonuses && cell.bonuses[currentCubes];
+
+                            if (!hasBonusProtected) {
+                                cell.cubes = currentCubes - 1;
+                                // If 0 cubes, does it become neutral?
+                                // "Neutral Card... place with no cubes".
+                                // If I remove last cube, maybe it reverts to neutral?
+                                // Let's assume yes.
+                                if (cell.cubes === 0) {
+                                    cell.owner = undefined;
+                                }
+                            }
+                        }
+                    }
+                };
+
+                // Row Scan
+                for (let c = 0; c < state.grid[sourceRow].length; c++) {
+                    removeCubeFromCell(sourceRow, c);
+                }
+                // Col Scan
+                for (let r = 0; r < state.grid.length; r++) {
+                    if (r !== sourceRow) {
+                        removeCubeFromCell(r, sourceCol);
+                    }
+                }
+
+            } else if (definition.type === 'ADD_POPULATION') {
+                // "Add 1 population to the row's pop card for each same-colored card in row"
+                // "Add 1 population to the col's pop card for each same-colored card in col"
+                const targetColor = definition.color; // e.g. "blue"
+                if (targetColor) { // Should be parsed
+                    // Count Row
+                    let rowCount = 0;
+                    for (let c = 0; c < state.grid[sourceRow].length; c++) {
+                        const cell = state.grid[sourceRow][c];
+                        if (cell && cell.color === targetColor) {
+                            rowCount++;
+                        }
+                    }
+                    // Update Row Header
+                    if (state.rowHeaders[sourceRow]) {
+                        state.rowHeaders[sourceRow].count += rowCount;
+                    }
+
+                    // Count Col
+                    let colCount = 0;
+                    for (let r = 0; r < state.grid.length; r++) {
+                        const cell = state.grid[r][sourceCol];
+                        if (cell && cell.color === targetColor) {
+                            colCount++;
+                        }
+                    }
+                    // Update Col Header
+                    if (state.colHeaders[sourceCol]) {
+                        state.colHeaders[sourceCol].count += colCount;
+                    }
+                }
+            }
+
+            // Remove executed bonus
+            state.pendingBonuses.splice(index, 1);
+
+            // Turn End Check? 
+            // "Player's turn isn't complete until they have marked all bonuses as played"
+            // If list empty -> End Turn automatically?
+            if (state.pendingBonuses.length === 0) {
                 state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
             }
         },
@@ -216,5 +413,5 @@ const gameSlice = createSlice({
     },
 });
 
-export const { addPlayer, removePlayer, startGame, dealCards, playerDiscard, playCard, resetGame } = gameSlice.actions;
+export const { addPlayer, removePlayer, startGame, dealCards, playerDiscard, playCard, resolveBonus, resetGame } = gameSlice.actions;
 export default gameSlice.reducer;

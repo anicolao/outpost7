@@ -1,0 +1,39 @@
+9:18:19 PM [vite-plugin-svelte] You are using Svelte 5.46.1 with vite-plugin-svelte@3. Active Svelte 5 support has moved to vite-plugin-svelte@4.
+	To receive bug fixes and new features update your devDependencies to "@sveltejs/vite-plugin-svelte": "^4.0.0-next.6" and install.
+	For framework integrations that depend on it, you might have to add an override:
+	"overrides": {"@sveltejs/vite-plugin-svelte": "^4.0.0-next.6"}
+
+ RUN  v1.6.1 /Users/anicolao/projects/antigravity/games/outpost7
+
+ ❯ tests/gameSlice.test.ts  (4 tests | 4 failed) 5ms
+   ❯ tests/gameSlice.test.ts > Bonus Logic > should NOT end turn if bonus triggered
+     → Cannot assign to read only property 'red' of object '#<Object>'
+   ❯ tests/gameSlice.test.ts > Bonus Logic > should end turn if NO bonus triggered
+     → Cannot assign to read only property 'red' of object '#<Object>'
+   ❯ tests/gameSlice.test.ts > Bonus Logic > should execute ADD_CUBE bonus and cascade if hitting another bonus
+     → Cannot assign to read only property 'red' of object '#<Object>'
+   ❯ tests/gameSlice.test.ts > Bonus Logic > should execute REMOVE_CUBE on opponents
+     → Cannot assign to read only property 'red' of object '#<Object>'
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/gameSlice.test.ts > Bonus Logic > should NOT end turn if bonus triggered
+ FAIL  tests/gameSlice.test.ts > Bonus Logic > should end turn if NO bonus triggered
+ FAIL  tests/gameSlice.test.ts > Bonus Logic > should execute ADD_CUBE bonus and cascade if hitting another bonus
+ FAIL  tests/gameSlice.test.ts > Bonus Logic > should execute REMOVE_CUBE on opponents
+TypeError: Cannot assign to read only property 'red' of object '#<Object>'
+ ❯ tests/gameSlice.test.ts:76:21
+     74| 
+     75|         // Clear hands/deck/grid for clean slate
+     76|         state.hands.red = [CARD_WITH_BONUS, CARD_PAY];
+       |                     ^
+     77|         state.hands.yellow = [];
+     78|         state.grid = Array(5).fill(null).map(() => Array(5).fill(null)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  21:18:19
+   Duration  557ms (transform 26ms, setup 0ms, collect 35ms, tests 5ms, environment 0ms, prepare 41ms)
+
