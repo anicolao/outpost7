@@ -2,8 +2,14 @@ import { test, expect, type Page } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Gameplay Loop', () => {
-    test('should allow selection and card placement', async ({ page }, testInfo) => {
-        const helper = new TestStepHelper(page, testInfo);
+    test('Gameplay Loop', async ({ page }) => {
+        // Set E2E Flag to skip animations
+        await page.addInitScript(() => {
+            // @ts-ignore
+            window.E2E_TEST = true;
+        });
+
+        const helper = new TestStepHelper(page, test.info());
         helper.setMetadata('Gameplay Loop', 'Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bonus');
 
         // Debug Host Logs

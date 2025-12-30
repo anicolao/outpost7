@@ -179,12 +179,14 @@ const gameSlice = createSlice({
             state.hands[color] = newHand;
             state.discard.push(...toDiscard);
         },
-        playCard: (state, action: PayloadAction<{ color: 'red' | 'yellow', playCard: Card, payCardId: string, row: number, col: number, settings: GameSettings }>) => {
-            const { color, playCard, payCardId, row, col, settings } = action.payload;
+        playCard: (state, action: PayloadAction<{ color: 'red' | 'yellow', playCardId: string, payCardId: string | null, row: number, col: number, settings: any }>) => {
+            const { color, playCardId, payCardId, row, col, settings } = action.payload;
             const hand = state.hands[color];
+            const playCardIndex = hand.findIndex(c => c.id === playCardId);
 
-            // Validate cards exist in hand
-            // const playCard = hand.find(c => c.id === playCardId); // playCard is now passed directly
+            if (playCardIndex === -1) return;
+
+            const playCard = hand[playCardIndex];
             const payCard = hand.find(c => c.id === payCardId);
 
             if (playCard && payCard) {
@@ -295,7 +297,8 @@ const gameSlice = createSlice({
                     if (cell.owner && cell.owner !== currentPlayer) {
                         const currentCubes = cell.cubes || 0;
                         if (currentCubes > 0) {
-                            const hasBonusProtected = cell.bonuses && cell.bonuses[currentCubes];
+                            // @ts-ignore - Check string key as fallback
+                            const hasBonusProtected = cell.bonuses && (cell.bonuses[currentCubes] || cell.bonuses[String(currentCubes) as any]);
                             if (!hasBonusProtected) {
                                 cell.cubes = currentCubes - 1;
                                 if (cell.cubes === 0) cell.owner = undefined;
