@@ -2,7 +2,7 @@ export type BonusType = 'ADD_CUBE' | 'REMOVE_CUBE' | 'ADD_POPULATION';
 
 export interface BonusDefinition {
     type: BonusType;
-    color?: string; // For ADD_POPULATION (e.g. 'blue', 'green', 'purple')
+    color?: string; // For ADD_POPULATION
 }
 
 export interface CardData {
@@ -20,31 +20,15 @@ export interface CardData {
     cost: number;
     color: string;
     // Parsed Bonuses for each cube slot (1-6)
-    // If a slot has a bonus, it will be in this map.
     bonuses: Record<number, BonusDefinition>;
 }
 
 function parseBonus(filename: string): BonusDefinition | null {
     if (!filename) return null;
-
-    // Check for "bonus_add_cube"
-    if (filename.includes('bonus_add_cube')) {
-        return { type: 'ADD_CUBE' };
-    }
-
-    // Check for "bonus_remove_cube"
-    if (filename.includes('bonus_remove_cube')) {
-        return { type: 'REMOVE_CUBE' };
-    }
-
-    // Check for "bonus_X_pop"
+    if (filename.includes('bonus_add_cube')) return { type: 'ADD_CUBE' };
+    if (filename.includes('bonus_remove_cube')) return { type: 'REMOVE_CUBE' };
     const popMatch = filename.match(/bonus_([a-z]+)_pop/);
-    if (popMatch) {
-        // csv uses "blue", "green", "purple" usually? 
-        // Let's check: bonus_blue_pop.pdf, bonus_green_pop.pdf, bonus_purple_pop.pdf
-        return { type: 'ADD_POPULATION', color: popMatch[1] };
-    }
-
+    if (popMatch) return { type: 'ADD_POPULATION', color: popMatch[1] };
     return null;
 }
 
@@ -68,7 +52,6 @@ export async function loadCards(): Promise<CardData[]> {
 
         for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(',');
-            // Basic protection against empty lines
             if (values.length < 2) continue;
 
             const card: any = {};
@@ -80,14 +63,12 @@ export async function loadCards(): Promise<CardData[]> {
             card.cost = parseInt(card.text_module_resource_1 || '0', 10);
 
             // Derive Color
-            // Expecting 'blue_resource.pdf' -> 'blue'
             const resource = card.module_resource_1 || '';
             const match = resource.match(/^([a-z]+)_/);
             card.color = match ? match[1] : 'gray';
 
             // Parse Bonuses
             card.bonuses = {};
-            // Slots 1 to 6
             for (let slot = 1; slot <= 6; slot++) {
                 const key = `cube_${slot}`;
                 const val = card[key];

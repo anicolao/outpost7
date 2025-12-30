@@ -4,7 +4,7 @@ import { TestStepHelper } from '../helpers/test-step-helper';
 test.describe('Gameplay Loop', () => {
     test('should allow selection and card placement', async ({ page }, testInfo) => {
         const helper = new TestStepHelper(page, testInfo);
-        helper.setMetadata('Gameplay Loop', 'Verify full gameplay cycle: Selection -> Visuals -> Placement');
+        helper.setMetadata('Gameplay Loop', 'Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bonus');
 
         // Debug Host Logs
         page.on('console', msg => console.log('HOST LOG:', msg.text()));
@@ -99,8 +99,6 @@ test.describe('Gameplay Loop', () => {
         });
 
         // 3. Client - Select Play/Pay
-        // We'll treat this as a "Manual Step" in the Host's doc flow, implies action on user device
-        // But we automate it here.
         await helper.step('003-client-selection', {
             description: 'Red Player Selects Play and Pay Cards',
             page: redPage, // Use Client Page for screenshot
@@ -174,7 +172,6 @@ test.describe('Gameplay Loop', () => {
                 {
                     spec: 'Click target cell (0,0)',
                     check: async () => {
-                        // Click 0,0
                         const target = page.locator('[data-cell-id="0-0"]');
                         await target.click({ force: true });
                     }
@@ -182,40 +179,22 @@ test.describe('Gameplay Loop', () => {
                 {
                     spec: 'Wait for animation and placement',
                     check: async () => {
-                        // Animation takes ~600ms
-                        // Check for flying card existence then disappearance
-                        // Might be too fast to catch existence reliably in step check, 
-                        // but we check the final result: cell has content?
-                        // Currently grid stores ID. 
-                        // We haven't implemented rendering the CARD in the cell yet in Board.svelte?
-                        // Wait, I saw `{#if cell} <!-- Grid content logic if needed --> {/if}` in Board.svelte...
-                        // I DID NOT IMPLEMENT RENDER!
-                        // The reducer updates the grid, but the UI is empty!
-                        // "The card, when placed, should have the initial cube state on it..."
-                        // I only stored the ID.
-                        // And the template has: `{#if cell} ... {/if}` empty.
-                        // I missed rendering the placed card in the template! 
-                        // I need to fix Board.svelte first.
-
                         // Verify cell has the card content (CardDisplay)
                         const cell = page.locator('[data-cell-id="0-0"]');
-                        // Use .card-bg to verify the card component is present
-                        await expect(cell.locator('.card-bg')).toBeVisible();
+                        await expect(cell.locator('.card-bg')).toBeVisible({ timeout: 10000 });
 
                         console.log('Verified Card Rendered (CardDisplay)');
 
-                        // Verify turn passed to Yellow
-
-                        // Wait for update - Should enter BONUS PHASE or YELLOW TURN
+                        // Wait for update - Should enter BONUS ACTIONS or YELLOW TURN
                         await expect.poll(async () => {
                             return await page.locator('.turn-indicator').innerText();
-                        }, { timeout: 3000 }).toMatch(/BONUS PHASE|YELLOW TURN/);
+                        }, { timeout: 3000 }).toMatch(/BONUS ACTIONS|YELLOW TURN/);
                     }
                 }
             ]
         });
 
-        // 6. Host - Handle Potential Bonus
+        // 6. Host - Handle Interactive Bonus
         await helper.step('006-resolve-bonus', {
             description: 'Resolve Bonus Phase if Active',
             verifications: [
@@ -223,10 +202,25 @@ test.describe('Gameplay Loop', () => {
                     spec: 'Check and Resolve Bonus',
                     check: async () => {
                         const text = await page.locator('.turn-indicator').innerText();
-                        if (text === 'BONUS PHASE') {
-                            console.log('Bonus Phase Active - Resolving...');
-                            await expect(page.locator('.resolve-btn')).toBeVisible();
-                            await page.locator('.resolve-btn').click();
+                        if (text === 'BONUS ACTIONS') {
+                            console.log('Bonus Actions Active - Resolving...');
+
+                            // Find the interactive cube on the card at 0-0
+                            const cell = page.locator('[data-cell-id="0-0"]');
+                            const interactiveCube = cell.locator('.player-cube.interactive');
+
+                            await expect(interactiveCube).toBeVisible();
+                            console.log('Found interactive cube');
+
+                            // Click it
+                            await interactiveCube.click();
+
+                            // Check for 'executing' class
+                            await expect(interactiveCube).toHaveClass(/executing/);
+                            console.log('Cube is animating/executing');
+
+                            // Wait for resolution
+                            await new Promise(r => setTimeout(r, 600)); // Animation time
                         } else {
                             console.log('No Bonus Phase triggered.');
                         }
@@ -240,6 +234,7 @@ test.describe('Gameplay Loop', () => {
                 }
             ]
         });
+
         helper.generateDocs();
     });
 });

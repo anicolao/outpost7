@@ -1,7 +1,18 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   import { getAssetUrl, type CardData } from '../lib/cardLoader';
 
   export let card: CardData;
+  export let activeBonusSlots: number[] = []; // Slot indices (1-6) that are clickable
+  export let executingBonusSlots: number[] = []; // Slot indices that are currently animating
+
+  const dispatch = createEventDispatcher();
+
+  function handleCubeClick(slotIndex: number) {
+      if (activeBonusSlots.includes(slotIndex)) {
+          dispatch('bonusClick', { slotIndex });
+      }
+  }
 </script>
 
 <div class="card-preview">
@@ -30,14 +41,27 @@
   <div class="slots-container">
     {#each [card.cube_1, card.cube_2, card.cube_3, card.cube_4, card.cube_5, card.cube_6] as cube, i}
       {#if cube}
+        {@const slotIndex = i + 1}
         <div class="slot-wrapper" class:bonus={cube.includes('bonus')}>
             <img
             src={getAssetUrl(cube)}
             class="slot-icon"
-            alt={`Slot ${i + 1}`}
+            alt={`Slot ${slotIndex}`}
             />
+            
+            <!-- Standard Player Cube -->
             {#if card.cubes && i < card.cubes && card.owner}
-                <div class="player-cube" class:red={card.owner === 'red'} class:yellow={card.owner === 'yellow'}></div>
+                <div 
+                  class="player-cube" 
+                  class:red={card.owner === 'red'} 
+                  class:yellow={card.owner === 'yellow'}
+                  class:interactive={activeBonusSlots.includes(slotIndex)}
+                  class:executing={executingBonusSlots.includes(slotIndex)}
+                  on:click|stopPropagation={() => handleCubeClick(slotIndex)}
+                  role="button"
+                  tabindex="0"
+                  on:keydown={(e) => e.key === 'Enter' && handleCubeClick(slotIndex)}
+                ></div>
             {/if}
         </div>
       {/if}
@@ -139,6 +163,7 @@
       /* User Request: 25%w, 50%h, 20%t, 60%l */
       top: 20%;
       left: 60%;
+      transition: transform 0.3s ease-out, box-shadow 0.3s;
   }
 
   /* Bonus Slots: Top 20%, Left 10% */
@@ -155,5 +180,25 @@
   .player-cube.yellow {
       background: linear-gradient(135deg, #ffeb3b, #fbc02d);
       border-color: #fff176;
+  }
+
+  /* Interactive States */
+  .player-cube.interactive {
+      cursor: pointer;
+      box-shadow: 0 0 8px #ffd700, inset 0 0 4px #fff;
+      border-color: #ffd700;
+      animation: pulse-glow 1.5s infinite;
+  }
+
+  .player-cube.executing {
+      transform: translateX(200%); /* Slide Right */
+      opacity: 0;
+      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s 0.1s;
+  }
+
+  @keyframes pulse-glow {
+      0% { box-shadow: 0 0 5px #ffd700; }
+      50% { box-shadow: 0 0 12px #ffd700, 0 0 5px #fff; }
+      100% { box-shadow: 0 0 5px #ffd700; }
   }
 </style>
