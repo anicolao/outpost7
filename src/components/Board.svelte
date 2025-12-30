@@ -240,6 +240,41 @@
       }
     }
 
+    let executingBonuses = new Set<string>();
+
+    async function handleBonusClick(rowIndex: number, colIndex: number, slotIndex: number) {
+        console.log(`Bonus Click: ${rowIndex}, ${colIndex}, Slot ${slotIndex}`);
+        
+        const bonus = pendingBonuses.find(b => 
+            b.sourceRow === rowIndex && 
+            b.sourceCol === colIndex && 
+            b.cubeSlot === slotIndex
+        );
+
+        if (!bonus) {
+            console.warn('Bonus not found for click');
+            return;
+        }
+
+        // 1. Mark as executing (triggers animation in UI)
+        executingBonuses.add(bonus.id);
+        executingBonuses = executingBonuses; // Trigger reactivity
+
+        // 2. Wait for animation
+        await new Promise(r => setTimeout(r, 600));
+
+        // 3. Resolve State
+        store.dispatch(resolveBonus({ bonusId: bonus.id })); // Action handles removal
+
+        // 4. Cleanup UI state
+        // We can leave it in set; it won't match any pending bonus once removed.
+        // But cleaner to remove.
+        executingBonuses.delete(bonus.id);
+        executingBonuses = executingBonuses;
+    }
+    
+
+
 </script>
 
 <div class="table-top">
@@ -304,7 +339,7 @@
                              card={cell} 
                              activeBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex).map(b => b.cubeSlot)}
                              executingBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex && executingBonuses.has(b.id)).map(b => b.cubeSlot)}
-                             on:bonusClick={(e) => handleBonusClick(e.detail)}
+                             on:bonusClick={(e) => handleBonusClick(rowIndex, colIndex, e.detail.slotIndex)}
                          />
                      </div>
                   {/if}
