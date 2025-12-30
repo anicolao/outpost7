@@ -148,37 +148,20 @@
       return !grid[rowIndex]?.[colIndex] && (hasSelection('red') || hasSelection('yellow'));
   }
 
-    async function handleCellClick(rowIndex: number, colIndex: number) {
-      
+  async function handleCellClick(rowIndex: number, colIndex: number) { 
       // If pending bonuses exist, block normal play
-      if (pendingBonuses.length > 0) {
-          console.log('Blocked by pending bonuses:', pendingBonuses.length);
-          return;
-      }
+      if (pendingBonuses.length > 0) return;
 
       const color = currentTurn;
-      // const isRed = color === 'red'; // Unused
-      // const isYellow = color === 'yellow'; // Unused
-
-      // Verify phase via store or prop? 
-      // We don't have a simple 'phase' reactive var, so access store safely
+      // Evaluate phase
       const phase = $gameState.game?.phase;
-      if (phase !== 'playing') {
-          console.log('Not playing phase:', phase);
-          return;
-      }
+      if (phase !== 'playing') return;
 
       const pSel = peerSelections[color];
-      console.log('Peer Selection:', pSel);
 
-      if (!pSel || !pSel.playCardId || !pSel.payCardId) {
-          console.log('Incomplete selection');
-          return;
-      }
+      if (!pSel || !pSel.playCardId || !pSel.payCardId) return;
       
       const isValid = isValidMove(rowIndex, colIndex);
-      console.log(`isValidMove(${rowIndex}, ${colIndex}):`, isValid);
-
       if (!isValid) return;
 
       // 1. Get positions for animation
@@ -187,78 +170,42 @@
       const startEl = document.querySelector(`.face-down-card.${edge}`);
       const targetEl = document.querySelector(`[data-cell-id="${rowIndex}-${colIndex}"]`);
 
-      console.log('Animation elements:', startEl, targetEl);
-
       if (startEl && targetEl) {
-          // 1. Trigger Animation Imperatively
           const startRect = startEl.getBoundingClientRect();
-          const targetRect = targetEl.getBoundingClientRect();
+          const endRect = targetEl.getBoundingClientRect();
           
+          // Get Card Data for Face
           const hand = hands[color];
-          const cardToPlay = hand ? hand.find(c => c.id === pSel.playCardId) : null;
+          const card = hand.find(c => c.id === pSel.playCardId);
 
-          if (cardToPlay) {
-             const flyingCard = document.createElement('div');
-             flyingCard.className = 'flying-card';
-             flyingCard.style.setProperty('--start-x', `${startRect.left}px`);
-             flyingCard.style.setProperty('--start-y', `${startRect.top}px`);
-             flyingCard.style.setProperty('--end-x', `${targetRect.left}px`);
-             flyingCard.style.setProperty('--end-y', `${targetRect.top}px`);
-             
-             // Flipper
-             const flipper = document.createElement('div');
-             flipper.className = 'flipper';
-             
-             // Front (Card Face)
-             const front = document.createElement('div');
-             front.className = 'front';
-             const frontImg = document.createElement('img');
-             frontImg.src = getAssetUrl(cardToPlay.background); // Use background as simple representation
-             front.appendChild(frontImg);
+          // Trigger Animation
+          animatingCard = {
+              id: pSel.playCardId,
+              startRect,
+              endRect,
+              cardData: card || null
+          };
 
-             // Back (Face Down)
-             const back = document.createElement('div');
-             back.className = 'back';
-             const backImg = document.createElement('img');
-             backImg.src = 'assets/module_back.svg';
-             back.appendChild(backImg);
+          // Dispatch Logic
+          const performDispatch = () => {
+              animatingCard = null;
+              store.dispatch(playCard({
+                  color,
+                  playCardId: pSel.playCardId,
+                  payCardId: pSel.payCardId,
+                  row: rowIndex,
+                  col: colIndex,
+                  settings: $settingsStore
+              }));
+              peerSelections[color] = { playCardId: null, payCardId: null };
+          };
 
-             flipper.appendChild(front);
-             flipper.appendChild(back);
-             flyingCard.appendChild(flipper);
-             
-             document.body.appendChild(flyingCard); // Append to body to ignore container transforms if any
-
-             console.log('Animation triggered. Scheduling cleanup.');
-             setTimeout(() => {
-                 console.log('Animation cleanup.');
-                 flyingCard.remove();
-             }, 600);
+          // @ts-ignore
+          if (window.E2E_TEST) {
+              performDispatch();
           } else {
-             console.log('Card to play not found, skipping animation');
+              setTimeout(performDispatch, 600);
           }
-      } else {
-          console.log('Animation elements missing, proceeding immediately.');
-      }
-
-      // 2. Dispatch Action
-      // Use 'hands' reactive variable which is syncd with store
-      const hand = hands[color];
-      // Re-find playCardObj as we are in main scope now
-      const playCardObj = hand ? hand.find(c => c.id === pSel.playCardId) : undefined;
-      
-      if (playCardObj) {
-          store.dispatch(playCard({
-              color: color as 'red' | 'yellow',
-              playCard: playCardObj,
-              payCardId: pSel.payCardId!,
-              row: rowIndex,
-              col: colIndex,
-              settings: $settingsStore
-          }));
-
-          // Clear selection implicitly updates via store -> hand -> client
-          peerSelections[color] = { playCardId: null, payCardId: null };
       }
     }
 
@@ -403,7 +350,29 @@
       {/each}
   {/if}
 
-
+  <!-- Flying Card Animation -->
+  {#if animatingCard}
+      <div 
+        class="flying-card"
+        style:--start-x="{animatingCard.startRect.left}px"
+        style:--start-y="{animatingCard.startRect.top}px"
+        style:--end-x="{animatingCard.endRect.left}px"
+        style:--end-y="{animatingCard.endRect.top}px"
+      >
+          <div class="flipper">
+              <div class="front">
+                  {#if animatingCard.cardData}
+                      <CardDisplay card={animatingCard.cardData} />
+                  {:else}
+                      <img src="assets/module_back.svg" alt="Card Front" />
+                  {/if}
+              </div>
+              <div class="back">
+                  <img src="assets/module_back.svg" alt="Card Back" />
+              </div>
+          </div>
+      </div>
+  {/if}
 
   <!-- Static Overlay Elements (Offer) -->
   <div class="offer-overlay">

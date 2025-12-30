@@ -199,7 +199,8 @@
   }
 
   .player-cube.completed {
-      transform: translateX(200%); /* Slide Right and Stay */
+      left: 0;
+      transform: none;
       opacity: 1; /* Stay Visible */
       box-shadow: none;
       animation: none;
