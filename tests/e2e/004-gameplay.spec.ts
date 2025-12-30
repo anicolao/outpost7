@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { TestStepHelper } from '../helpers/test-step-helper';
+import { TestStepHelper } from './helpers/test-step-helper';
 
 test.describe('Gameplay Loop', () => {
     test('should allow selection and card placement', async ({ page }, testInfo) => {

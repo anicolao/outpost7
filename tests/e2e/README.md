@@ -1,28 +1,39 @@
-# Bonus Mechanics
+# Settings and Cards
 
-**As a** player, **I want** to execute bonuses (Add Population) when triggered.
+Verify opening settings, editing values, and navigating to cards.
 
-## Review: Board Loaded
+## Open Settings Modal
 
-![Review: Board Loaded](screenshots/000-board-loaded.png)
-
-**Specs:**
-- Board visible
-
-## Bonus Phase Active
-
-![Bonus Phase Active](screenshots/001-bonus-triggered.png)
+![Open Settings Modal](screenshots/000-open-settings.png)
 
 **Specs:**
-- Turn indicator says BONUS PHASE
-- Bonus Overlay Visible
-- Bonus Type is ADD_POPULATION
+- Clicking corner gear icon opens settings modal
 
-## Turn Completed
+## Edit Game Setting
 
-![Turn Completed](screenshots/002-turn-ended.png)
+![Edit Game Setting](screenshots/001-edit-setting.png)
 
 **Specs:**
-- Turn indicator says YELLOW TURN
-- Bonus Overlay Gone
+- Clicking + updates the setting value
+
+## Navigate to Card Library
+
+![Navigate to Card Library](screenshots/002-nav-cards.png)
+
+**Specs:**
+- Clicking Open Card Library switches to Cards Modal
+
+## Close Modals
+
+![Close Modals](screenshots/003-close-cards.png)
+
+**Specs:**
+- Clicking close button dismisses modal
+
+## Verify Grid Settings Apply to Board
+
+![Verify Grid Settings Apply to Board](screenshots/004-verify-settings-effect.png)
+
+**Specs:**
+- Board grid cells reflect changed rows setting
 
