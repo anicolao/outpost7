@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TestStepHelper } from '../helpers/test-step-helper';
+import { TestStepHelper } from './helpers/test-step-helper';
 
 test.beforeEach(({ page }) => {
     page.on('console', msg => console.log(`BROWSER LOG: ${msg.text()}`));
