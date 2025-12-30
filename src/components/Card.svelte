@@ -194,7 +194,7 @@
 
   .player-cube.executing {
       transform: translateX(200%); /* Slide Right */
-      opacity: 0;
+      opacity: 1;
       transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s 0.1s;
   }
 
