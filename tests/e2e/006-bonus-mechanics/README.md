@@ -24,4 +24,5 @@
 **Specs:**
 - Turn indicator says YELLOW TURN
 - Bonus Phase Ended
+- Completed Bonus Visible
 

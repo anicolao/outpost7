@@ -112,7 +112,8 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
         description: 'Turn Completed',
         verifications: [
             { spec: 'Turn indicator says YELLOW TURN', check: async () => await expect(boardPage.locator('.turn-indicator')).toContainText('YELLOW TURN') },
-            { spec: 'Bonus Phase Ended', check: async () => await expect(boardPage.locator('.turn-indicator')).not.toContainText('BONUS ACTIONS') }
+            { spec: 'Bonus Phase Ended', check: async () => await expect(boardPage.locator('.turn-indicator')).not.toContainText('BONUS ACTIONS') },
+            { spec: 'Completed Bonus Visible', check: async () => await expect(boardPage.locator('.player-cube.completed')).toBeVisible() }
         ]
     });
 

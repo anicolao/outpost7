@@ -233,18 +233,16 @@
         // 2. Wait for animation
         await new Promise(r => setTimeout(r, 600));
 
-        // 3. Resolve State
-        store.dispatch(resolveBonus({ bonusId: bonus.id })); // Action handles removal
-
-        // 4. Cleanup UI state
-        // We can leave it in set; it won't match any pending bonus once removed.
-        // But cleaner to remove.
-        executingBonuses = executingBonuses;
-
-        // 5. Mark as Completed (Persist visual state)
+        // 3. Mark as Completed (Persist visual state FIRST to avoid flicker)
         const key = `${rowIndex}-${colIndex}-${slotIndex}`;
         completedBonuses.add(key);
         completedBonuses = completedBonuses;
+
+        // 4. Resolve State (Trigger store update which removes pending/interactive)
+        store.dispatch(resolveBonus({ bonusId: bonus.id })); 
+
+        // 5. Cleanup UI state
+        executingBonuses = executingBonuses;
     }
     
 
