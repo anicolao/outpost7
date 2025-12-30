@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TestStepHelper } from './helpers/test-step-helper';
+import { TestStepHelper } from '../helpers/test-step-helper';
 
 test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
     const tester = new TestStepHelper(boardPage, testInfo);

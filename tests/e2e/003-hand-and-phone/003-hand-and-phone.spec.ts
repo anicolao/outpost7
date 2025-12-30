@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { TestStepHelper } from './helpers/test-step-helper';
+import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Hand and Phone UI', () => {
     test('should connect players and sync hands', async ({ page }, testInfo) => {

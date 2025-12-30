@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { TestStepHelper } from './helpers/test-step-helper';
+import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Discard Flow', () => {
     test('should allow discarding when over limit', async ({ page }, testInfo) => {
