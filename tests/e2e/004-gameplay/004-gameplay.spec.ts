@@ -181,6 +181,7 @@ test.describe('Gameplay Loop', () => {
                     check: async () => {
                         // Verify cell has the card content (CardDisplay)
                         const cell = page.locator('[data-cell-id="0-0"]');
+
                         await expect(cell.locator('.card-bg')).toBeVisible({ timeout: 10000 });
 
                         console.log('Verified Card Rendered (CardDisplay)');
