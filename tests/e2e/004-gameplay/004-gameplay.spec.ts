@@ -173,7 +173,7 @@ test.describe('Gameplay Loop', () => {
                     spec: 'Click target cell (0,0)',
                     check: async () => {
                         const target = page.locator('[data-cell-id="0-0"]');
-                        await target.click({ force: true });
+                        await target.click();
                     }
                 },
                 {
