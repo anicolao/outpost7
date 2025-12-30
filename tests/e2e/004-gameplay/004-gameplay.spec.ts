@@ -205,7 +205,16 @@ test.describe('Gameplay Loop', () => {
                         console.log('Verified Card Rendered (CardDisplay)');
 
                         // Verify turn passed to Yellow
-                        await expect(page.locator('.turn-indicator')).toHaveText('YELLOW TURN');
+                        // Note: If a bonus was triggered (e.g. ADD_CUBE), we enter BONUS PHASE first.
+                        await expect.poll(async () => {
+                            const text = await page.locator('.turn-indicator').innerText();
+                            if (text === 'BONUS PHASE') {
+                                // Auto-resolve bonus if we stumbled into one
+                                await page.locator('.resolve-btn').click();
+                                return 'RESOLVING';
+                            }
+                            return text;
+                        }, { timeout: 3000 }).toContain('YELLOW TURN');
                     }
                 }
             ]
