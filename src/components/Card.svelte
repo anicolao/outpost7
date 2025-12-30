@@ -5,6 +5,7 @@
   export let card: CardData;
   export let activeBonusSlots: number[] = []; // Slot indices (1-6) that are clickable
   export let executingBonusSlots: number[] = []; // Slot indices that are currently animating
+  export let completedBonusSlots: number[] = []; // Slot indices that have finished executing
 
   const dispatch = createEventDispatcher();
 
@@ -57,6 +58,7 @@
                   class:yellow={card.owner === 'yellow'}
                   class:interactive={activeBonusSlots.includes(slotIndex)}
                   class:executing={executingBonusSlots.includes(slotIndex)}
+                  class:completed={completedBonusSlots.includes(slotIndex)}
                   on:click|stopPropagation={() => handleCubeClick(slotIndex)}
                   role="button"
                   tabindex="0"
@@ -194,6 +196,14 @@
       transform: translateX(200%); /* Slide Right */
       opacity: 0;
       transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s 0.1s;
+  }
+
+  .player-cube.completed {
+      transform: translateX(200%); /* Slide Right and Stay */
+      opacity: 1; /* Stay Visible */
+      box-shadow: none;
+      animation: none;
+      border-color: rgba(255,255,255,0.4);
   }
 
   @keyframes pulse-glow {

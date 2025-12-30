@@ -190,32 +190,53 @@
       console.log('Animation elements:', startEl, targetEl);
 
       if (startEl && targetEl) {
-          // Clone the face-down card for animation
-          const rect = startEl.getBoundingClientRect();
+          // 1. Trigger Animation Imperatively
+          const startRect = startEl.getBoundingClientRect();
           const targetRect = targetEl.getBoundingClientRect();
-
-          const flyingCard = document.createElement('div');
-          flyingCard.className = 'flying-card';
-          flyingCard.style.top = `${rect.top}px`;
-          flyingCard.style.left = `${rect.left}px`;
-          flyingCard.style.width = `${rect.width}px`;
-          flyingCard.style.height = `${rect.height}px`;
           
-          document.body.appendChild(flyingCard);
+          const hand = hands[color];
+          const cardToPlay = hand ? hand.find(c => c.id === pSel.playCardId) : null;
 
-          // Force reflow
-          flyingCard.offsetHeight;
+          if (cardToPlay) {
+             const flyingCard = document.createElement('div');
+             flyingCard.className = 'flying-card';
+             flyingCard.style.setProperty('--start-x', `${startRect.left}px`);
+             flyingCard.style.setProperty('--start-y', `${startRect.top}px`);
+             flyingCard.style.setProperty('--end-x', `${targetRect.left}px`);
+             flyingCard.style.setProperty('--end-y', `${targetRect.top}px`);
+             
+             // Flipper
+             const flipper = document.createElement('div');
+             flipper.className = 'flipper';
+             
+             // Front (Card Face)
+             const front = document.createElement('div');
+             front.className = 'front';
+             const frontImg = document.createElement('img');
+             frontImg.src = getAssetUrl(cardToPlay.background); // Use background as simple representation
+             front.appendChild(frontImg);
 
-          // Animate
-          flyingCard.style.top = `${targetRect.top}px`;
-          flyingCard.style.left = `${targetRect.left}px`;
-          flyingCard.style.transform = 'rotate(0deg)'; // Adjust if needed
+             // Back (Face Down)
+             const back = document.createElement('div');
+             back.className = 'back';
+             const backImg = document.createElement('img');
+             backImg.src = 'assets/module_back.svg';
+             back.appendChild(backImg);
 
-          // Cleanup after animation
-          console.log('Starting animation wait...');
-          await new Promise(r => setTimeout(r, 600));
-          console.log('Animation done. Dispatching playCard.');
-          flyingCard.remove();
+             flipper.appendChild(front);
+             flipper.appendChild(back);
+             flyingCard.appendChild(flipper);
+             
+             document.body.appendChild(flyingCard); // Append to body to ignore container transforms if any
+
+             console.log('Animation triggered. Scheduling cleanup.');
+             setTimeout(() => {
+                 console.log('Animation cleanup.');
+                 flyingCard.remove();
+             }, 600);
+          } else {
+             console.log('Card to play not found, skipping animation');
+          }
       } else {
           console.log('Animation elements missing, proceeding immediately.');
       }
@@ -223,6 +244,7 @@
       // 2. Dispatch Action
       // Use 'hands' reactive variable which is syncd with store
       const hand = hands[color];
+      // Re-find playCardObj as we are in main scope now
       const playCardObj = hand ? hand.find(c => c.id === pSel.playCardId) : undefined;
       
       if (playCardObj) {
@@ -241,6 +263,7 @@
     }
 
     let executingBonuses = new Set<string>();
+    let completedBonuses = new Set<string>(); // "row-col-slot" strings
 
     async function handleBonusClick(rowIndex: number, colIndex: number, slotIndex: number) {
         console.log(`Bonus Click: ${rowIndex}, ${colIndex}, Slot ${slotIndex}`);
@@ -269,8 +292,12 @@
         // 4. Cleanup UI state
         // We can leave it in set; it won't match any pending bonus once removed.
         // But cleaner to remove.
-        executingBonuses.delete(bonus.id);
         executingBonuses = executingBonuses;
+
+        // 5. Mark as Completed (Persist visual state)
+        const key = `${rowIndex}-${colIndex}-${slotIndex}`;
+        completedBonuses.add(key);
+        completedBonuses = completedBonuses;
     }
     
 
@@ -339,6 +366,7 @@
                              card={cell} 
                              activeBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex).map(b => b.cubeSlot)}
                              executingBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex && executingBonuses.has(b.id)).map(b => b.cubeSlot)}
+                             completedBonusSlots={[...completedBonuses].filter(k => k.startsWith(`${rowIndex}-${colIndex}-`)).map(k => parseInt(k.split('-')[2]))}
                              on:bonusClick={(e) => handleBonusClick(rowIndex, colIndex, e.detail.slotIndex)}
                          />
                      </div>
@@ -375,29 +403,7 @@
       {/each}
   {/if}
 
-  <!-- Flying Card Animation -->
-  {#if animatingCard}
-      <div 
-        class="flying-card"
-        style:--start-x="{animatingCard.startRect.left}px"
-        style:--start-y="{animatingCard.startRect.top}px"
-        style:--end-x="{animatingCard.endRect.left}px"
-        style:--end-y="{animatingCard.endRect.top}px"
-      >
-          <div class="flipper">
-              <div class="front">
-                  {#if animatingCard.cardData}
-                      <CardDisplay card={animatingCard.cardData} />
-                  {:else}
-                      <img src="assets/module_back.svg" alt="Card Front" />
-                  {/if}
-              </div>
-              <div class="back">
-                  <img src="assets/module_back.svg" alt="Card Back" />
-              </div>
-          </div>
-      </div>
-  {/if}
+
 
   <!-- Static Overlay Elements (Offer) -->
   <div class="offer-overlay">
