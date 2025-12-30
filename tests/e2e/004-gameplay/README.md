@@ -1,6 +1,6 @@
 # Gameplay Loop
 
-Verify full gameplay cycle: Selection -> Visuals -> Placement
+Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bonus
 
 ## Start Game with Red Player
 
