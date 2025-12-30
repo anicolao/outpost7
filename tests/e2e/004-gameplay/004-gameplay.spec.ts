@@ -205,26 +205,41 @@ test.describe('Gameplay Loop', () => {
                         console.log('Verified Card Rendered (CardDisplay)');
 
                         // Verify turn passed to Yellow
-                        // Note: If a bonus was triggered (e.g. ADD_CUBE), we enter BONUS PHASE first.
+
+                        // Wait for update - Should enter BONUS PHASE or YELLOW TURN
                         await expect.poll(async () => {
-                            const text = await page.locator('.turn-indicator').innerText();
-                            if (text === 'BONUS PHASE') {
-                                // Auto-resolve bonus if we stumbled into one
-                                await page.locator('.resolve-btn').click();
-                                return 'RESOLVING';
-                            }
-                            return text;
-                        }, { timeout: 3000 }).toContain('YELLOW TURN');
+                            return await page.locator('.turn-indicator').innerText();
+                        }, { timeout: 3000 }).toMatch(/BONUS PHASE|YELLOW TURN/);
                     }
                 }
             ]
         });
 
-        // STOP: I noticed I missed the UI rendering for the grid cell.
-        // I need to update Board.svelte to render the placed card.
-        // I will finish writing this test file, but comment out the final check or expect failure.
-        // Actually, better to fix the code first.
-        // I'll write the test file but know I need to pause and fix Board.svelte.
+        // 6. Host - Handle Potential Bonus
+        await helper.step('006-resolve-bonus', {
+            description: 'Resolve Bonus Phase if Active',
+            verifications: [
+                {
+                    spec: 'Check and Resolve Bonus',
+                    check: async () => {
+                        const text = await page.locator('.turn-indicator').innerText();
+                        if (text === 'BONUS PHASE') {
+                            console.log('Bonus Phase Active - Resolving...');
+                            await expect(page.locator('.resolve-btn')).toBeVisible();
+                            await page.locator('.resolve-btn').click();
+                        } else {
+                            console.log('No Bonus Phase triggered.');
+                        }
+                    }
+                },
+                {
+                    spec: 'Verify Final Turn State (Yellow)',
+                    check: async () => {
+                        await expect(page.locator('.turn-indicator')).toHaveText('YELLOW TURN');
+                    }
+                }
+            ]
+        });
         helper.generateDocs();
     });
 });
