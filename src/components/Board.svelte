@@ -88,7 +88,7 @@
   // derived state for active selections
   $: hasSelection = (color: string) => {
       const s = peerSelections[color];
-      return s && s.playCardId && s.payCardId;
+      return !!(s && s.playCardId && s.payCardId);
   };
 
   // Turn management
