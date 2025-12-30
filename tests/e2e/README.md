@@ -1,26 +1,28 @@
 # Bonus Mechanics
 
-**As a** player, **I want** to execute bonuses when triggered, **so that** I can gain advantages and complete my turn.
+**As a** player, **I want** to execute bonuses (Add Population) when triggered.
 
-## Lobby Loaded
+## Review: Board Loaded
 
-![Lobby Loaded](screenshots/000-lobby-load.png)
-
-**Specs:**
-- Lobby is visible
-
-## Players Joined
-
-![Players Joined](screenshots/001-players-joined.png)
+![Review: Board Loaded](screenshots/000-board-loaded.png)
 
 **Specs:**
-- Start button appears
+- Board visible
 
-## Game Started
+## Bonus Phase Active
 
-![Game Started](screenshots/002-game-start.png)
+![Bonus Phase Active](screenshots/001-bonus-triggered.png)
 
 **Specs:**
-- Game board is visible
-- Turn indicator visible
+- Turn indicator says BONUS PHASE
+- Bonus Overlay Visible
+- Bonus Type is ADD_POPULATION
+
+## Turn Completed
+
+![Turn Completed](screenshots/002-turn-ended.png)
+
+**Specs:**
+- Turn indicator says YELLOW TURN
+- Bonus Overlay Gone
 
