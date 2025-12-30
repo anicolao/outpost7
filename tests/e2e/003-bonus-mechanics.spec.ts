@@ -1,58 +1,118 @@
 import { test, expect } from '@playwright/test';
 import { TestStepHelper } from './helpers/test-step-helper';
 
-test('Bonus Mechanics Flow', async ({ page }, testInfo) => {
-    const tester = new TestStepHelper(page, testInfo);
-
+test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
+    const tester = new TestStepHelper(boardPage, testInfo);
     tester.setMetadata(
         'Bonus Mechanics',
-        '**As a** player, **I want** to execute bonuses when triggered, **so that** I can gain advantages and complete my turn.'
+        '**As a** player, **I want** to execute bonuses (Add Population) when triggered.'
     );
 
-    // 1. Load Lobby
-    await page.goto('/');
-    await tester.step('lobby-load', {
-        description: 'Lobby Loaded',
+    // 1. Load Board with Seed (Red gets card_38 with ADD_POPULATION) and FIXED Host ID
+    const HOST_ID = 'e2e_host';
+    await boardPage.goto(`/?seed=seed_0&hostId=${HOST_ID}`); // Note: params might need encoding if complex, but simple strings are fine
+
+    // 1b. Lobby Setup (Required to reach Board)
+    await expect(boardPage.locator('.lobby-container')).toBeVisible();
+
+    // Add Red
+    await boardPage.locator('.edge-control.bottom .add-btn').click();
+    await boardPage.locator('.edge-control.bottom .color-btn[title="red"]').click();
+
+    // Add Yellow
+    await boardPage.locator('.edge-control.top .add-btn').click();
+    await boardPage.locator('.edge-control.top .color-btn[title="yellow"]').click();
+
+    // Start Game
+    await expect(boardPage.locator('.play-btn')).toBeVisible();
+    await boardPage.locator('.play-btn').click();
+
+    await tester.step('board-loaded', {
+        description: 'Review: Board Loaded',
         verifications: [
-            { spec: 'Lobby is visible', check: async () => await expect(page.locator('.lobby-container')).toBeVisible() }
+            { spec: 'Board visible', check: async () => await expect(boardPage.locator('.board-container')).toBeVisible() }
         ]
     });
 
-    // 2. Setup Players
-    // Add Red (Bottom Edge)
-    await page.locator('.edge-control.bottom .add-btn').click();
-    // Helper to wait for animation if needed, or just click color
-    // In Lobby svelte, clicking add sets 'selectingStore = edge', showing color picker.
-    await expect(page.locator('.edge-control.bottom .color-picker')).toBeVisible();
-    await page.locator('.edge-control.bottom .color-btn[title="red"]').click();
+    // 2. Load Player Hand (Red) in New Page
+    const playerPage = await context.newPage();
 
-    // Verification: Player joined
-    await expect(page.locator('.edge-control.bottom .player-token')).toBeVisible();
+    // Pipe console logs
+    playerPage.on('console', msg => console.log(`[PlayerPage] ${msg.text()}`));
 
-    // Add Yellow (Top Edge)
-    await page.locator('.edge-control.top .add-btn').click();
-    await expect(page.locator('.edge-control.top .color-picker')).toBeVisible();
-    await page.locator('.edge-control.top .color-btn[title="yellow"]').click();
+    await playerPage.goto(`/#/hand?host=${HOST_ID}&color=red`);
 
-    await tester.step('players-joined', {
-        description: 'Players Joined',
+    // Wait for connection
+    await expect(playerPage.locator('text=Connected')).toBeVisible();
+
+    // Verify Red has card_38
+    await expect(playerPage.locator('[data-card-id="card_38"]')).toBeVisible();
+
+    // 2b. Discard Phase (Must get under Cost 12)
+    // Current Hand: 38(3), 41(4), 18(3), 50(6), 17(6). Total 22. Target 12.
+    // We keep 38 and 41 for the play. (Total 7).
+    // Discard 50(6), 17(6). (Total discarded 12. Remaining 10. Valid).
+    await playerPage.locator('[data-card-id="card_50"]').click();
+    await playerPage.locator('[data-card-id="card_17"]').click();
+
+    // Verify Discard Selection
+    await expect(playerPage.locator('[data-card-id="card_50"] .selected-overlay.discard')).toBeVisible();
+
+    // Confirm Discard
+    await playerPage.locator('.discard-btn').click();
+
+    // Wait for cards to disappear
+    await expect(playerPage.locator('[data-card-id="card_50"]')).not.toBeVisible();
+
+
+    // 3. Play Card_38 (Cost 3)
+    // Tap to Select Play
+    await playerPage.locator('[data-card-id="card_38"]').click();
+
+    // Verify Selection Mark (Play)
+    await expect(playerPage.locator('[data-card-id="card_38"] .selected-overlay.play')).toBeVisible();
+
+    // 4. Select Pay Card (Cost > 3). Hand logic requires Payer >= Play logic.
+    // We use card_41 (Cost 4, Purple).
+    // Red Plays card_38 (Cost 3, Purple).
+    // Matches Color (Purple) + Overpay (1). -> Guaranteed Cubes.
+    await playerPage.locator('[data-card-id="card_41"]').click();
+
+    // Verify Pay Overlay
+    await expect(playerPage.locator('[data-card-id="card_41"] .selected-overlay.pay')).toBeVisible();
+
+    // 5. Board: Verify Peer Selection (Face Down Card appears)
+    await expect(boardPage.locator('.face-down-card.bottom')).toBeVisible();
+
+    // 6. Board: Place Card
+    // Click cell (2, 2) - Center.
+    await boardPage.locator('[data-cell-id="2-2"]').click();
+
+    // 7. Verify Bonus Phase
+    // card_38 has ADD_POPULATION on Cube 1.
+    // With correct payment, we place at least 1 cube.
+    // So Bonus Phase MUST trigger.
+    await tester.step('bonus-triggered', {
+        description: 'Bonus Phase Active',
         verifications: [
-            { spec: 'Start button appears', check: async () => await expect(page.locator('.play-btn')).toBeVisible() }
+            { spec: 'Turn indicator says BONUS PHASE', check: async () => await expect(boardPage.locator('.turn-indicator')).toHaveText('BONUS PHASE') },
+            { spec: 'Bonus Overlay Visible', check: async () => await expect(boardPage.locator('.bonus-overlay')).toBeVisible() },
+            { spec: 'Bonus Type is ADD_POPULATION', check: async () => await expect(boardPage.locator('.bonus-type')).toHaveText('ADD_POPULATION') }
         ]
     });
 
-    // 3. Start Game
-    await page.locator('.play-btn').click();
+    // 8. Resolve Bonus
+    // Click Resolve Button (auto-selected first bonus)
+    await boardPage.locator('.resolve-btn').click();
 
-    // 4. Verify Board
-    await tester.step('game-start', {
-        description: 'Game Started',
+    // 9. Verify Turn End (Red -> Yellow)
+    await tester.step('turn-ended', {
+        description: 'Turn Completed',
         verifications: [
-            { spec: 'Game board is visible', check: async () => await expect(page.locator('.board-container')).toBeVisible() },
-            { spec: 'Turn indicator visible', check: async () => await expect(page.locator('.turn-indicator')).toBeVisible() }
+            { spec: 'Turn indicator says YELLOW TURN', check: async () => await expect(boardPage.locator('.turn-indicator')).toContainText('YELLOW TURN') },
+            { spec: 'Bonus Overlay Gone', check: async () => await expect(boardPage.locator('.bonus-overlay')).not.toBeVisible() }
         ]
     });
 
-    // 5. Generate Docs
     tester.generateDocs();
 });

@@ -191,6 +191,7 @@
 
       // Play Mode
       console.log('Tapped card:', cardId);
+
       if (playCardId && payCardId) {
           console.log('Both selected, resetting.');
           playCardId = null;
@@ -206,8 +207,8 @@
           // Must have at least one OTHER card with cost >= this card's cost
           const hasValidPayer = hand.some(c => c.id !== cardId && c.cost >= card.cost);
           if (!hasValidPayer) {
-              console.log('Cannot Play: No valid payer in hand');
-              return;
+               console.log('Cannot Play: No valid payer in hand');
+               return;
           }
           console.log('Selecting PLAY:', cardId);
           playCardId = cardId;
@@ -312,6 +313,7 @@
         
         <div 
           class="card-wrapper" 
+          data-card-id={card.id}
           class:play-selected={selectionMode === 'play' && !isOverLimit && playCardId === card.id}
           class:pay-selected={selectionMode === 'play' && !isOverLimit && payCardId === card.id}
           class:discard-selected={(selectionMode === 'discard' || isOverLimit) && discardSelection.has(card.id)}
