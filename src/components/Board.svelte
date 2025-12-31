@@ -108,7 +108,7 @@
         if (color === 'red' || color === 'yellow') {
             connections[color] = conn;
             // Send initial hand
-            conn.send({ type: 'HAND_UPDATE', hand: hands[color], turn: $gameState.game.currentTurn });
+            conn.send({ type: 'HAND_UPDATE', hand: hands[color], turn: $gameState.game.currentTurn, turnCount: $gameState.game.turnCount });
         }
     } else if (data.type === 'DISCARD') {
         const { color, cardIds } = data;
@@ -129,11 +129,11 @@
 
   // Reactive updates for hands
   $: if (hands.red && connections.red) {
-      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red, turn: $gameState.game.currentTurn });
+      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red, turn: $gameState.game.currentTurn, turnCount: $gameState.game.turnCount });
   }
   
   $: if (hands.yellow && connections.yellow) {
-      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow, turn: $gameState.game.currentTurn });
+      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow, turn: $gameState.game.currentTurn, turnCount: $gameState.game.turnCount });
   }
 
   // Meeple Icon
