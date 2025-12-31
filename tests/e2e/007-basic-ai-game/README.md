@@ -17,9 +17,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 2: RED - BONUS (7ay6ahxc3)
+## Turn 2: RED - BONUS (bonus_1)
 
-![Turn 2: RED - BONUS (7ay6ahxc3)](screenshots/002-turn-002-red.png)
+![Turn 2: RED - BONUS (bonus_1)](screenshots/002-turn-002-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -31,9 +31,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 4: YELLOW - BONUS (vklrco8jc)
+## Turn 4: YELLOW - BONUS (bonus_2)
 
-![Turn 4: YELLOW - BONUS (vklrco8jc)](screenshots/004-turn-004-yellow.png)
+![Turn 4: YELLOW - BONUS (bonus_2)](screenshots/004-turn-004-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -45,9 +45,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 6: RED - BONUS (wega2suon)
+## Turn 6: RED - BONUS (bonus_3)
 
-![Turn 6: RED - BONUS (wega2suon)](screenshots/006-turn-006-red.png)
+![Turn 6: RED - BONUS (bonus_3)](screenshots/006-turn-006-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -59,16 +59,16 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 8: YELLOW - BONUS (qgh103l10)
+## Turn 8: YELLOW - BONUS (bonus_4)
 
-![Turn 8: YELLOW - BONUS (qgh103l10)](screenshots/008-turn-008-yellow.png)
+![Turn 8: YELLOW - BONUS (bonus_4)](screenshots/008-turn-008-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 9: YELLOW - BONUS (2op4sxmgl)
+## Turn 9: YELLOW - BONUS (bonus_5)
 
-![Turn 9: YELLOW - BONUS (2op4sxmgl)](screenshots/009-turn-009-yellow.png)
+![Turn 9: YELLOW - BONUS (bonus_5)](screenshots/009-turn-009-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -94,9 +94,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 13: RED - BONUS (rkz2qq849)
+## Turn 13: RED - BONUS (bonus_6)
 
-![Turn 13: RED - BONUS (rkz2qq849)](screenshots/013-turn-013-red.png)
+![Turn 13: RED - BONUS (bonus_6)](screenshots/013-turn-013-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -108,9 +108,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 15: YELLOW - BONUS (cwuczgccs)
+## Turn 15: YELLOW - BONUS (bonus_7)
 
-![Turn 15: YELLOW - BONUS (cwuczgccs)](screenshots/015-turn-015-yellow.png)
+![Turn 15: YELLOW - BONUS (bonus_7)](screenshots/015-turn-015-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -122,9 +122,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 17: RED - BONUS (lyew68ffn)
+## Turn 17: RED - BONUS (bonus_8)
 
-![Turn 17: RED - BONUS (lyew68ffn)](screenshots/017-turn-017-red.png)
+![Turn 17: RED - BONUS (bonus_8)](screenshots/017-turn-017-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -150,9 +150,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 21: YELLOW - BONUS (v87k3yd0l)
+## Turn 21: YELLOW - BONUS (bonus_9)
 
-![Turn 21: YELLOW - BONUS (v87k3yd0l)](screenshots/021-turn-021-yellow.png)
+![Turn 21: YELLOW - BONUS (bonus_9)](screenshots/021-turn-021-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -164,16 +164,16 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 23: RED - BONUS (t0t6xtgg4)
+## Turn 23: RED - BONUS (bonus_10)
 
-![Turn 23: RED - BONUS (t0t6xtgg4)](screenshots/023-turn-023-red.png)
+![Turn 23: RED - BONUS (bonus_10)](screenshots/023-turn-023-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 24: RED - BONUS (nkn714b7p)
+## Turn 24: RED - BONUS (bonus_11)
 
-![Turn 24: RED - BONUS (nkn714b7p)](screenshots/024-turn-024-red.png)
+![Turn 24: RED - BONUS (bonus_11)](screenshots/024-turn-024-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -199,9 +199,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 28: YELLOW - BONUS (e6fkq2gcf)
+## Turn 28: YELLOW - BONUS (bonus_12)
 
-![Turn 28: YELLOW - BONUS (e6fkq2gcf)](screenshots/028-turn-028-yellow.png)
+![Turn 28: YELLOW - BONUS (bonus_12)](screenshots/028-turn-028-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -213,9 +213,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 30: RED - BONUS (gsibrocnz)
+## Turn 30: RED - BONUS (bonus_13)
 
-![Turn 30: RED - BONUS (gsibrocnz)](screenshots/030-turn-030-red.png)
+![Turn 30: RED - BONUS (bonus_13)](screenshots/030-turn-030-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -241,9 +241,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 34: YELLOW - BONUS (m382b9mlt)
+## Turn 34: YELLOW - BONUS (bonus_14)
 
-![Turn 34: YELLOW - BONUS (m382b9mlt)](screenshots/034-turn-034-yellow.png)
+![Turn 34: YELLOW - BONUS (bonus_14)](screenshots/034-turn-034-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -255,9 +255,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 36: RED - BONUS (5g34zi3fk)
+## Turn 36: RED - BONUS (bonus_15)
 
-![Turn 36: RED - BONUS (5g34zi3fk)](screenshots/036-turn-036-red.png)
+![Turn 36: RED - BONUS (bonus_15)](screenshots/036-turn-036-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -283,9 +283,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 40: YELLOW - BONUS (mfrxz71mo)
+## Turn 40: YELLOW - BONUS (bonus_16)
 
-![Turn 40: YELLOW - BONUS (mfrxz71mo)](screenshots/040-turn-040-yellow.png)
+![Turn 40: YELLOW - BONUS (bonus_16)](screenshots/040-turn-040-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -297,9 +297,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 42: RED - BONUS (qfkpch3ar)
+## Turn 42: RED - BONUS (bonus_17)
 
-![Turn 42: RED - BONUS (qfkpch3ar)](screenshots/042-turn-042-red.png)
+![Turn 42: RED - BONUS (bonus_17)](screenshots/042-turn-042-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -325,9 +325,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 46: YELLOW - BONUS (cokeviwov)
+## Turn 46: YELLOW - BONUS (bonus_18)
 
-![Turn 46: YELLOW - BONUS (cokeviwov)](screenshots/046-turn-046-yellow.png)
+![Turn 46: YELLOW - BONUS (bonus_18)](screenshots/046-turn-046-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -339,9 +339,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 48: RED - BONUS (ben4saosq)
+## Turn 48: RED - BONUS (bonus_19)
 
-![Turn 48: RED - BONUS (ben4saosq)](screenshots/048-turn-048-red.png)
+![Turn 48: RED - BONUS (bonus_19)](screenshots/048-turn-048-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -367,23 +367,23 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 52: YELLOW - BONUS (po7rp85ok)
+## Turn 52: YELLOW - BONUS (bonus_20)
 
-![Turn 52: YELLOW - BONUS (po7rp85ok)](screenshots/052-turn-052-yellow.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
-
-## Turn 53: YELLOW - BONUS (nw75frra8)
-
-![Turn 53: YELLOW - BONUS (nw75frra8)](screenshots/053-turn-053-yellow.png)
+![Turn 52: YELLOW - BONUS (bonus_20)](screenshots/052-turn-052-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 54: YELLOW - BONUS (t0m9wufol)
+## Turn 53: YELLOW - BONUS (bonus_21)
 
-![Turn 54: YELLOW - BONUS (t0m9wufol)](screenshots/054-turn-054-yellow.png)
+![Turn 53: YELLOW - BONUS (bonus_21)](screenshots/053-turn-053-yellow.png)
+
+**Specs:**
+- Execute RESOLVE_BONUS
+
+## Turn 54: YELLOW - BONUS (bonus_22)
+
+![Turn 54: YELLOW - BONUS (bonus_22)](screenshots/054-turn-054-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -395,9 +395,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 56: RED - BONUS (1urbgspjv)
+## Turn 56: RED - BONUS (bonus_23)
 
-![Turn 56: RED - BONUS (1urbgspjv)](screenshots/056-turn-056-red.png)
+![Turn 56: RED - BONUS (bonus_23)](screenshots/056-turn-056-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -423,9 +423,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 60: YELLOW - BONUS (4hy4p2ip1)
+## Turn 60: YELLOW - BONUS (bonus_24)
 
-![Turn 60: YELLOW - BONUS (4hy4p2ip1)](screenshots/060-turn-060-yellow.png)
+![Turn 60: YELLOW - BONUS (bonus_24)](screenshots/060-turn-060-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -437,16 +437,16 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 62: RED - BONUS (05okis6k2)
+## Turn 62: RED - BONUS (bonus_25)
 
-![Turn 62: RED - BONUS (05okis6k2)](screenshots/062-turn-062-red.png)
+![Turn 62: RED - BONUS (bonus_25)](screenshots/062-turn-062-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 63: RED - BONUS (lsqpzg412)
+## Turn 63: RED - BONUS (bonus_26)
 
-![Turn 63: RED - BONUS (lsqpzg412)](screenshots/063-turn-063-red.png)
+![Turn 63: RED - BONUS (bonus_26)](screenshots/063-turn-063-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
@@ -465,9 +465,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute REPAIR
 
-## Turn 66: YELLOW - BONUS (nefy2iqxn)
+## Turn 66: YELLOW - BONUS (bonus_27)
 
-![Turn 66: YELLOW - BONUS (nefy2iqxn)](screenshots/066-turn-066-yellow.png)
+![Turn 66: YELLOW - BONUS (bonus_27)](screenshots/066-turn-066-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS

@@ -45,4 +45,5 @@ export interface GameState {
     finishedPlayers: PlayerColor[];
     winner: PlayerColor | 'draw' | null;
     scores: { red: number; yellow: number };
+    bonusIdCounter: number;
 }

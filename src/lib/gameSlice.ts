@@ -35,6 +35,7 @@ const initialState: GameState = {
     finishedPlayers: [],
     winner: null,
     scores: { red: 0, yellow: 0 },
+    bonusIdCounter: 0,
 };
 
 const gameSlice = createSlice({
@@ -60,6 +61,7 @@ const gameSlice = createSlice({
                 state.finishedPlayers = [];
                 state.winner = null;
                 state.scores = { red: 0, yellow: 0 };
+                state.bonusIdCounter = 0; // Reset counter
 
 
                 // Initialize RNG
@@ -205,8 +207,10 @@ const gameSlice = createSlice({
                 if (newCard.bonuses) {
                     for (let i = 1; i <= cubes; i++) {
                         if (newCard.bonuses[i]) {
+                            state.bonusIdCounter = (state.bonusIdCounter || 0) + 1;
+                            const newBonusId = `bonus_${state.bonusIdCounter}`;
                             state.pendingBonuses.push({
-                                id: Math.random().toString(36).substr(2, 9),
+                                id: newBonusId,
                                 definition: newCard.bonuses[i],
                                 sourceCardId: newCard.id,
                                 sourceRow: row,
@@ -270,8 +274,10 @@ const gameSlice = createSlice({
 
                             // CASCADE: Check if new cube triggers bonus
                             if (cell.bonuses && cell.bonuses[cell.cubes]) {
+                                state.bonusIdCounter = (state.bonusIdCounter || 0) + 1;
+                                const newCascadeId = `bonus_${state.bonusIdCounter}`;
                                 state.pendingBonuses.push({
-                                    id: Math.random().toString(36).substr(2, 9),
+                                    id: newCascadeId,
                                     definition: cell.bonuses[cell.cubes],
                                     sourceCardId: cell.id,
                                     sourceRow: r,
