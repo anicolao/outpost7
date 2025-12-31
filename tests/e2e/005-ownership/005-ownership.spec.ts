@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Ownership Evaluation', () => {
-    test.skip('Verify Ownership Flip', async ({ page }) => {
+    test('Verify Ownership Flip', async ({ page }) => {
         // Set E2E Flag
         await page.addInitScript(() => {
             // @ts-ignore
@@ -66,6 +66,44 @@ test.describe('Ownership Evaluation', () => {
                         // Wait for hand
                         await redPage.waitForSelector('.card-wrapper');
 
+                        // Check for Discard Phase (Over Limit)
+                        if (await redPage.locator('.alert-banner').isVisible()) {
+                            // Simply discard the highest cost cards until valid
+                            // We loop because we might need to discard multiple
+                            while (await redPage.locator('.alert-banner').isVisible()) {
+                                // Find highest cost card
+                                const cardToDiscardIndex = await redPage.evaluate(() => {
+                                    const cards = Array.from(document.querySelectorAll('.card-wrapper'));
+                                    let maxCost = -1;
+                                    let maxIndex = -1;
+                                    cards.forEach((el, index) => {
+                                        // Ignore already selected
+                                        if (el.classList.contains('discard-selected')) return;
+                                        const valueText = el.querySelector('.card-value')?.textContent || '0';
+                                        const cost = parseInt(valueText, 10);
+                                        if (cost > maxCost) {
+                                            maxCost = cost;
+                                            maxIndex = index;
+                                        }
+                                    });
+                                    return maxIndex;
+                                });
+
+                                if (cardToDiscardIndex !== -1) {
+                                    await redPage.locator('.card-wrapper').nth(cardToDiscardIndex).click();
+                                }
+
+                                // Try to confirm
+                                const btn = redPage.locator('.discard-btn');
+                                if (await btn.isEnabled()) {
+                                    await btn.click();
+                                    await redPage.waitForTimeout(500); // Wait for transition
+                                }
+                            }
+                            await expect(redPage.locator('.alert-banner')).not.toBeVisible();
+                            // Reset selection context? No, discard is done.
+                        }
+
                         // Select Pair
                         const indices = await redPage.evaluate(() => {
                             const cards = Array.from(document.querySelectorAll('.card-wrapper'));
@@ -87,8 +125,14 @@ test.describe('Ownership Evaluation', () => {
                         if (!indices) throw new Error('No valid play pair');
 
                         const cards = redPage.locator('.card-wrapper');
+
+                        // Click Play Card and Verify
                         await cards.nth(indices.playIndex).click({ force: true });
+                        await expect(cards.nth(indices.playIndex).locator('.selected-overlay.play')).toBeVisible();
+
+                        // Click Pay Card and Verify
                         await cards.nth(indices.payIndex).click({ force: true });
+                        await expect(cards.nth(indices.payIndex).locator('.selected-overlay.pay')).toBeVisible();
                     }
                 }
             ]
