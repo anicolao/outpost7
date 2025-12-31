@@ -161,14 +161,9 @@
       }
   }
 
-  // Over limit based on CURRENT hand (to show alert)
-  // For basic game flow, let's keep the play/pay focus for now.
-  // We can re-enable discard logic if needed, but the prompt focuses on Play/Pay.
-  // The 'discard to pay' is part of the move. 
-  // Let's hide the old manual discard for now unless user needs it (prompt implies move-driven discard).
-  // Actually, user prompt says: "When the player doesn't need to discard and selects a card..." 
-  // This implies we ARE in the Play phase.
-  $: isOverLimit = handCount > 7 || totalCost > 12;
+  // Over limit based on Hand Count (7)
+  // Value limit only applies at start and is not enforced here for general play
+  $: isOverLimit = handCount > 7;
   
   function handleCardTap(cardId: string) {
       if (isOverLimit) {
@@ -250,7 +245,7 @@
   $: remainingHandCount = handCount - discardSelection.size;
   $: remainingCost = totalCost - selectedCost;
 
-  $: remainsValid = !isOverLimit || (remainingHandCount <= 7 && remainingCost <= 12);
+  $: remainsValid = !isOverLimit || (remainingHandCount <= 7);
 
   function confirmDiscard() {
       if (discardSelection.size === 0) return;
@@ -288,8 +283,8 @@
         <div class="stat" class:danger={remainingHandCount > 7}>
             Cards: {remainingHandCount}/7
         </div>
-        <div class="stat" class:danger={remainingCost > 12}>
-            Value: {remainingCost}/12
+        <div class="stat">
+            Value: {remainingCost}
         </div>
     </div>
     <div class="mode-switch">

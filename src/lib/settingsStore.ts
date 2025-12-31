@@ -7,6 +7,8 @@ export interface GameSettings {
     CUBES_PER_OVERPAYMENT: number;
     GRID_ROWS: number;
     GRID_COLS: number;
+    STARTING_HAND_LIMIT_P1: number;
+    STARTING_HAND_LIMIT_P2: number;
 }
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -16,6 +18,8 @@ const DEFAULT_SETTINGS: GameSettings = {
     CUBES_PER_OVERPAYMENT: 1,
     GRID_ROWS: 5,
     GRID_COLS: 5,
+    STARTING_HAND_LIMIT_P1: 12,
+    STARTING_HAND_LIMIT_P2: 16,
 };
 
 export const SETTINGS_DESCRIPTIONS = {
@@ -25,6 +29,8 @@ export const SETTINGS_DESCRIPTIONS = {
     CUBES_PER_OVERPAYMENT: "Cubes gained per point of overpayment",
     GRID_ROWS: "Grid Rows",
     GRID_COLS: "Grid Columns",
+    STARTING_HAND_LIMIT_P1: "Starting Hand Value Limit (P1)",
+    STARTING_HAND_LIMIT_P2: "Starting Hand Value Limit (P2)",
 };
 
 function createSettingsStore() {
