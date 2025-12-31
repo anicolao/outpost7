@@ -226,7 +226,10 @@
         executingBonuses = executingBonuses; // Trigger reactivity
 
         // 2. Wait for animation
-        await new Promise(r => setTimeout(r, 600));
+        // @ts-ignore
+        if (!window.E2E_TEST) {
+             await new Promise(r => setTimeout(r, 600));
+        }
 
         // 3. Resolve State (Store updates persistence)
         store.dispatch(resolveBonus({ bonusId: bonus.id })); 
