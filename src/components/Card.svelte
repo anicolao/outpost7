@@ -198,8 +198,10 @@
       transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s 0.1s;
   }
 
-  .player-cube.completed {
-      left: 0;
+  /* High Specificity for Completed State */
+  .slot-wrapper .player-cube.completed,
+  .slot-wrapper.bonus .player-cube.completed {
+      left: 60%;
       transform: none;
       opacity: 1; /* Stay Visible */
       box-shadow: none;
