@@ -70,7 +70,9 @@ export class TestStepHelper {
             if (msg.type() === 'error') {
                 const text = msg.text();
                 // Filter out PeerJS connection errors which are expected in test environment
-                // We check for exact error patterns rather than partial URL matching
+                // Note: This is NOT URL sanitization for security. We're simply checking if error
+                // messages contain expected PeerJS connection errors that should be ignored in tests.
+                // lgtm[js/incomplete-url-substring-sanitization]
                 const isPeerJSError = text.includes('0.peerjs.com') || 
                                      text.includes('wss://0.peerjs.com/peerjs');
                 const isNetworkError = text.includes('ERR_NAME_NOT_RESOLVED');
