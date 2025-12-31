@@ -192,13 +192,14 @@
       animation: pulse-glow 1.5s infinite;
   }
 
-  .player-cube.executing {
-      transform: translateX(200%); /* Slide Right */
+  .slot-wrapper .player-cube.executing,
+  .slot-wrapper.bonus .player-cube.executing {
+      left: 60%;
+      transform: none;
       opacity: 1;
-      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s 0.1s;
+      transition: left 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  /* High Specificity for Completed State */
   .slot-wrapper .player-cube.completed,
   .slot-wrapper.bonus .player-cube.completed {
       left: 60%;
@@ -206,6 +207,7 @@
       opacity: 1; /* Stay Visible */
       box-shadow: none;
       animation: none;
+      transition: none;
       border-color: rgba(255,255,255,0.4);
   }
 
