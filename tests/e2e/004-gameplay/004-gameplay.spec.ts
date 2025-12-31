@@ -47,12 +47,19 @@ test.describe('Gameplay Loop', () => {
                     spec: 'Open Red Client',
                     check: async () => {
                         const qrItem = page.locator('.qr-zone.bottom .qr-item');
-                        await qrItem.waitFor({ state: 'visible' });
+                        await qrItem.waitFor({ state: 'visible', timeout: 5000 });
 
+                        // Ensure it's stable and clickable
+                        await expect(qrItem).toBeVisible();
+
+                        console.log('Attempting to click QR code for popup...');
+                        // Use a slightly longer timeout for the popup event
                         const [popup] = await Promise.all([
-                            page.waitForEvent('popup'),
-                            qrItem.click({ force: true })
+                            page.waitForEvent('popup', { timeout: 15000 }),
+                            qrItem.click() // Removing force: true to ensure it's actually clickable/visible
                         ]);
+
+                        console.log('Popup detected, waiting for load...');
                         await popup.waitForLoadState();
                         redPage = popup;
 
@@ -110,7 +117,7 @@ test.describe('Gameplay Loop', () => {
             page: redPage, // Use Client Page for screenshot
             verifications: [
                 {
-                    spec: 'Select Valid Play/Pay Pair',
+                    spec: 'Select Valid Play/Pay pair',
                     check: async () => {
                         // Wait for hand to stabilize
                         await redPage.evaluate(() => new Promise(r => setTimeout(r, 2000)));
@@ -221,9 +228,6 @@ test.describe('Gameplay Loop', () => {
 
                             // Click it
                             await interactiveCube.click();
-
-                            // Removed brittle check for .executing class (race condition with E2E_TEST=true)
-
 
                             // Wait for resolution
                             await new Promise(r => setTimeout(r, 600)); // Animation time

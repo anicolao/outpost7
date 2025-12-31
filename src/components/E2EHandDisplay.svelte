@@ -32,6 +32,7 @@
         flex-direction: column;
         align-items: center;
         border: 2px solid #555;
+        pointer-events: none; /* Allow clicks to pass through to QR code underneath */
     }
 
     .e2e-hand-display.red { border-color: #ff4d4d; }
