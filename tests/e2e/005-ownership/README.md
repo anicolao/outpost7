@@ -1,6 +1,6 @@
-# Ownership Loop
+# Ownership Flip
 
-Verify ownership updates when gaining majority in a row
+Verify flipping ownership of Row 2 and Col 1 from Yellow to Red
 
 ## Start Game with Red and Yellow
 
@@ -9,31 +9,45 @@ Verify ownership updates when gaining majority in a row
 **Specs:**
 - Add Players and Start
 
+## Script Yellow to claim Row 2 and Column 1
+
+![Script Yellow to claim Row 2 and Column 1](screenshots/001-002-yellow-claims.png)
+
+**Specs:**
+- Execute Yellow Moves
+
 ## Connect Red Player
 
-![Connect Red Player](screenshots/001-002-connect-red.png)
+![Connect Red Player](screenshots/002-003-connect-red.png)
 
 **Specs:**
 - Open Red Client
 
-## Red Plays Card into Row 1
+## Ensure Red has a play generating >= 2 cubes
 
-![Red Plays Card into Row 1](screenshots/002-003-client-play.png)
-
-**Specs:**
-- Select and Play Card
-
-## Place card in Row 1 Col 0
-
-![Place card in Row 1 Col 0](screenshots/003-004-execute-move.png)
+![Ensure Red has a play generating >= 2 cubes](screenshots/003-004-fix-red-hand.png)
 
 **Specs:**
-- Click Row 1 Col 0
+- Cycle cards until strong pair found
 
-## Check Row 1 Ownership is Red
+## Red plays at (2, 1) intersection
 
-![Check Row 1 Ownership is Red](screenshots/004-005-verify-ownership.png)
+![Red plays at (2, 1) intersection](screenshots/004-005-red-plays.png)
 
 **Specs:**
-- Row 1 Header should be Red
+- Select matching/overpay pair
+
+## Execute move at (2, 1)
+
+![Execute move at (2, 1)](screenshots/005-006-execute-flip.png)
+
+**Specs:**
+- Click cell (2, 1)
+
+## Row 2 and Col 1 should be Red
+
+![Row 2 and Col 1 should be Red](screenshots/006-007-verify-flip.png)
+
+**Specs:**
+- Headers are Red
 
