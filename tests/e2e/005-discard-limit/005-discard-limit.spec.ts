@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Discard Flow', () => {
-    test.skip('should allow discarding when over limit', async ({ page }, testInfo) => {
+    test('should allow discarding when over limit', async ({ page }, testInfo) => {
         const helper = new TestStepHelper(page, testInfo);
         helper.setMetadata('Discard Flow', 'Verify player can discard when over hand limit');
 

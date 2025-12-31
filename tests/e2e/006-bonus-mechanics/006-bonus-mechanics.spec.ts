@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
-test.skip('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
+test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
     const tester = new TestStepHelper(boardPage, testInfo);
     tester.setMetadata(
         'Bonus Mechanics',

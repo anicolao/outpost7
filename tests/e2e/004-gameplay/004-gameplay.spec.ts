@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Gameplay Loop', () => {
-    test.skip('Gameplay Loop', async ({ page }) => {
+    test('Gameplay Loop', async ({ page }) => {
         // Set E2E Flag to skip animations
         await page.addInitScript(() => {
             // @ts-ignore

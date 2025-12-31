@@ -9,8 +9,9 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:with-peer": "bash scripts/test-e2e-with-peer.sh",
     "peer-server": "peerjs --port 9000 --path / --ip 0.0.0.0",
-    "pre-commit": "if grep -r 'waitForTimeout' src tests; then echo 'Error: waitForTimeout is banned. Use waitForAnimations instead.' && exit 1; fi && npm run test:e2e",
+    "pre-commit": "if grep -r 'waitForTimeout' src tests; then echo 'Error: waitForTimeout is banned. Use waitForAnimations instead.' && exit 1; fi && npm run test:e2e:with-peer",
     "prepare": "husky"
   },
   "devDependencies": {
