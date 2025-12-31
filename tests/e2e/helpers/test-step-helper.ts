@@ -69,6 +69,13 @@ export class TestStepHelper {
         this.page.on('console', msg => {
             if (msg.type() === 'error') {
                 console.error(`PAGE ERROR LOG: ${msg.text()}`);
+                // Ignore expected WebSocket and network errors for PeerJS in test environment
+                const text = msg.text();
+                if ((text.includes('WebSocket connection') || text.includes('Failed to load resource')) && 
+                    (text.includes('peerjs.com') || text.includes('ERR_NAME_NOT_RESOLVED'))) {
+                    console.log('Ignoring expected PeerJS network error in test environment');
+                    return;
+                }
                 throw new Error(`Console Error Detected: ${msg.text()}`);
             }
         });

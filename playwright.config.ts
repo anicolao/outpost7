@@ -41,6 +41,8 @@ export default defineConfig({
                         '--use-gl=swiftshader',
                         '--disable-smooth-scrolling',
                         '--disable-partial-raster',
+                        '--use-fake-ui-for-media-stream', // Auto-grant media permissions
+                        '--use-fake-device-for-media-stream', // Use fake devices for WebRTC
                     ],
                 },
             },
@@ -50,5 +52,9 @@ export default defineConfig({
         command: 'npm run dev -- --port 5177',
         port: 5177,
         reuseExistingServer: !process.env.CI,
+        env: {
+            VITE_PEER_HOST: process.env.VITE_PEER_HOST || '127.0.0.1',
+            VITE_PEER_PORT: process.env.VITE_PEER_PORT || '9000',
+        },
     },
 });
