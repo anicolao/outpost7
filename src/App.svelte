@@ -10,6 +10,7 @@
   import Board from './components/Board.svelte';
   import SettingsModal from './components/SettingsModal.svelte';
   import CardsModal from './components/CardsModal.svelte';
+  import GameOver from './components/GameOver.svelte';
 
   $: phase = $gameState.game.phase;
 
@@ -80,6 +81,8 @@
     <Lobby on:requestSettings={handleSettings} on:startGame={start} />
   {:else if phase === 'playing'}
     <Board />
+  {:else if phase === 'game_over'}
+    <GameOver on:playAgain={() => phase = 'lobby'} />
   {/if}
 
   {#if showSettings}

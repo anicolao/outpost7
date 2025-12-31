@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction, current } from '@reduxjs/toolkit';
 import seedrandom from 'seedrandom';
 
 export type PlayerColor = 'red' | 'yellow';
@@ -21,7 +21,7 @@ export interface PopulationCard {
     owner: PlayerColor;
 }
 
-export type GamePhase = 'lobby' | 'playing';
+export type GamePhase = 'lobby' | 'playing' | 'game_over';
 
 export interface BonusInstance {
     id: string;
@@ -47,6 +47,9 @@ interface GameState {
     currentTurn: PlayerColor;
     turnCount: number;
     pendingBonuses: BonusInstance[];
+    finishedPlayers: PlayerColor[];
+    winner: PlayerColor | 'draw' | null;
+    scores: { red: number; yellow: number };
 }
 
 const initialState: GameState = {
@@ -63,6 +66,9 @@ const initialState: GameState = {
     currentTurn: 'red', // Default
     turnCount: 1, // Start at Turn 1 (Red)
     pendingBonuses: [],
+    finishedPlayers: [],
+    winner: null,
+    scores: { red: 0, yellow: 0 },
 };
 
 const gameSlice = createSlice({
@@ -85,6 +91,10 @@ const gameSlice = createSlice({
             console.log('startGame called. Players:', state.players.length);
             if (state.players.length === 2) {
                 state.phase = 'playing';
+                state.finishedPlayers = [];
+                state.winner = null;
+                state.scores = { red: 0, yellow: 0 };
+
 
                 // Initialize RNG
                 const rng = seedrandom(action.payload.seed);
@@ -243,8 +253,7 @@ const gameSlice = createSlice({
                 // Toggle Turn (only if no bonuses)
                 if (state.pendingBonuses.length === 0) {
                     evaluateOwnership(state);
-                    state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
-                    state.turnCount++;
+                    endTurn(state);
                 }
             }
         },
@@ -363,8 +372,7 @@ const gameSlice = createSlice({
             // Toggle Turn if all resolved
             if (state.pendingBonuses.length === 0) {
                 evaluateOwnership(state);
-                state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
-                state.turnCount++;
+                endTurn(state);
             }
         },
         resetGame: (state) => {
@@ -416,8 +424,7 @@ const gameSlice = createSlice({
             }
 
             // 4. End Turn
-            state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
-            state.turnCount++;
+            endTurn(state);
         }
     },
 });
@@ -458,6 +465,165 @@ function evaluateOwnership(state: GameState) {
                 else if (yellowCubes > redCubes) state.colHeaders[c].owner = 'yellow';
             }
         }
+    }
+}
+
+// Logic to check if a player has ANY valid moves
+function hasValidMoves(state: GameState, player: PlayerColor): boolean {
+    const hand = state.hands[player];
+
+    // 1. Check Salvage
+    // Valid if hand is not full AND offer has at least one card <= 12
+    if (hand.length < 7) {
+        const canPickUpAny = state.offer.some(c => c.cost <= 12); // Rule: Total <= 12. Cheapest card implies possible move.
+        // Actually, if offer is empty, can they salvage?
+        // Rule: "Pickup any combination... from the 5 face up"
+        // If deck empty and offer empty -> NO salvage.
+        // If deck not empty but offer empty (shouldn't happen with refill logic unless deck empties) -> wait, refill happens immediately.
+        // So checking offer is enough.
+        if (canPickUpAny) return true;
+        // Even if all cards > 12 (unlikely/impossible given card distribution, but theoretically), if you can pick 0 cards?
+        // Rules say "Pick up any combination". Picking 0 is usually not a turn. "Pass" is the action when you can't play.
+    }
+
+    // 2. Check Repair
+    // Need:
+    // A play card
+    // A pay card (same or higher value)
+    // A valid spot on grid
+
+    // Quick check: If no cards in hand, cannot repair.
+    if (hand.length < 2) return false; // Need at least pair
+
+    // Check if any pair in hand is valid (Pay >= Play)
+    // Sort hand by cost? O(N log N) - hand is small (max 7)
+    // Actually just double loop O(N^2) is fine.
+
+    let hasValidPair = false;
+    for (let i = 0; i < hand.length; i++) {
+        for (let j = 0; j < hand.length; j++) {
+            if (i === j) continue;
+            if (hand[j].cost >= hand[i].cost) {
+                hasValidPair = true;
+                break;
+            }
+        }
+        if (hasValidPair) break;
+    }
+
+    if (!hasValidPair) return false;
+
+    // Check if valid spot on grid
+    // Format: First card anywhere. Subsequent: Adjacent.
+    let gridEmpty = true;
+    let validSpots: [number, number][] = [];
+
+    for (let r = 0; r < state.grid.length; r++) {
+        for (let c = 0; c < state.grid[r].length; c++) {
+            if (state.grid[r][c] !== null) {
+                gridEmpty = false;
+            }
+        }
+    }
+
+    if (gridEmpty) return true; // Can place first card anywhere
+
+    // Find empty spots adjacent to existing cards
+    for (let r = 0; r < state.grid.length; r++) {
+        for (let c = 0; c < state.grid[r].length; c++) {
+            if (state.grid[r][c] === null) {
+                // Check neighbors
+                const neighbors = [
+                    state.grid[r - 1]?.[c],
+                    state.grid[r + 1]?.[c],
+                    state.grid[r]?.[c - 1],
+                    state.grid[r]?.[c + 1]
+                ];
+                if (neighbors.some(n => n !== undefined && n !== null)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+function calculateScores(state: GameState): { red: number, yellow: number } {
+    const scores = { red: 0, yellow: 0 };
+
+    // Count population from Headers
+    [...state.rowHeaders, ...state.colHeaders].forEach(h => {
+        if (h.owner === 'red') scores.red += h.count;
+        else if (h.owner === 'yellow') scores.yellow += h.count;
+    });
+
+    return scores;
+}
+
+function endTurn(state: GameState) {
+    const currentPlayer = state.currentTurn;
+    const otherPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
+
+    let nextPlayer = otherPlayer;
+    let nextPlayerValid = hasValidMoves(state, nextPlayer);
+    let currentPlayerValid = hasValidMoves(state, currentPlayer);
+
+    // If next player is already finished, they stay finished.
+    // If next player was playing but has no valid moves now, they become finished.
+    if (!state.finishedPlayers.includes(nextPlayer)) {
+        if (!nextPlayerValid) {
+            state.finishedPlayers.push(nextPlayer);
+        }
+    }
+
+    // Check if next player is finished (either previously or just now)
+    if (state.finishedPlayers.includes(nextPlayer)) {
+        // P2 cannot play. Control returns to P1 (Current Player)
+
+        // Does P1 (Current) now have valid moves?
+        // We know they just played, so maybe hand changed.
+        currentPlayerValid = hasValidMoves(state, currentPlayer);
+
+        if (!currentPlayerValid) {
+            // P1 also cannot play. Game Over.
+            if (!state.finishedPlayers.includes(currentPlayer)) {
+                state.finishedPlayers.push(currentPlayer);
+            }
+
+            // GAME OVER
+            state.phase = 'game_over';
+
+            // Calculate Scores
+            state.scores = calculateScores(state);
+
+            if (state.scores.red > state.scores.yellow) state.winner = 'red';
+            else if (state.scores.yellow > state.scores.red) state.winner = 'yellow';
+            else {
+                // Tiebreaker: Most cubes on board
+                let redCubes = 0;
+                let yellowCubes = 0;
+
+                state.grid.flat().forEach(cell => {
+                    if (cell && cell.cubes && cell.owner) {
+                        if (cell.owner === 'red') redCubes += cell.cubes;
+                        else if (cell.owner === 'yellow') yellowCubes += cell.cubes;
+                    }
+                });
+
+                if (redCubes > yellowCubes) state.winner = 'red';
+                else if (yellowCubes > redCubes) state.winner = 'yellow';
+                else state.winner = 'draw';
+            }
+        } else {
+            // P1 continues playing (Solo mode)
+            state.currentTurn = currentPlayer;
+            state.turnCount++;
+        }
+    } else {
+        // Normal turn pass
+        state.currentTurn = nextPlayer;
+        state.turnCount++;
     }
 }
 

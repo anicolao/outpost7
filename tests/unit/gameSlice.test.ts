@@ -109,7 +109,8 @@ describe('Bonus Logic', () => {
             ...baseState,
             hands: {
                 ...baseState.hands,
-                red: [CARD_NO_BONUS, CARD_PAY]
+                red: [CARD_NO_BONUS, CARD_PAY],
+                yellow: [CARD_NO_BONUS, CARD_PAY]
             }
         };
 
@@ -316,5 +317,90 @@ describe('Ownership Evaluation', () => {
         }));
 
         expect(nextState.colHeaders[2].owner).toBe('red');
+    });
+});
+
+describe('Game End Logic', () => {
+    // Helper to get a clean state
+    const getBaseState = () => {
+        let state = gameReducer(undefined, { type: 'unknown' });
+        state = gameReducer(state, addPlayer(RED_PLAYER));
+        state = gameReducer(state, addPlayer(YELLOW_PLAYER));
+        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'test' }));
+        return state;
+    };
+
+    it('should auto-pass turn if next player has NO valid moves', () => {
+        const baseState = getBaseState();
+
+        // Setup:
+        // Current Turn: Red (playing) -> will pass to Yellow
+        // Yellow Hand: Empty (cannot play)
+        // Offer: All expensive (cannot salvage if hand full, but here hand empty so salvage possible if cost low)
+        // Let's make Offer empty so salvage impossible? Or make offer expensive > 12
+
+        const EXPENSIVE_CARD = { ...CARD_NO_BONUS, cost: 20 };
+
+        const state = {
+            ...baseState,
+            currentTurn: 'red' as PlayerColor,
+            hands: {
+                red: [CARD_NO_BONUS, CARD_PAY],
+                yellow: [] // Empty hand -> Cannot Repair
+            },
+            offer: [EXPENSIVE_CARD], // Expensive -> Cannot Salvage (assuming max cost 12)
+            finishedPlayers: []
+        };
+
+        // Red plays -> triggers endTurn -> checks Yellow
+        const nextState = gameReducer(state, playCard({
+            color: 'red',
+            playCardId: CARD_NO_BONUS.id,
+            payCardId: CARD_PAY.id,
+            row: 0,
+            col: 0,
+            settings: MOCK_SETTINGS
+        }));
+
+        // Yellow should be skipped/finished
+        expect(nextState.finishedPlayers).toContain('yellow');
+        // Turn should return to Red
+        expect(nextState.currentTurn).toBe('red');
+    });
+
+    it('should end game if BOTH players cannot move', () => {
+        const baseState = getBaseState();
+
+        // Setup:
+        // Yellow is already finished
+        // Red plays their last move and leaves themselves with no moves
+
+        const EXPENSIVE_CARD = { ...CARD_NO_BONUS, cost: 20 };
+
+        const state = {
+            ...baseState,
+            currentTurn: 'red' as PlayerColor,
+            hands: {
+                red: [CARD_NO_BONUS, CARD_PAY], // Can make this move, then empty
+                yellow: []
+            },
+            offer: [EXPENSIVE_CARD],
+            finishedPlayers: ['yellow']
+        };
+
+        const nextState = gameReducer(state, playCard({
+            color: 'red',
+            playCardId: CARD_NO_BONUS.id, // Last Valid Move
+            payCardId: CARD_PAY.id,
+            row: 0,
+            col: 0,
+            settings: MOCK_SETTINGS
+        }));
+
+        // Red hand now empty -> No repair. Offer expensive -> No salvage.
+        // Red sees P2 finished. Checks self. Self finished.
+
+        expect(nextState.phase).toBe('game_over');
+        expect(nextState.winner).toBeDefined(); // Red wins on tiebreaker/points or Draw
     });
 });
