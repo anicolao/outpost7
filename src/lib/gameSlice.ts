@@ -1,56 +1,22 @@
 import { createSlice, type PayloadAction, current } from '@reduxjs/toolkit';
 import seedrandom from 'seedrandom';
-
-export type PlayerColor = 'red' | 'yellow';
-export type Edge = 'bottom' | 'top' | 'left' | 'right';
-
-
-export interface Player {
-    color: PlayerColor;
-    edge: Edge;
-}
-
-// Re-export CardData as Card for consistency, or extend it
 import type { CardData, BonusDefinition } from './cardLoader';
 import type { GameSettings } from './settingsStore';
-export type Card = CardData & { id: string; cubes?: number; owner?: PlayerColor; completedBonuses?: number[]; };
+import type {
+    PlayerColor,
+    Edge,
+    Player,
+    Card,
+    PopulationCard,
+    GamePhase,
+    BonusInstance,
+    GameState
+} from './types';
+import { hasValidMoves, evaluateOwnership } from './gameUtils';
 
-export interface PopulationCard {
-    card: string; // filename
-    count: number;
-    owner: PlayerColor;
-}
+// Export types for potential external use (consistency)
+export type { PlayerColor, Edge, Player, Card, PopulationCard, GamePhase, BonusInstance, GameState };
 
-export type GamePhase = 'lobby' | 'playing' | 'game_over';
-
-export interface BonusInstance {
-    id: string;
-    definition: BonusDefinition;
-    sourceCardId: string;
-    sourceRow: number;
-    sourceCol: number;
-    cubeSlot: number; // The slot (1-6) this bonus originated from
-}
-
-interface GameState {
-    players: Player[];
-    phase: GamePhase;
-    orientation: number;
-    grid: (Card | null)[][];
-    rowHeaders: PopulationCard[];
-    colHeaders: PopulationCard[];
-    deck: Card[];
-    offer: Card[];
-    discard: Card[];
-    hands: Record<PlayerColor, Card[]>;
-    currentPlayerHand?: Card[]; // Added for convenience or filtered from hands
-    currentTurn: PlayerColor;
-    turnCount: number;
-    pendingBonuses: BonusInstance[];
-    finishedPlayers: PlayerColor[];
-    winner: PlayerColor | 'draw' | null;
-    scores: { red: number; yellow: number };
-}
 
 const initialState: GameState = {
     players: [],
@@ -376,6 +342,19 @@ const gameSlice = createSlice({
                 endTurn(state);
             }
         },
+        passTurn: (state, action: PayloadAction<{ color: PlayerColor }>) => {
+            const { color } = action.payload;
+            if (state.currentTurn !== color) return;
+
+            // Optional: stricter check "if hasValidMoves(state, color) => throw/ignore" ?
+            // For now, allow voluntary pass, or assume caller checked.
+            // But we should mark them as finished if they pass?
+            // "When a player cannot play... they pass... once a player has passed, they are out of the round"
+            if (!state.finishedPlayers.includes(color)) {
+                state.finishedPlayers.push(color);
+            }
+            endTurn(state);
+        },
         resetGame: (state) => {
             return initialState;
         },
@@ -430,125 +409,6 @@ const gameSlice = createSlice({
     },
 });
 
-// Helper: Evaluate Ownership
-function evaluateOwnership(state: GameState) {
-    // Rows
-    for (let r = 0; r < state.grid.length; r++) {
-        let redCubes = 0;
-        let yellowCubes = 0;
-        for (let c = 0; c < state.grid[r].length; c++) {
-            const cell = state.grid[r][c];
-            if (cell && cell.cubes && cell.owner) {
-                if (cell.owner === 'red') redCubes += cell.cubes;
-                else if (cell.owner === 'yellow') yellowCubes += cell.cubes;
-            }
-        }
-        if (state.rowHeaders[r]) {
-            if (redCubes > yellowCubes) state.rowHeaders[r].owner = 'red';
-            else if (yellowCubes > redCubes) state.rowHeaders[r].owner = 'yellow';
-        }
-    }
-
-    // Cols
-    if (state.grid.length > 0) {
-        for (let c = 0; c < state.grid[0].length; c++) {
-            let redCubes = 0;
-            let yellowCubes = 0;
-            for (let r = 0; r < state.grid.length; r++) {
-                const cell = state.grid[r][c];
-                if (cell && cell.cubes && cell.owner) {
-                    if (cell.owner === 'red') redCubes += cell.cubes;
-                    else if (cell.owner === 'yellow') yellowCubes += cell.cubes;
-                }
-            }
-            if (state.colHeaders[c]) {
-                if (redCubes > yellowCubes) state.colHeaders[c].owner = 'red';
-                else if (yellowCubes > redCubes) state.colHeaders[c].owner = 'yellow';
-            }
-        }
-    }
-}
-
-// Logic to check if a player has ANY valid moves
-function hasValidMoves(state: GameState, player: PlayerColor): boolean {
-    const hand = state.hands[player];
-
-    // 1. Check Salvage
-    // Valid if hand is not full AND offer has at least one card <= 12
-    if (hand.length < 7) {
-        const canPickUpAny = state.offer.some(c => c.cost <= 12); // Rule: Total <= 12. Cheapest card implies possible move.
-        // Actually, if offer is empty, can they salvage?
-        // Rule: "Pickup any combination... from the 5 face up"
-        // If deck empty and offer empty -> NO salvage.
-        // If deck not empty but offer empty (shouldn't happen with refill logic unless deck empties) -> wait, refill happens immediately.
-        // So checking offer is enough.
-        if (canPickUpAny) return true;
-        // Even if all cards > 12 (unlikely/impossible given card distribution, but theoretically), if you can pick 0 cards?
-        // Rules say "Pick up any combination". Picking 0 is usually not a turn. "Pass" is the action when you can't play.
-    }
-
-    // 2. Check Repair
-    // Need:
-    // A play card
-    // A pay card (same or higher value)
-    // A valid spot on grid
-
-    // Quick check: If no cards in hand, cannot repair.
-    if (hand.length < 2) return false; // Need at least pair
-
-    // Check if any pair in hand is valid (Pay >= Play)
-    // Sort hand by cost? O(N log N) - hand is small (max 7)
-    // Actually just double loop O(N^2) is fine.
-
-    let hasValidPair = false;
-    for (let i = 0; i < hand.length; i++) {
-        for (let j = 0; j < hand.length; j++) {
-            if (i === j) continue;
-            if (hand[j].cost >= hand[i].cost) {
-                hasValidPair = true;
-                break;
-            }
-        }
-        if (hasValidPair) break;
-    }
-
-    if (!hasValidPair) return false;
-
-    // Check if valid spot on grid
-    // Format: First card anywhere. Subsequent: Adjacent.
-    let gridEmpty = true;
-    let validSpots: [number, number][] = [];
-
-    for (let r = 0; r < state.grid.length; r++) {
-        for (let c = 0; c < state.grid[r].length; c++) {
-            if (state.grid[r][c] !== null) {
-                gridEmpty = false;
-            }
-        }
-    }
-
-    if (gridEmpty) return true; // Can place first card anywhere
-
-    // Find empty spots adjacent to existing cards
-    for (let r = 0; r < state.grid.length; r++) {
-        for (let c = 0; c < state.grid[r].length; c++) {
-            if (state.grid[r][c] === null) {
-                // Check neighbors
-                const neighbors = [
-                    state.grid[r - 1]?.[c],
-                    state.grid[r + 1]?.[c],
-                    state.grid[r]?.[c - 1],
-                    state.grid[r]?.[c + 1]
-                ];
-                if (neighbors.some(n => n !== undefined && n !== null)) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
 
 function calculateScores(state: GameState): { red: number, yellow: number } {
     const scores = { red: 0, yellow: 0 };
@@ -628,5 +488,5 @@ function endTurn(state: GameState) {
     }
 }
 
-export const { addPlayer, removePlayer, startGame, dealCards, playerDiscard, playCard, resolveBonus, resetGame, salvage } = gameSlice.actions;
+export const { addPlayer, removePlayer, startGame, dealCards, playerDiscard, playCard, resolveBonus, passTurn, resetGame, salvage } = gameSlice.actions;
 export default gameSlice.reducer;

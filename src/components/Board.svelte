@@ -10,6 +10,10 @@
   import Offer from './Offer.svelte';
   import PlayerQR from './PlayerQR.svelte';
   import CardDisplay from './Card.svelte';
+  import E2EHandDisplay from './E2EHandDisplay.svelte';
+
+  // @ts-ignore
+  const isE2E = typeof window !== 'undefined' && (window.E2E_TEST === true || window.E2E_TEST === 'true');
 
   $: orientation = $gameState.game.orientation;
   $: rows = $settingsStore.GRID_ROWS;
@@ -369,6 +373,10 @@
   <div class="offer-overlay">
       <Offer />
   </div>
+
+  {#if isE2E}
+      <E2EHandDisplay />
+  {/if}
 </div>
 
 
