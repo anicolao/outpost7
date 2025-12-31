@@ -359,9 +359,57 @@ const gameSlice = createSlice({
         },
         resetGame: (state) => {
             return initialState;
+        },
+        salvage: (state, action: PayloadAction<{ color: PlayerColor, cardIds: string[] }>) => {
+            const { color, cardIds } = action.payload;
+
+            // Validation 1: Check Turn
+            if (state.currentTurn !== color) {
+                console.warn(`Salvage Failed: Not ${color}'s turn`);
+                return;
+            }
+
+            // Validation 2: Check Cost limit (12)
+            const selectedCards = state.offer.filter(c => cardIds.includes(c.id));
+            if (selectedCards.length !== cardIds.length) {
+                console.warn('Salvage Failed: Some cards not found in offer');
+                return;
+            }
+
+            const totalCost = selectedCards.reduce((sum, c) => sum + c.cost, 0);
+            if (totalCost > 12) {
+                console.warn(`Salvage Failed: Total cost ${totalCost} > 12`);
+                return;
+            }
+
+            // Validation 3: Check Hand Size Limit (7)
+            const currentHandSize = state.hands[color].length;
+            if (currentHandSize + selectedCards.length > 7) {
+                console.warn(`Salvage Failed: Hand size would exceed 7`);
+                return;
+            }
+
+            // Execute Salvage
+
+            // 1. Add to Hand
+            state.hands[color].push(...selectedCards);
+
+            // 2. Remove from Offer
+            state.offer = state.offer.filter(c => !cardIds.includes(c.id));
+
+            // 3. Refill Offer (up to 5)
+            const cardsNeeded = 5 - state.offer.length;
+            if (cardsNeeded > 0 && state.deck.length > 0) {
+                const drawn = state.deck.slice(0, cardsNeeded);
+                state.deck = state.deck.slice(cardsNeeded);
+                state.offer.push(...drawn);
+            }
+
+            // 4. End Turn
+            state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
         }
     },
 });
 
-export const { addPlayer, removePlayer, startGame, dealCards, playerDiscard, playCard, resolveBonus, resetGame } = gameSlice.actions;
+export const { addPlayer, removePlayer, startGame, dealCards, playerDiscard, playCard, resolveBonus, resetGame, salvage } = gameSlice.actions;
 export default gameSlice.reducer;
