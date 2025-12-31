@@ -70,7 +70,12 @@ export class TestStepHelper {
             if (msg.type() === 'error') {
                 const text = msg.text();
                 // Filter out PeerJS connection errors which are expected in test environment
-                if (text.includes('peerjs.com') || text.includes('ERR_NAME_NOT_RESOLVED')) {
+                // We check for exact error patterns rather than partial URL matching
+                const isPeerJSError = text.includes('0.peerjs.com') || 
+                                     text.includes('wss://0.peerjs.com/peerjs');
+                const isNetworkError = text.includes('ERR_NAME_NOT_RESOLVED');
+                
+                if (isPeerJSError || isNetworkError) {
                     console.log(`PAGE WARNING (filtered): ${text}`);
                     return;
                 }
