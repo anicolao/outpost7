@@ -8,8 +8,8 @@ import gameReducer, {
     type Edge,
     type PlayerColor,
     addPlayer
-} from '../src/lib/gameSlice';
-import type { GameSettings } from '../src/lib/settingsStore';
+} from '../../src/lib/gameSlice';
+import type { GameSettings } from '../../src/lib/settingsStore';
 
 // Mock Data
 const MOCK_SETTINGS: GameSettings = {
@@ -18,7 +18,9 @@ const MOCK_SETTINGS: GameSettings = {
     CUBES_PER_PLAY: 1,
     CUBES_PER_OVERPAYMENT: 1,
     GRID_ROWS: 5,
-    GRID_COLS: 5
+    GRID_COLS: 5,
+    STARTING_HAND_LIMIT_P1: 12,
+    STARTING_HAND_LIMIT_P2: 16
 };
 
 const RED_PLAYER: { color: PlayerColor, edge: Edge } = { color: 'red', edge: 'bottom' };
@@ -145,8 +147,7 @@ describe('Bonus Logic', () => {
             definition: { type: 'ADD_CUBE' },
             sourceCardId: 'source',
             sourceRow: 2,
-            sourceCol: 2,
-            description: 'Test Bonus'
+            sourceCol: 2
         };
 
         const state = {
@@ -178,8 +179,7 @@ describe('Bonus Logic', () => {
             definition: { type: 'REMOVE_CUBE' },
             sourceCardId: 'source',
             sourceRow: 2,
-            sourceCol: 2,
-            description: 'Test remove'
+            sourceCol: 2
         };
 
         const state = {
@@ -192,5 +192,129 @@ describe('Bonus Logic', () => {
 
         // Expect opponent cubes reduced
         expect(nextState.grid[3][2]?.cubes).toBe(1);
+    });
+});
+
+describe('Ownership Evaluation', () => {
+    // Helper to get a clean state (Immutable)
+    const getBaseState = () => {
+        let state = gameReducer(undefined, { type: 'unknown' });
+        state = gameReducer(state, addPlayer(RED_PLAYER));
+        state = gameReducer(state, addPlayer(YELLOW_PLAYER));
+        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'test' }));
+        return state;
+    };
+
+    it('should update row ownership to RED if RED has majority', () => {
+        const baseState = getBaseState();
+        // Setup: Row 0 has Red Majority
+        const grid = baseState.grid.map(row => [...row]);
+        // 2 Red Cubes vs 0 Yellow
+        grid[0][0] = { ...CARD_NO_BONUS, id: 'r1', owner: 'red', cubes: 2 };
+
+        const state = {
+            ...baseState,
+            grid,
+            // Ensure Row 0 starts as Yellow for the test to prove it flips
+            rowHeaders: baseState.rowHeaders.map((h, i) => i === 0 ? { ...h, owner: 'yellow' as PlayerColor } : h),
+            hands: { ...baseState.hands, red: [CARD_NO_BONUS, CARD_PAY] },
+            currentTurn: 'red' as PlayerColor
+        };
+
+        // Play a card to trigger end of turn
+        // We'll play into Row 1 to avoid messing up our setup in Row 0, but trigger evaluation
+        const nextState = gameReducer(state, playCard({
+            color: 'red',
+            playCardId: CARD_NO_BONUS.id,
+            payCardId: CARD_PAY.id,
+            row: 1,
+            col: 0,
+            settings: MOCK_SETTINGS
+        }));
+
+        // Expect Row 0 owner to flip to Red
+        expect(nextState.rowHeaders[0].owner).toBe('red');
+    });
+
+    it('should update row ownership to YELLOW if YELLOW has majority', () => {
+        const baseState = getBaseState();
+        const grid = baseState.grid.map(row => [...row]);
+        // 2 Yellow Cubes vs 0 Red
+        grid[0][0] = { ...CARD_NO_BONUS, id: 'y1', owner: 'yellow', cubes: 2 };
+
+        const state = {
+            ...baseState,
+            grid,
+            // Start as Red
+            rowHeaders: baseState.rowHeaders.map((h, i) => i === 0 ? { ...h, owner: 'red' as PlayerColor } : h),
+            hands: { ...baseState.hands, red: [CARD_NO_BONUS, CARD_PAY] },
+            currentTurn: 'red' as PlayerColor
+        };
+
+        const nextState = gameReducer(state, playCard({
+            color: 'red',
+            playCardId: CARD_NO_BONUS.id,
+            payCardId: CARD_PAY.id,
+            row: 1,
+            col: 0,
+            settings: MOCK_SETTINGS
+        }));
+
+        expect(nextState.rowHeaders[0].owner).toBe('yellow');
+    });
+
+    it('should NOT update ownership on TIE', () => {
+        const baseState = getBaseState();
+        const grid = baseState.grid.map(row => [...row]);
+        // 2 Red, 2 Yellow
+        grid[0][0] = { ...CARD_NO_BONUS, id: 'r1', owner: 'red', cubes: 2 };
+        grid[0][1] = { ...CARD_NO_BONUS, id: 'y1', owner: 'yellow', cubes: 2 };
+
+        const state = {
+            ...baseState,
+            grid,
+            // Start as Yellow
+            rowHeaders: baseState.rowHeaders.map((h, i) => i === 0 ? { ...h, owner: 'yellow' as PlayerColor } : h),
+            hands: { ...baseState.hands, red: [CARD_NO_BONUS, CARD_PAY] },
+            currentTurn: 'red' as PlayerColor
+        };
+
+        const nextState = gameReducer(state, playCard({
+            color: 'red',
+            playCardId: CARD_NO_BONUS.id,
+            payCardId: CARD_PAY.id,
+            row: 1,
+            col: 0,
+            settings: MOCK_SETTINGS
+        }));
+
+        // Should REMAIN Yellow (Tie doesn't flip)
+        expect(nextState.rowHeaders[0].owner).toBe('yellow');
+    });
+
+    it('should update COLUMN ownership correctly', () => {
+        const baseState = getBaseState();
+        const grid = baseState.grid.map(row => [...row]);
+        // Col 2 has Red Majority
+        grid[0][2] = { ...CARD_NO_BONUS, id: 'r1', owner: 'red', cubes: 3 };
+
+        const state = {
+            ...baseState,
+            grid,
+            colHeaders: baseState.colHeaders.map((h, i) => i === 2 ? { ...h, owner: 'yellow' as PlayerColor } : h),
+            hands: { ...baseState.hands, red: [CARD_NO_BONUS, CARD_PAY] },
+            currentTurn: 'red' as PlayerColor
+        };
+
+        const nextState = gameReducer(state, playCard({
+            color: 'red',
+            playCardId: CARD_NO_BONUS.id,
+            payCardId: CARD_PAY.id,
+            row: 1,
+            col: 0,
+            settings: MOCK_SETTINGS
+        }));
+
+        expect(nextState.colHeaders[2].owner).toBe('red');
     });
 });

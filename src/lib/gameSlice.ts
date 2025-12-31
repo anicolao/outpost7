@@ -242,6 +242,7 @@ const gameSlice = createSlice({
 
                 // Toggle Turn (only if no bonuses)
                 if (state.pendingBonuses.length === 0) {
+                    evaluateOwnership(state);
                     state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
                     state.turnCount++;
                 }
@@ -361,6 +362,7 @@ const gameSlice = createSlice({
 
             // Toggle Turn if all resolved
             if (state.pendingBonuses.length === 0) {
+                evaluateOwnership(state);
                 state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
                 state.turnCount++;
             }
@@ -419,6 +421,45 @@ const gameSlice = createSlice({
         }
     },
 });
+
+// Helper: Evaluate Ownership
+function evaluateOwnership(state: GameState) {
+    // Rows
+    for (let r = 0; r < state.grid.length; r++) {
+        let redCubes = 0;
+        let yellowCubes = 0;
+        for (let c = 0; c < state.grid[r].length; c++) {
+            const cell = state.grid[r][c];
+            if (cell && cell.cubes && cell.owner) {
+                if (cell.owner === 'red') redCubes += cell.cubes;
+                else if (cell.owner === 'yellow') yellowCubes += cell.cubes;
+            }
+        }
+        if (state.rowHeaders[r]) {
+            if (redCubes > yellowCubes) state.rowHeaders[r].owner = 'red';
+            else if (yellowCubes > redCubes) state.rowHeaders[r].owner = 'yellow';
+        }
+    }
+
+    // Cols
+    if (state.grid.length > 0) {
+        for (let c = 0; c < state.grid[0].length; c++) {
+            let redCubes = 0;
+            let yellowCubes = 0;
+            for (let r = 0; r < state.grid.length; r++) {
+                const cell = state.grid[r][c];
+                if (cell && cell.cubes && cell.owner) {
+                    if (cell.owner === 'red') redCubes += cell.cubes;
+                    else if (cell.owner === 'yellow') yellowCubes += cell.cubes;
+                }
+            }
+            if (state.colHeaders[c]) {
+                if (redCubes > yellowCubes) state.colHeaders[c].owner = 'red';
+                else if (yellowCubes > redCubes) state.colHeaders[c].owner = 'yellow';
+            }
+        }
+    }
+}
 
 export const { addPlayer, removePlayer, startGame, dealCards, playerDiscard, playCard, resolveBonus, resetGame, salvage } = gameSlice.actions;
 export default gameSlice.reducer;
