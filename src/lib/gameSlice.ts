@@ -139,8 +139,9 @@ const gameSlice = createSlice({
                     [availableHeaders[i], availableHeaders[j]] = [availableHeaders[j], availableHeaders[i]];
                 }
 
-                // Draw 10
-                const drawnHeaders = availableHeaders.slice(0, 10);
+                // Draw required number of headers
+                const requiredHeaders = rows + cols;
+                const drawnHeaders = availableHeaders.slice(0, requiredHeaders);
 
                 // Assign Owners
                 const headersWithOwners: PopulationCard[] = drawnHeaders.map((d, i) => ({
@@ -149,8 +150,8 @@ const gameSlice = createSlice({
                 }));
 
                 // Split into Cols (Top) and Rows (Left)
-                state.colHeaders = headersWithOwners.slice(0, 5);
-                state.rowHeaders = headersWithOwners.slice(5, 10);
+                state.colHeaders = headersWithOwners.slice(0, cols);
+                state.rowHeaders = headersWithOwners.slice(cols, cols + rows);
 
                 // --- Card Deck Initialization ---
                 // Use provided deck or fallback (though fallback will be empty/invalid with new type)

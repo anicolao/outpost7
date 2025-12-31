@@ -404,3 +404,32 @@ describe('Game End Logic', () => {
         expect(nextState.winner).toBeDefined(); // Red wins on tiebreaker/points or Draw
     });
 });
+
+describe('Grid Initialization', () => {
+    it('should correctly slice headers for 2x2 grid', () => {
+        let state = gameReducer(undefined, { type: 'unknown' });
+        state = gameReducer(state, addPlayer(RED_PLAYER));
+        state = gameReducer(state, addPlayer(YELLOW_PLAYER));
+        
+        // Pass 2x2
+        state = gameReducer(state, startGame({ rows: 2, cols: 2, seed: 'test' }));
+
+        expect(state.grid.length).toBe(2);
+        expect(state.grid[0].length).toBe(2);
+        
+        expect(state.colHeaders.length).toBe(2);
+        expect(state.rowHeaders.length).toBe(2);
+    });
+
+    it('should correctly slice headers for 5x5 grid', () => {
+        let state = gameReducer(undefined, { type: 'unknown' });
+        state = gameReducer(state, addPlayer(RED_PLAYER));
+        state = gameReducer(state, addPlayer(YELLOW_PLAYER));
+        
+        // Pass 5x5
+        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'test' }));
+
+        expect(state.colHeaders.length).toBe(5);
+        expect(state.rowHeaders.length).toBe(5);
+    });
+});
