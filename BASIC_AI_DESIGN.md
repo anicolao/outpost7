@@ -98,7 +98,7 @@ If no Repair moves are possible (hand empty or no valid spots/discards) AND no S
 
 ## 5. Technical Considerations
 *   **Performance**: The branching factor for Repair can be high (~7 cards * ~10 spots * ~6 discards = ~420 combinations). This is trivial for modern JS to compute in ms.
-*   **State Cloning**: Ensure the `GameState` can be cheaply cloned or virtually mutated to test moves without affecting the real UI.
+*   **State Immutability**: Since the game state is implemented with Redux, each action returns a new state. The AI can safely dispatch actions to evaluate moves without affecting the current game state.
 *   **Async**: Computation should be wrapped in a microtask or generally non-blocking if it takes >16ms (unlikely for this complexity).
 *   **Determinism**: AI should ideally be deterministic (seeded random) for debugging, or random for variety.
 
