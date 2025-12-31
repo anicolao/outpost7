@@ -43,7 +43,9 @@ interface GameState {
     offer: Card[];
     discard: Card[];
     hands: Record<PlayerColor, Card[]>;
+    currentPlayerHand?: Card[]; // Added for convenience or filtered from hands
     currentTurn: PlayerColor;
+    turnCount: number;
     pendingBonuses: BonusInstance[];
 }
 
@@ -59,6 +61,7 @@ const initialState: GameState = {
     discard: [],
     hands: { red: [], yellow: [] },
     currentTurn: 'red', // Default
+    turnCount: 1, // Start at Turn 1 (Red)
     pendingBonuses: [],
 };
 
@@ -162,6 +165,9 @@ const gameSlice = createSlice({
                 state.hands.red = currentDeck.slice(0, 5);
                 state.hands.yellow = currentDeck.slice(5, 10);
                 state.deck = currentDeck.slice(10);
+
+                // Explicitly set Turn 1
+                state.turnCount = 1;
             }
         },
         dealCards: (state, action: PayloadAction<{ count: number, to: PlayerColor }>) => {
@@ -237,6 +243,7 @@ const gameSlice = createSlice({
                 // Toggle Turn (only if no bonuses)
                 if (state.pendingBonuses.length === 0) {
                     state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
+                    state.turnCount++;
                 }
             }
         },
@@ -355,6 +362,7 @@ const gameSlice = createSlice({
             // Toggle Turn if all resolved
             if (state.pendingBonuses.length === 0) {
                 state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
+                state.turnCount++;
             }
         },
         resetGame: (state) => {
@@ -407,6 +415,7 @@ const gameSlice = createSlice({
 
             // 4. End Turn
             state.currentTurn = state.currentTurn === 'red' ? 'yellow' : 'red';
+            state.turnCount++;
         }
     },
 });

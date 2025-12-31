@@ -18,6 +18,7 @@
   let payCardId: string | null = null;
   let discardSelection: Set<string> = new Set();
   let currentTurn: string | null = null;
+  let turnCount: number = 0;
   
   // Modes: 'play' | 'discard'
   // Auto-switch to discard if over limit, otherwise user can toggle?
@@ -134,6 +135,7 @@
                 hand = newHand;
             }
             if (data.turn) currentTurn = data.turn;
+            if (data.turnCount) turnCount = data.turnCount;
         }
     });
 
@@ -161,9 +163,21 @@
       }
   }
 
-  // Over limit based on Hand Count (7)
-  // Value limit only applies at start and is not enforced here for general play
-  $: isOverLimit = handCount > 7;
+  // Over limit based on Hand Count (7) usually.
+  // BUT: "value based hand limit only applies to the first turn"
+  // Red (P1) Limit: 12 on Turn 1
+  // Yellow (P2) Limit: 16 on Turn 2
+  // Note: settingsStore is NOT available on client directly unless we bundle or fetch it.
+  // For now, I will hardcode the defaults or assume they match. Ideally Host sends settings. 
+  // Let's assume standard values as per request: 12 and 16.
+  // If we wanted to be perfect we'd send settings in HAND_UPDATE.
+  
+  $: isFirstTurn = (playerColor === 'red' && turnCount === 1) || (playerColor === 'yellow' && turnCount === 2);
+  $: valueLimit = playerColor === 'yellow' ? 16 : 12;
+  
+  $: isOverLimit = isFirstTurn 
+      ? (totalCost > valueLimit || handCount > 7) // Does count limit apply on first turn? Usually yes.
+      : (handCount > 7);
   
   function handleCardTap(cardId: string) {
       if (isOverLimit) {
@@ -245,7 +259,7 @@
   $: remainingHandCount = handCount - discardSelection.size;
   $: remainingCost = totalCost - selectedCost;
 
-  $: remainsValid = !isOverLimit || (remainingHandCount <= 7);
+  $: remainsValid = !isOverLimit || (isFirstTurn ? (remainingCost <= valueLimit && remainingHandCount <= 7) : (remainingHandCount <= 7));
 
   function confirmDiscard() {
       if (discardSelection.size === 0) return;
@@ -283,8 +297,8 @@
         <div class="stat" class:danger={remainingHandCount > 7}>
             Cards: {remainingHandCount}/7
         </div>
-        <div class="stat">
-            Value: {remainingCost}
+        <div class="stat" class:danger={isFirstTurn && remainingCost > valueLimit}>
+            Value: {remainingCost}{isFirstTurn ? `/${valueLimit}` : ''}
         </div>
     </div>
     <div class="mode-switch">
