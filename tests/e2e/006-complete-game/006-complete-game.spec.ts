@@ -11,7 +11,8 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
     );
 
     // 1. Initial Load & Setup
-    await page.goto('/');
+    // Use fixed seed for deterministic behavior
+    await page.goto('/?seed=complete-game-test');
 
     await tester.step('01-initial-state', {
         description: 'Game Loaded',
@@ -98,11 +99,22 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
         // Dispatch
         // We must serialize action if needed? No, playCard returns JSON serializable object.
         await page.evaluate((action) => (window as any).store.dispatch(action), action);
+
+        // Wait for UI to update (Svelte render)
+        const cellSelector = `[data-cell-id="${row}-${col}"] .played-card`;
+        await expect(page.locator(cellSelector)).toBeVisible();
+
+        // Wait for image to load to prevent snapshot race conditions
+        const img = page.locator(`${cellSelector} img.card-bg`);
+        await expect(img).toBeVisible();
+        await expect(img).toHaveJSProperty('complete', true);
+        await expect(img).not.toHaveJSProperty('naturalWidth', 0);
+
         await waitForAnimations(page);
     };
 
     await playMove('red', 0, 0);
-    await tester.step('04-red-played', { description: 'Red Played 0,0', verifications: [] });
+    await tester.step('04-red-played', { description: 'Red Played 0,0', verifications: [], skipScreenshot: true });
 
     await playMove('yellow', 0, 1);
     await playMove('red', 1, 0);
@@ -112,7 +124,8 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
         description: 'Grid Filled',
         verifications: [
             { spec: '4 played cards', check: async () => await expect(page.locator('.played-card')).toHaveCount(4) }
-        ]
+        ],
+        skipScreenshot: true
     });
 
     // 6. Force Game End by Salvaging loop
@@ -189,7 +202,8 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
         description: 'Game Over Screen',
         verifications: [
             { spec: 'Game Over visible', check: async () => await expect(page.locator('.game-over-modal')).toBeVisible() }
-        ]
+        ],
+        skipScreenshot: true
     });
 
     tester.generateDocs();

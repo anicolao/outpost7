@@ -10,7 +10,7 @@
     "test": "vitest",
     "test:e2e": "playwright test",
     "peer-server": "peerjs --port 9000 --path / --ip 0.0.0.0",
-    "pre-commit": "if grep -r 'waitForTimeout' src tests; then echo 'Error: waitForTimeout is banned. Use waitForAnimations instead.' && exit 1; fi",
+    "pre-commit": "if grep -r 'waitForTimeout' src tests; then echo 'Error: waitForTimeout is banned. Use waitForAnimations instead.' && exit 1; fi && npm run test:e2e",
     "prepare": "husky"
   },
   "devDependencies": {

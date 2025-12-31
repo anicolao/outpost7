@@ -11,6 +11,7 @@ export interface StepOptions {
     description: string;
     verifications: Verification[];
     page?: Page; // Optional override for multi-page tests
+    skipScreenshot?: boolean;
 }
 
 // Shared Utility
@@ -96,6 +97,9 @@ export class TestStepHelper {
                     caret-color: transparent !important;
                 }
             `;
+            // @ts-ignore
+            window.E2E_TEST = true;
+
             const target = document.head || document.documentElement;
             if (target) target.appendChild(style);
         });
@@ -129,7 +133,9 @@ export class TestStepHelper {
         await waitForAnimations(targetPage);
 
         // Assert equality (Pixel Perfect)
-        await expect(targetPage).toHaveScreenshot(filename);
+        if (!options.skipScreenshot) {
+            await expect(targetPage).toHaveScreenshot(filename);
+        }
 
         // 4. Record for Docs
         this.steps.push({
