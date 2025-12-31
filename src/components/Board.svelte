@@ -210,10 +210,8 @@
     }
 
     let executingBonuses = new Set<string>();
-    let completedBonuses = new Set<string>(); // "row-col-slot" strings
 
     async function handleBonusClick(rowIndex: number, colIndex: number, slotIndex: number) {
-        console.log(`Bonus Click: ${rowIndex}, ${colIndex}, Slot ${slotIndex}`);
         
         const bonus = pendingBonuses.find(b => 
             b.sourceRow === rowIndex && 
@@ -221,10 +219,7 @@
             b.cubeSlot === slotIndex
         );
 
-        if (!bonus) {
-            console.warn('Bonus not found for click');
-            return;
-        }
+        if (!bonus) return;
 
         // 1. Mark as executing (triggers animation in UI)
         executingBonuses.add(bonus.id);
@@ -233,15 +228,10 @@
         // 2. Wait for animation
         await new Promise(r => setTimeout(r, 600));
 
-        // 3. Mark as Completed (Persist visual state FIRST to avoid flicker)
-        const key = `${rowIndex}-${colIndex}-${slotIndex}`;
-        completedBonuses.add(key);
-        completedBonuses = completedBonuses;
-
-        // 4. Resolve State (Trigger store update which removes pending/interactive)
+        // 3. Resolve State (Store updates persistence)
         store.dispatch(resolveBonus({ bonusId: bonus.id })); 
 
-        // 5. Cleanup UI state
+        // 4. Cleanup UI state
         executingBonuses = executingBonuses;
     }
     
@@ -311,7 +301,7 @@
                              card={cell} 
                              activeBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex).map(b => b.cubeSlot)}
                              executingBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex && executingBonuses.has(b.id)).map(b => b.cubeSlot)}
-                             completedBonusSlots={[...completedBonuses].filter(k => k.startsWith(`${rowIndex}-${colIndex}-`)).map(k => parseInt(k.split('-')[2]))}
+                             completedBonusSlots={cell.completedBonuses || []}
                              on:bonusClick={(e) => handleBonusClick(rowIndex, colIndex, e.detail.slotIndex)}
                          />
                      </div>
