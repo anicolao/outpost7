@@ -13,7 +13,7 @@ export interface Player {
 // Re-export CardData as Card for consistency, or extend it
 import type { CardData, BonusDefinition } from './cardLoader';
 import type { GameSettings } from './settingsStore';
-export type Card = CardData & { id: string; cubes?: number; owner?: PlayerColor; };
+export type Card = CardData & { id: string; cubes?: number; owner?: PlayerColor; completedBonuses?: number[]; };
 
 export interface PopulationCard {
     card: string; // filename
@@ -241,12 +241,31 @@ const gameSlice = createSlice({
             }
         },
         resolveBonus: (state, action: PayloadAction<{ bonusId: string }>) => {
+            console.log('REDUCER: resolveBonus', action.payload);
             const { bonusId } = action.payload;
             const index = state.pendingBonuses.findIndex(b => b.id === bonusId);
-            if (index === -1) return;
+
+            if (index === -1) {
+                console.error('REDUCER: Bonus not found', bonusId);
+                return;
+            }
 
             const bonus = state.pendingBonuses[index];
-            const { definition, sourceRow, sourceCol } = bonus;
+            const { definition, sourceRow, sourceCol, cubeSlot } = bonus;
+            console.log('REDUCER: Resolving bonus', { sourceRow, sourceCol, cubeSlot });
+
+            // Mark as Completed on Source Card
+            const sourceCard = state.grid[sourceRow]?.[sourceCol];
+            if (sourceCard) {
+                if (!sourceCard.completedBonuses) sourceCard.completedBonuses = [];
+                if (!sourceCard.completedBonuses.includes(cubeSlot)) {
+                    sourceCard.completedBonuses.push(cubeSlot);
+                    console.log('REDUCER: Marked completed', sourceCard.completedBonuses);
+                }
+            } else {
+                console.error('REDUCER: Source card not found');
+            }
+
             const currentPlayer = state.currentTurn;
 
             // Execute Logic based on Type
