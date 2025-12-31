@@ -28,7 +28,7 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bon
 ![Red Player Selects Play and Pay Cards](screenshots/003-003-client-selection.png)
 
 **Specs:**
-- Select Valid Play/Pay Pair
+- Select Valid Play/Pay pair
 
 ## Verify Face Down Card and Highlights
 
