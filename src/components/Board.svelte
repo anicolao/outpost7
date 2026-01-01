@@ -124,6 +124,9 @@
           const ai = aiInstances[turnColor];
           
           // Small delay for "thinking"
+          // Faster for E2E to avoid timeouts, moderate for users to perceive turns
+          const AI_THINK_DELAY = isE2E ? 10 : 500;
+          
           setTimeout(() => {
               // Re-check state to ensure it's still AI's turn (async safety)
               if ($gameState.game.currentTurn === turnColor) {
@@ -149,7 +152,7 @@
                       }
                   }
               }
-          }, 1000); 
+          }, AI_THINK_DELAY); 
       }
   }
   
