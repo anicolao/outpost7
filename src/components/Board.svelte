@@ -125,9 +125,8 @@
           
           // Small delay for "thinking"
           // Faster for E2E to avoid timeouts, moderate for users to perceive turns
-          const AI_THINK_DELAY = isE2E ? 10 : 500;
-          
-          setTimeout(() => {
+
+          const executeAIMove = () => {
               // Re-check state to ensure it's still AI's turn (async safety)
               if ($gameState.game.currentTurn === turnColor) {
                   const move = ai.computeMove($gameState.game);
@@ -152,7 +151,13 @@
                       }
                   }
               }
-          }, AI_THINK_DELAY); 
+          };
+
+          if (isE2E) {
+              executeAIMove();
+          } else {
+              setTimeout(executeAIMove, 500);
+          }
       }
   }
   
