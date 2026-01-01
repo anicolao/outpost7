@@ -21,6 +21,7 @@ export interface CardData {
     color: string;
     // Parsed Bonuses for each cube slot (1-6)
     bonuses: Record<number, BonusDefinition>;
+    maxCubes: number;
 }
 
 function parseBonus(filename: string): BonusDefinition | null {
@@ -76,6 +77,12 @@ export async function loadCards(): Promise<CardData[]> {
                 if (bonus) {
                     card.bonuses[slot] = bonus;
                 }
+                // Count valid slots
+                let maxCubes = 0;
+                for (let slot = 1; slot <= 6; slot++) {
+                    if (card[`cube_${slot}`]) maxCubes++;
+                }
+                card.maxCubes = maxCubes;
             }
 
             cards.push(card as CardData);
