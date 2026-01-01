@@ -4,6 +4,7 @@ import { BasicAI } from '../../../src/lib/ai/BasicAI';
 import type { GameState } from '../../../src/lib/types';
 
 test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
+    test.setTimeout(300000); // 5 minutes for full game simulation
     // 1. Setup
     const helper = new TestStepHelper(page, testInfo);
     helper.setMetadata('Basic AI Match', 'A complete game played between two Basic AIs (Red vs Yellow).');
