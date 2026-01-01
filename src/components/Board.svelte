@@ -3,7 +3,7 @@
 
   import { Peer, type DataConnection } from 'peerjs';
   import { gameState } from '../lib/redux-svelte';
-  import { dealCards, playerDiscard, resolveBonus, type BonusInstance } from '../lib/gameSlice';
+  import { dealCards, playerDiscard, resolveBonus, salvage, type BonusInstance } from '../lib/gameSlice';
   import { getAssetUrl, type CardData } from '../lib/cardLoader';
   import { settingsStore } from '../lib/settingsStore';
   import { store } from '../lib/store';
@@ -134,7 +134,7 @@
                       if (move.type === 'PASS') {
                           store.dispatch({ type: 'game/passTurn', payload: { color: turnColor } });
                       } else if (move.type === 'SALVAGE') {
-                          store.dispatch(require('../lib/gameSlice').salvage({ color: turnColor, cardIds: move.cardIds }));
+                          store.dispatch(salvage({ color: turnColor, cardIds: move.cardIds }));
                       } else if (move.type === 'RESOLVE_BONUS') {
                           store.dispatch(resolveBonus({ bonusId: move.bonusId }));
                       } else if (move.type === 'REPAIR') {
