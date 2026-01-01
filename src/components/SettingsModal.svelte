@@ -37,12 +37,12 @@
         {#each Object.entries($settingsStore) as [key, value]}
             <li class="setting-item">
                 <div class="setting-info">
-                    <span class="label">{SETTINGS_DESCRIPTIONS[key] || key}</span>
+                    <span class="label">{SETTINGS_DESCRIPTIONS[key as keyof GameSettings] || key}</span>
                 </div>
                 <div class="controls">
-                    <button class="control-btn" onclick={() => updateSetting(key, -1)}>-</button>
+                    <button class="control-btn" onclick={() => updateSetting(key as keyof GameSettings, -1)}>-</button>
                     <span class="value">{value}</span>
-                    <button class="control-btn" onclick={() => updateSetting(key, 1)}>+</button>
+                    <button class="control-btn" onclick={() => updateSetting(key as keyof GameSettings, 1)}>+</button>
                 </div>
             </li>
         {/each}

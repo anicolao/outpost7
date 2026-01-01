@@ -8,7 +8,7 @@
 
   // Derived state from store
   $: players = $gameState.game.players;
-  $: canStart = players.length === 2;
+  $: canStart = players.length >= 1;
 
   const EDGES: Edge[] = ['bottom', 'left', 'top', 'right'];
   const COLORS: PlayerColor[] = ['red', 'yellow'];
@@ -40,7 +40,27 @@
   }
 
   function handleStart() {
-    dispatch('startGame');
+    if (players.length === 1) {
+        // Single Player Mode: Auto-add AI
+        const p1 = players[0];
+        const aiColor = p1.color === 'red' ? 'yellow' : 'red';
+        
+        let aiEdge: Edge = 'top';
+        if (p1.edge === 'bottom') aiEdge = 'top';
+        else if (p1.edge === 'top') aiEdge = 'bottom';
+        else if (p1.edge === 'left') aiEdge = 'right';
+        else if (p1.edge === 'right') aiEdge = 'left';
+
+        if (getPlayerAt(aiEdge)) {
+            const availableMap = EDGES.filter(e => !getPlayerAt(e));
+            if (availableMap.length > 0) aiEdge = availableMap[0];
+        }
+
+        store.dispatch(addPlayer({ edge: aiEdge, color: aiColor, type: 'ai' }));
+        setTimeout(() => dispatch('startGame'), 10);
+    } else {
+        dispatch('startGame');
+    }
   }
 
   // Icons
@@ -73,6 +93,9 @@
       <button class="play-btn" in:fade onclick={handleStart}>
         {@html PlayIcon}
       </button>
+      <div class="start-label" in:fade>
+         {players.length === 1 ? 'START SOLO' : 'START GAME'}
+      </div>
     {:else}
       <div class="waiting-msg" in:fade>
         Waiting for {2 - players.length} players...
@@ -149,6 +172,13 @@
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     transition: transform 0.2s, background-color 0.2s;
+  }
+  
+  .start-label {
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      opacity: 0.8;
   }
 
   .play-btn:hover {

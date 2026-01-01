@@ -64,7 +64,11 @@
         config: { iceServers: [] }
     } : undefined;
 
-    peer = forcedClientId ? new Peer(forcedClientId, peerConfig) : new Peer(peerConfig);
+    if (forcedClientId) {
+        peer = peerConfig ? new Peer(forcedClientId, peerConfig) : new Peer(forcedClientId);
+    } else {
+        peer = peerConfig ? new Peer(peerConfig) : new Peer();
+    }
 
     peer.on('open', (id) => {
         console.log('Client Peer ID:', id);
