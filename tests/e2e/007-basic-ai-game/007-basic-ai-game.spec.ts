@@ -86,8 +86,6 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
         if (move.type === 'PASS') desc += 'PASS';
         else if (move.type === 'SALVAGE') desc += `SALVAGE (${move.cardIds.join(', ')})`;
         else if (move.type === 'RESOLVE_BONUS') desc += `BONUS (${move.bonusId})`;
-        else desc += `REPAIR (Play ${move.playCardId} at ${move.row},${move.col})`;
-
         // Execute Move
         await helper.step(`turn-${String(turnCount).padStart(3, '0')}-${currentPlayer}`, {
             description: desc,
@@ -146,32 +144,25 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
                             }, { ...move });
                         }
 
-                        // Wait for State Change
-                        await expect.poll(async () => {
-                            return await page.evaluate(({ prevTurn, prevBonus, targetBonusId }) => {
-                                // @ts-ignore
-                                const s = window.store.getState().game;
-                                const turnChanged = s.turnCount > prevTurn;
+                        // Wait for State Change (Direct Evaluation - Redux is sync-ish for this test)
+                        await page.waitForFunction(({ prevTurn, prevBonus, targetBonusId }) => {
+                            // @ts-ignore
+                            const s = window.store.getState().game;
+                            const turnChanged = s.turnCount > prevTurn;
 
-                                let stateChanged = false;
-                                if (targetBonusId) {
-                                    // If we resolved a specific bonus, we expect it to be gone
-                                    stateChanged = !s.pendingBonuses.some(b => b.id === targetBonusId);
-                                } else {
-                                    // Normal move: Expect turn change OR bonus appearance/count change
-                                    stateChanged = (s.pendingBonuses.length !== prevBonus);
-                                }
-
-                                // Also check for game over
-                                const gameOver = s.phase === 'game_over';
-
-                                return turnChanged || stateChanged || gameOver;
-                            }, {
-                                prevTurn: previousTurnCount,
-                                prevBonus: previousBonusCount,
-                                targetBonusId: move.type === 'RESOLVE_BONUS' ? move.bonusId : null
-                            });
-                        }, { timeout: 5000 }).toBe(true);
+                            let stateChanged = false;
+                            if (targetBonusId) {
+                                stateChanged = !s.pendingBonuses.some((b: any) => b.id === targetBonusId);
+                            } else {
+                                stateChanged = (s.pendingBonuses.length !== prevBonus);
+                            }
+                            const gameOver = s.phase === 'game_over';
+                            return turnChanged || stateChanged || gameOver;
+                        }, {
+                            prevTurn: previousTurnCount,
+                            prevBonus: previousBonusCount,
+                            targetBonusId: move.type === 'RESOLVE_BONUS' ? move.bonusId : null
+                        });
                     }
                 }
             ]

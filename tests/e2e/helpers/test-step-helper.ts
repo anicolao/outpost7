@@ -32,11 +32,20 @@ export async function waitForAnimations(page: Page) {
             });
 
             if (animations.length > 0) {
-                // If animations are running, wait for them to finish (or be cancelled)
+                // Aggressively fast-forward animations
+                console.log(`[waitForAnimations] Fast-forwarding ${animations.length} animations`);
+                animations.forEach(a => {
+                    try {
+                        a.finish();
+                    } catch (e) {
+                        // Fallback for infinite or un-finishable animations
+                        a.cancel();
+                    }
+                });
+
+                // Allow one frame for state to settle
                 stableFrames = 0;
-                // Animations might be cancelled (e.g. element removed), which rejects 'finished'.
-                // We should catch that.
-                await Promise.all(animations.map(a => a.finished.catch(() => { })));
+                await new Promise(resolve => requestAnimationFrame(resolve));
             } else {
                 // If quiet, count this frame
                 stableFrames++;
@@ -98,8 +107,13 @@ export class TestStepHelper {
             const style = document.createElement('style');
             style.innerHTML = `
                 *, *::before, *::after {
-                    transition: none !important;
+                    transition-property: none !important;
+                    transition-duration: 0s !important;
+                    transition-delay: 0s !important;
                     animation: none !important;
+                    animation-duration: 0s !important;
+                    animation-delay: 0s !important;
+                    animation-iteration-count: 1 !important;
                     caret-color: transparent !important;
                 }
             `;
