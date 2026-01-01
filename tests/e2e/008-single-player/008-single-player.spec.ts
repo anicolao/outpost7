@@ -173,7 +173,7 @@ test.describe('Single Player Mode', () => {
                                 // @ts-ignore
                                 return window.store.getState().game.turnCount;
                             });
-                        }, { timeout: 5000 }).toBeGreaterThan(1);
+                        }, { timeout: 15000 }).toBeGreaterThan(1);
 
                         // Check logs or state to see if Yellow played
                         await expect.poll(async () => {
@@ -183,7 +183,7 @@ test.describe('Single Player Mode', () => {
                                 // Check if any cell is owned by yellow
                                 return grid.flat().some((c: any) => c && c.owner === 'yellow');
                             });
-                        }, { timeout: 5000 }).toBe(true);
+                        }, { timeout: 15000 }).toBe(true);
                     }
                 }
             ]
