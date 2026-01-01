@@ -86,6 +86,9 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
         if (move.type === 'PASS') desc += 'PASS';
         else if (move.type === 'SALVAGE') desc += `SALVAGE (${move.cardIds.join(', ')})`;
         else if (move.type === 'RESOLVE_BONUS') desc += `BONUS (${move.bonusId})`;
+        // else desc is already set for REPAIR
+
+        const start = Date.now();
         // Execute Move
         await helper.step(`turn-${String(turnCount).padStart(3, '0')}-${currentPlayer}`, {
             description: desc,
@@ -167,6 +170,8 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
                 }
             ]
         });
+        const duration = Date.now() - start;
+        console.log(`[Turn ${turnCount}] Step Duration: ${duration}ms`);
 
         turnCount++;
     }
