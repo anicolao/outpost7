@@ -26,7 +26,7 @@ const createInitialState = (): GameState => ({
 });
 
 describe('Limit Checks', () => {
-    it('should limit cubes to 6 when playing a card with massive overpayment', () => {
+    it('should limit cubes to the cards maxCubes (3) when playing a card with massive overpayment', () => {
         let state = createInitialState();
 
         // Mock Settings
@@ -43,7 +43,8 @@ describe('Limit Checks', () => {
             background: 'bg',
             module_resource_1: 'red_mod',
             text_module_resource_1: '0', // Cost 0
-            cube_1: '1', cube_2: '2', cube_3: '3', cube_4: '4', cube_5: '5', cube_6: '6',
+            cube_1: '1', cube_2: '2', cube_3: '3', cube_4: '', cube_5: '', cube_6: '', // ONLY 3 SLOTS
+            maxCubes: 3, // EXPLICIT LIMIT
             cost: 0,
             color: 'red',
             bonuses: {}
@@ -55,6 +56,7 @@ describe('Limit Checks', () => {
             module_resource_1: 'red_mod',
             text_module_resource_1: '10', // Cost 10
             cube_1: '1', cube_2: '2', cube_3: '3', cube_4: '4', cube_5: '5', cube_6: '6',
+            maxCubes: 6,
             cost: 10,
             color: 'red',
             bonuses: {}
@@ -64,6 +66,7 @@ describe('Limit Checks', () => {
 
         // Play card: Cost 0, Pay with 10. Overpay = 10.
         // Cubes = 1 (base) + 1 (match) + 10 (overpay) = 12.
+        // BUT maxCubes is 3.
         const action = playCard({
             color: 'red',
             playCardId: 'play_1',
@@ -76,24 +79,25 @@ describe('Limit Checks', () => {
         state = reducer(state, action);
 
         expect(state.grid[0][0]).not.toBeNull();
-        expect(state.grid[0][0]?.cubes).toBeLessThanOrEqual(6);
+        expect(state.grid[0][0]?.cubes).toBe(3); // Should be capped at 3
     });
 
-    it('should ignores adding a cube to a card that already has 6', () => {
+    it('should ignore adding a cube to a card that is full (at maxCubes)', () => {
         let state = createInitialState();
 
-        // Place a card with 6 cubes at 0,1
+        // Place a card with 3 cubes and maxCubes=3 at 0,1
         state.grid[0][1] = {
             id: 'target',
             index: '1',
             background: 'bg',
             module_resource_1: 'red_mod',
             text_module_resource_1: '0',
-            cube_1: '1', cube_2: '2', cube_3: '3', cube_4: '4', cube_5: '5', cube_6: '6',
+            cube_1: '1', cube_2: '2', cube_3: '3', cube_4: '', cube_5: '', cube_6: '',
+            maxCubes: 3,
             cost: 0,
             color: 'red',
             bonuses: {},
-            cubes: 6,       // FULL
+            cubes: 3,       // FULL
             owner: 'red'
         };
 
@@ -105,6 +109,7 @@ describe('Limit Checks', () => {
             module_resource_1: 'red_mod',
             text_module_resource_1: '0',
             cube_1: '1', cube_2: '2', cube_3: '3', cube_4: '4', cube_5: '5', cube_6: '6',
+            maxCubes: 6,
             cost: 0,
             color: 'red',
             bonuses: {},
@@ -125,7 +130,7 @@ describe('Limit Checks', () => {
         // Resolve Bonus
         state = reducer(state, resolveBonus({ bonusId: 'b1' }));
 
-        // Target at 0,1 should still be 6
-        expect(state.grid[0][1]?.cubes).toBe(6);
+        // Target at 0,1 should still be 3
+        expect(state.grid[0][1]?.cubes).toBe(3);
     });
 });
