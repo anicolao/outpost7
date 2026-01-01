@@ -6,6 +6,7 @@ export type Edge = 'bottom' | 'top' | 'left' | 'right';
 export interface Player {
     color: PlayerColor;
     edge: Edge;
+    type: 'human' | 'ai';
 }
 
 export type Card = CardData & { id: string; cubes?: number; owner?: PlayerColor; completedBonuses?: number[]; };

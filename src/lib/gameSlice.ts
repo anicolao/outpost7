@@ -42,13 +42,13 @@ const gameSlice = createSlice({
     name: 'game',
     initialState,
     reducers: {
-        addPlayer: (state, action: PayloadAction<Player>) => {
-            const { color, edge } = action.payload;
+        addPlayer: (state, action: PayloadAction<{ color: PlayerColor, edge: Edge, type?: 'human' | 'ai' }>) => {
+            const { color, edge, type = 'human' } = action.payload;
             const edgeOccupied = state.players.some(p => p.edge === edge);
             const colorTaken = state.players.some(p => p.color === color);
 
             if (!edgeOccupied && !colorTaken) {
-                state.players.push(action.payload);
+                state.players.push({ color, edge, type });
             }
         },
         removePlayer: (state, action: PayloadAction<Edge>) => {
@@ -430,7 +430,7 @@ function calculateScores(state: GameState): { red: number, yellow: number } {
 
 function endTurn(state: GameState) {
     const currentPlayer = state.currentTurn;
-    const otherPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
+    const otherPlayer: PlayerColor = currentPlayer === 'red' ? 'yellow' : 'red';
 
     let nextPlayer = otherPlayer;
     let nextPlayerValid = hasValidMoves(state, nextPlayer);

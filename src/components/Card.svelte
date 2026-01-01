@@ -1,8 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { getAssetUrl, type CardData } from '../lib/cardLoader';
+  import { getAssetUrl } from '../lib/cardLoader';
+  import type { Card } from '../lib/types';
 
-  export let card: CardData;
+  export let card: Card;
   export let activeBonusSlots: number[] = []; // Slot indices (1-6) that are clickable
   export let executingBonusSlots: number[] = []; // Slot indices that are currently animating
   export let completedBonusSlots: number[] = []; // Slot indices that have finished executing
