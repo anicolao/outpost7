@@ -186,7 +186,7 @@ const gameSlice = createSlice({
                 const colorMatch = payCard.color === playCard.color ? settings.CUBES_PER_COLOR_MATCH : 0;
                 const overpay = Math.max(0, payCard.cost - playCard.cost);
                 const overpayBonus = overpay * settings.CUBES_PER_OVERPAYMENT;
-                const cubes = settings.CUBES_PER_PLAY + colorMatch + overpayBonus;
+                const cubes = Math.min(settings.CUBES_PER_PLAY + colorMatch + overpayBonus, 6);
 
                 // Remove both from hand
                 // Remove both from hand
