@@ -77,7 +77,26 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
 
         const currentPlayer = gameState.currentTurn;
         const ai = currentPlayer === 'red' ? aiRed : aiYellow;
+
+        // Mock Math.random for deterministic AI behavior in tests
+        const originalRandom = Math.random;
+        // Simple LCG for determinism
+        Math.random = () => {
+            // Use a persistent seed initialized outside or use a fixed calculation based on turn?
+            // To ensure full replayability, we need a persistent state.
+            // Let's rely on a global seed variable for this test scope.
+            // @ts-ignore
+            if (!globalThis.testSeed) globalThis.testSeed = 12345 + turnCount;
+            // @ts-ignore
+            globalThis.testSeed = (globalThis.testSeed * 9301 + 49297) % 233280;
+            // @ts-ignore
+            return globalThis.testSeed / 233280;
+        };
+
         const move = ai.computeMove(gameState);
+
+        // Restore Math.random
+        Math.random = originalRandom;
 
         console.log(`[Turn ${turnCount}] ${currentPlayer} chose:`, move);
 
