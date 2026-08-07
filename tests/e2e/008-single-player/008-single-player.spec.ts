@@ -184,6 +184,20 @@ test.describe('Single Player Mode', () => {
                                 return grid.flat().some((c: any) => c && c.owner === 'yellow');
                             });
                         }, { timeout: 15000 }).toBe(true);
+
+                        await expect.poll(async () => {
+                            return page.evaluate(() => {
+                                // @ts-ignore
+                                const game = window.store.getState().game;
+                                return {
+                                    currentTurn: game.currentTurn,
+                                    pendingBonuses: game.pendingBonuses.length
+                                };
+                            });
+                        }, { timeout: 15000 }).toEqual({
+                            currentTurn: 'red',
+                            pendingBonuses: 0
+                        });
                     }
                 }
             ]
