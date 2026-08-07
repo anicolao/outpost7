@@ -16,7 +16,7 @@ test('Player can salvage cards from the offer', async ({ page }, testInfo) => {
             {
                 spec: 'Add Players and Start',
                 check: async () => {
-                    await page.goto('/?seed=salvage_test_1&hostId=e2e_host_salvage');
+                    await page.goto('/?seed=salvage_test_1&gameId=e2e_host_salvage');
 
                     // Add Red (Bottom)
                     await page.locator('.bottom .add-btn').click({ force: true });

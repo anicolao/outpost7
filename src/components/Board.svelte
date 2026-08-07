@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
 
-  import { Peer, type DataConnection } from 'peerjs';
   import { gameState } from '../lib/redux-svelte';
   import { dealCards, playerDiscard, resolveBonus, salvage, type BonusInstance } from '../lib/gameSlice';
   import { getAssetUrl, type CardData } from '../lib/cardLoader';
+  import { createActionRepository, type ActionRepository, type ControllerEvent } from '../lib/action-repository';
+  import { initializeFirebase } from '../lib/firebase';
+  import type { PlayerColor } from '../lib/types';
   import { settingsStore } from '../lib/settingsStore';
   import { store } from '../lib/store';
   import Offer from './Offer.svelte';
@@ -30,70 +32,53 @@
 
   const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 
-  let peer: Peer;
-  let hostPeerId: string | null = null;
-  let connections: Record<string, DataConnection> = {};
-  let forcedId: string | null = null;
+  let gameId: string | null = null;
+  let repository: ActionRepository | undefined;
+  let unsubscribe: (() => void) | undefined;
+  let connectedPlayers: Partial<Record<PlayerColor, string>> = {};
+  let repositoryStatus: 'connecting' | 'ready' | 'offline' | 'error' = 'connecting';
+  let initialSnapshotReceived = false;
+  const handledDiscardEvents = new Set<string>();
+  const publishedHands: Partial<Record<PlayerColor, string>> = {};
 
-  onMount(() => {
-    // Initialize Peer
+  onMount(async () => {
     const urlParams = new URLSearchParams(window.location.search);
-    forcedId = urlParams.get('hostId');
+    gameId = urlParams.get('gameId') ?? crypto.randomUUID().replaceAll('-', '').slice(0, 12);
 
-    const peerConfig = import.meta.env.VITE_PEER_HOST ? {
-        host: import.meta.env.VITE_PEER_HOST,
-        port: parseInt(import.meta.env.VITE_PEER_PORT || '9000'),
-        path: '/',
-        config: { iceServers: [] }
-    } : undefined;
-
-    peer = forcedId 
-        ? (peerConfig ? new Peer(forcedId, peerConfig) : new Peer(forcedId)) 
-        : (peerConfig ? new Peer(peerConfig) : new Peer());
-
-    peer.on('open', (id) => {
-      hostPeerId = id;
-      console.log('Host Peer ID:', id);
-    });
-
-    peer.on('connection', (conn) => {
-      conn.on('data', (data: any) => {
-        console.log('Received data:', data);
-        handleData(conn, data);
-      });
-      
-      conn.on('close', () => {
-         console.log('Client disconnected');
-         // Find and remove connection to restore QR
-         const color = Object.keys(connections).find(c => connections[c] === conn);
-         if (color) {
-             console.log(`Restoring QR for ${color}`);
-             delete connections[color];
-             connections = connections; // trigger reactivity
-         }
-      });
-
-      conn.on('error', (err) => {
-          console.error('Board Connection Error:', err);
-      });
-    });
+    try {
+      const { auth, db } = await initializeFirebase();
+      repository = createActionRepository(db, gameId, auth.currentUser!.uid);
+      unsubscribe = repository.subscribe(
+        handleEvents,
+        (error) => {
+          repositoryStatus = 'error';
+          console.error('Firebase controller connection failed:', error);
+        },
+        (status) => {
+          repositoryStatus = status === 'offline' ? 'offline' : 'ready';
+        },
+      );
+    } catch (error) {
+      repositoryStatus = 'error';
+      console.error('Firebase initialization failed:', error);
+    }
   });
 
   onDestroy(() => {
-    if (peer) peer.destroy();
+    unsubscribe?.();
   });
 
   import { playCard } from '../lib/gameSlice';
 
-  // State for peer selections
-  let peerSelections: Record<string, { playCardId: string | null, payCardId: string | null }> = {
+  // State for private controller selections
+  let controllerSelections: Record<string, { playCardId: string | null, payCardId: string | null }> = {
       red: { playCardId: null, payCardId: null },
       yellow: { playCardId: null, payCardId: null }
   };
 
   // derived state for active selections
   $: hasSelection = (color: string) => {
-      const s = peerSelections[color];
+      const s = controllerSelections[color];
       return !!(s && s.playCardId && s.payCardId);
   };
 
@@ -170,39 +155,72 @@
   } | null = null;
 
 
-  function handleData(conn: DataConnection, data: any) {
-    if (data.type === 'REGISTER') {
-        const color = data.color;
-        if (color === 'red' || color === 'yellow') {
-            connections[color] = conn;
-            // Send initial hand
-            conn.send({ type: 'HAND_UPDATE', hand: hands[color as import('../lib/types').PlayerColor], turn: $gameState.game.currentTurn, turnCount: $gameState.game.turnCount });
-        }
-    } else if (data.type === 'DISCARD') {
-        const { color, cardIds } = data;
+  function handleEvents(events: ControllerEvent[]) {
+    const nextConnections: Partial<Record<PlayerColor, string>> = {};
+    const nextSelections = {
+      red: { playCardId: null as string | null, payCardId: null as string | null },
+      yellow: { playCardId: null as string | null, payCardId: null as string | null },
+    };
+
+    for (const event of events) {
+      const color = event.payload.color;
+      if (color !== 'red' && color !== 'yellow') continue;
+
+      if (event.type === 'player/registered') {
+        nextConnections[color] = event.actorUid;
+      } else if (event.type === 'player/selection-updated') {
+        nextSelections[color] = {
+          playCardId: typeof event.payload.playCardId === 'string' ? event.payload.playCardId : null,
+          payCardId: typeof event.payload.payCardId === 'string' ? event.payload.payCardId : null,
+        };
+      }
+    }
+
+    connectedPlayers = nextConnections;
+    controllerSelections = nextSelections;
+
+    const discardEvents = events.filter((event) => event.type === 'player/discarded');
+    if (!initialSnapshotReceived) {
+      discardEvents.forEach((event) => handledDiscardEvents.add(event.id));
+      initialSnapshotReceived = true;
+      return;
+    }
+
+    for (const event of discardEvents) {
+      if (handledDiscardEvents.has(event.id)) continue;
+      handledDiscardEvents.add(event.id);
+      const color = event.payload.color;
+      const cardIds = event.payload.cardIds;
+      if (
+        (color === 'red' || color === 'yellow') &&
+        Array.isArray(cardIds) &&
+        cardIds.every((id) => typeof id === 'string') &&
+        connectedPlayers[color] === event.actorUid
+      ) {
         store.dispatch(playerDiscard({ color, cardIds }));
-    } else if (data.type === 'SELECTION_UPDATE') {
-        const { color, playCardId, payCardId } = data;
-        if (peerSelections[color]) {
-            peerSelections[color] = { playCardId, payCardId };
-            peerSelections = peerSelections; // Trigger reactivity
-        }
-    } else if (data.type === 'PLAYER_DISCARD') {
-        store.dispatch(playerDiscard({
-            color: data.color,
-            cardIds: data.cardIds
-        }));
+      }
     }
   }
 
-  // Reactive updates for hands
-  $: if (hands.red && connections.red) {
-      connections.red.send({ type: 'HAND_UPDATE', hand: hands.red, turn: $gameState.game.currentTurn, turnCount: $gameState.game.turnCount });
+  function publishHand(color: PlayerColor) {
+    if (!repository) return;
+    const payload = {
+      color,
+      hand: hands[color],
+      turn: $gameState.game.currentTurn,
+      turnCount: $gameState.game.turnCount,
+    };
+    const signature = JSON.stringify(payload);
+    if (publishedHands[color] === signature) return;
+    publishedHands[color] = signature;
+    repository.append('host/hand-updated', payload).catch((error) => {
+      repositoryStatus = 'error';
+      console.error('Firebase hand update failed:', error);
+    });
   }
-  
-  $: if (hands.yellow && connections.yellow) {
-      connections.yellow.send({ type: 'HAND_UPDATE', hand: hands.yellow, turn: $gameState.game.currentTurn, turnCount: $gameState.game.turnCount });
-  }
+
+  $: if (repository && hands.red) publishHand('red');
+  $: if (repository && hands.yellow) publishHand('yellow');
 
   // Meeple Icon
   const MeepleIcon = (owner: string) => {
@@ -225,7 +243,7 @@
       const phase = $gameState.game?.phase;
       if (phase !== 'playing') return;
 
-      const pSel = peerSelections[color];
+      const pSel = controllerSelections[color];
 
       if (!pSel || !pSel.playCardId || !pSel.payCardId) return;
       
@@ -265,7 +283,7 @@
                   col: colIndex,
                   settings: $settingsStore
               }));
-              peerSelections[color] = { playCardId: null, payCardId: null };
+              controllerSelections[color] = { playCardId: null, payCardId: null };
           };
 
           // @ts-ignore
@@ -310,7 +328,7 @@
 
 </script>
 
-<div class="table-top">
+<div class="table-top" data-transport-status={repositoryStatus}>
   <!-- Rotated Board Container -->
   <div class="board-container" style:transform={`rotate(${rotation}deg)`}>
     {#if rows && cols}
@@ -386,14 +404,14 @@
 
   <!-- QR Zones & Face Down Cards -->
   <!-- QR Zones & Face Down Cards -->
-  {#if hostPeerId}  
+  {#if gameId && repositoryStatus !== 'connecting' && repositoryStatus !== 'error'}
       {#each ['top', 'bottom', 'left', 'right'] as edge (edge)}
           {@const player = players.find(p => p.edge === edge)}
           <!-- QR Code (Only if not connected) -->
-          {#if player && !connections[player.color]}
+          {#if player && !connectedPlayers[player.color]}
              <div class="qr-zone {edge}"> 
                  <PlayerQR 
-                     url={`${window.location.origin}${baseUrl}#/hand?host=${hostPeerId}&color=${player.color}${forcedId ? `&clientId=${hostPeerId}_${player.color}` : ''}`} 
+                     url={`${window.location.origin}${baseUrl}#/hand?game=${gameId}&color=${player.color}`}
                      label={`${player.color.toUpperCase()} JOIN`}
                      color={player.color === 'yellow' ? '#ffd700' : '#ff4d4d'} 
                  />
@@ -401,8 +419,8 @@
           {/if}
     
           <!-- Face Down Card (If connected and has selection) -->
-          {@const pSel = player ? peerSelections[player.color] : null}
-          {#if player && connections[player.color] && pSel && pSel.playCardId && pSel.payCardId}
+          {@const pSel = player ? controllerSelections[player.color] : null}
+          {#if player && connectedPlayers[player.color] && pSel && pSel.playCardId && pSel.payCardId}
              <div class="face-down-card {edge}">
                  <img src="assets/module_back.svg" alt="Card Back" />
              </div>

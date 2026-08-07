@@ -16,7 +16,7 @@ test.describe('Grid Initialization', () => {
         for (const size of sizes) {
             await test.step(`Testing ${size}x${size} Grid`, async () => {
                 // 1. Load Page
-                await page.goto('/?seed=test_seed_grid');
+                await page.goto('/?seed=test_seed_grid&gameId=e2e_grid_sizes');
 
                 await tester.step(`load-page-${size}`, {
                     description: `Load Game for ${size}x${size} Test`,

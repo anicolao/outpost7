@@ -7,7 +7,7 @@ test.describe('Hand and Phone UI', () => {
         page.on('pageerror', exception => console.log(`PAGE ERROR: ${exception}`));
 
         const helper = new TestStepHelper(page, testInfo);
-        helper.setMetadata('Hand and Phone UI', 'Verify peer connection and hand syncing');
+        helper.setMetadata('Hand and Phone UI', 'Verify Firebase controller connection and hand syncing');
 
         // 1. Host - Start Game
         await helper.step('001-start-game', {
@@ -16,7 +16,7 @@ test.describe('Hand and Phone UI', () => {
                 {
                     spec: 'Open game page',
                     check: async () => {
-                        await page.goto('/?seed=e2e_test&hostId=e2e_host_conn_v2');
+                        await page.goto('/?seed=e2e_test&gameId=e2e_host_conn_v2');
                         await expect(page.locator('.lobby-container')).toBeVisible();
                     }
                 },
@@ -50,13 +50,14 @@ test.describe('Hand and Phone UI', () => {
                     check: async () => {
                         try {
                             await expect(page.locator('.board-container')).toBeVisible();
+                            await expect(page.locator('.table-top')).toHaveAttribute('data-transport-status', 'ready');
                         } catch (e) {
                             console.log('DEBUG: Board container not visible.');
                             console.log('DEBUG HTML:', await page.content());
                             throw e;
                         }
 
-                        // Wait for Peer ID and QR Rendering
+                        // Wait for Firebase readiness and QR rendering
                         await expect(page.locator('.qr-zone.bottom .qr-item')).toHaveAttribute('data-status', 'ready'); // Red
                         await expect(page.locator('.qr-zone.top .qr-item')).toHaveAttribute('data-status', 'ready'); // Yellow
                     }

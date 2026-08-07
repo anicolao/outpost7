@@ -23,7 +23,7 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
             {
                 spec: 'Load Game with Fixed Seed',
                 check: async () => {
-                    await page.goto('/?seed=ai_battle_001');
+                    await page.goto('/?seed=ai_battle_001&gameId=e2e_ai_battle');
                     await expect(page.locator('.lobby-container')).toBeVisible();
                 }
             },

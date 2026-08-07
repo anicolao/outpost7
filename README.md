@@ -20,6 +20,26 @@ npm install
 npm run dev
 ```
 
+Local multiplayer tests run against the Firebase Authentication and Firestore
+emulators:
+
+```bash
+npm run test:e2e
+```
+
+## Firebase
+
+- Project: `outpost7-20260807`
+- Authentication: anonymous sign-in
+- Database: Cloud Firestore
+- Controller transport: authenticated, append-only events at
+  `games/{gameId}/events/{eventId}`
+
+Firebase browser configuration is public configuration. Authentication and
+Firestore Security Rules provide event attribution and immutable history; no
+service-account credential, private key, Firebase CLI token, or production
+data belongs in this repository.
+
 ## Documentation
 - [VISION.md](./VISION.md) - High-level game vision
 - [DESIGN_OVERVIEW.md](./DESIGN_OVERVIEW.md) - Technical and design overview

@@ -10,7 +10,7 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
 
     // 1. Load Board with Seed (Red gets card_38 with ADD_POPULATION) and FIXED Host ID
     const HOST_ID = 'e2e_host';
-    await boardPage.goto(`/?seed=seed_0&hostId=${HOST_ID}`); // Note: params might need encoding if complex, but simple strings are fine
+    await boardPage.goto(`/?seed=seed_0&gameId=${HOST_ID}`); // Note: params might need encoding if complex, but simple strings are fine
 
     // 1b. Lobby Setup (Required to reach Board)
     await expect(boardPage.locator('.lobby-container')).toBeVisible();
@@ -40,7 +40,7 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
     // Pipe console logs
     playerPage.on('console', msg => console.log(`[PlayerPage] ${msg.text()}`));
 
-    await playerPage.goto(`/#/hand?host=${HOST_ID}&color=red`);
+    await playerPage.goto(`/#/hand?game=${HOST_ID}&color=red`);
 
     // Wait for connection
     await expect(playerPage.locator('text=Connected')).toBeVisible();
@@ -81,7 +81,7 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
     // Verify Pay Overlay
     await expect(playerPage.locator('[data-card-id="card_41"] .selected-overlay.pay')).toBeVisible();
 
-    // 5. Board: Verify Peer Selection (Face Down Card appears)
+    // 5. Board: Verify controller selection (Face Down Card appears)
     await expect(boardPage.locator('.face-down-card.bottom')).toBeVisible();
 
     // 6. Board: Place Card

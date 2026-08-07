@@ -21,7 +21,7 @@ test.describe('Ownership Evaluation', () => {
                 {
                     spec: 'Add Players and Start',
                     check: async () => {
-                        await page.goto('/?seed=e2e_flip&hostId=e2e_host_flip');
+                        await page.goto('/?seed=e2e_flip&gameId=e2e_host_flip');
                         await page.locator('.bottom .add-btn').click({ force: true });
                         await page.locator('.color-picker button[title="red"]').click({ force: true });
                         await page.locator('.top .add-btn').click({ force: true });
