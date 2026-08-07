@@ -30,3 +30,19 @@ Verify player can discard when over hand limit
 **Specs:**
 - Select and Confirm Discard
 
+
+
+## Start a game and immediately connect the red player
+
+![Start a game and immediately connect the red player](screenshots/000-opening-discard-setup.png)
+
+**Specs:**
+- Red receives the five-card opening hand
+
+## Discard the over-limit cards and receive the updated hand
+
+![Discard the over-limit cards and receive the updated hand](screenshots/001-opening-discard-synchronized.png)
+
+**Specs:**
+- Host and player both contain the same three remaining cards
+

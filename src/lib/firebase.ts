@@ -1,5 +1,12 @@
 import { initializeApp } from 'firebase/app';
-import { connectAuthEmulator, getAuth, signInAnonymously, type Auth } from 'firebase/auth';
+import {
+    connectAuthEmulator,
+    getAuth,
+    inMemoryPersistence,
+    setPersistence,
+    signInAnonymously,
+    type Auth,
+} from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
 import { readFirebaseConfig } from './firebase-config';
 
@@ -32,6 +39,7 @@ export async function initializeFirebase(): Promise<FirebaseServices> {
         );
     }
 
+    await setPersistence(auth, inMemoryPersistence);
     await signInAnonymously(auth);
     services = { auth, db };
     return services;
