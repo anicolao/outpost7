@@ -67,6 +67,10 @@ test.describe('Grid Initialization', () => {
                     await expect(colValueEl).toHaveText(String(currentCol));
                 }
 
+                await page.locator('.modal .content').evaluate((element) => {
+                    element.scrollTop = 0;
+                });
+
                 await tester.step(`settings-updated-${size}`, {
                     description: `Update Settings to ${size}x${size}`,
                     verifications: [
