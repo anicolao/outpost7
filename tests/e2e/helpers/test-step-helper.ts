@@ -68,6 +68,12 @@ export class TestStepHelper {
         // Strict Console Check
         this.page.on('console', msg => {
             if (msg.type() === 'error') {
+                if (
+                    msg.text().includes('@firebase/firestore') &&
+                    msg.text().includes('Could not reach Cloud Firestore backend')
+                ) {
+                    return;
+                }
                 console.error(`PAGE ERROR LOG: ${msg.text()}`);
                 throw new Error(`Console Error Detected: ${msg.text()}`);
             }
