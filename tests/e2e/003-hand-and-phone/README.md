@@ -1,6 +1,6 @@
 # Hand and Phone UI
 
-Verify peer connection and hand syncing
+Verify Firebase controller connection and hand syncing
 
 ## Navigate to game and start 2-player match
 

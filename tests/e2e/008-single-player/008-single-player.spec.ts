@@ -13,7 +13,7 @@ test.describe('Single Player Mode', () => {
                 {
                     spec: 'Start Game with 1 Player',
                     check: async () => {
-                        await page.goto('/?seed=e2e_test_solo'); // Use simple seed
+                        await page.goto('/?seed=e2e_test_solo&gameId=e2e_solo'); // Use simple seed
                         await page.waitForLoadState('networkidle');
                         await expect(page.locator('.lobby-container')).toBeVisible();
 
@@ -74,13 +74,13 @@ test.describe('Single Player Mode', () => {
                             const payCard = hand[1];
 
                             store.dispatch({
-                                type: 'SELECTION_UPDATE', // Won't work directly, need to set peerSelections in component?
+                                type: 'SELECTION_UPDATE', // Won't work directly, need to set controller selections in component?
                                 // Actually, for local player, we just click UI or dispatch selection update locally if we simulated clicks.
-                                // BUT wait, Board.svelte handles "handleCellClick" using "peerSelections".
-                                // For local play (no peer), we need to see how selections work.
+                                // BUT wait, Board.svelte handles "handleCellClick" using controller selections.
+                                // For local play (no controller), we need to see how selections work.
                                 // Ah, Single Player uses the same Board logic?
                                 // Board.svelte logic:
-                                // "handleData" updates "peerSelections".
+                                // Firebase events update controller selections.
                                 // BUT for local interactions, we usually need to set selection via UI or mock it.
 
                                 // Actually, let's just use the `playCard` action directly to simulate the move execution 

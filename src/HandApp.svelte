@@ -1,14 +1,15 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { Peer, type DataConnection } from 'peerjs';
   import CardDisplay from './components/Card.svelte';
   import type { Card } from './lib/gameSlice';
+  import { createActionRepository, type ActionRepository, type HandUpdatedPayload } from './lib/action-repository';
+  import { initializeFirebase } from './lib/firebase';
 
-  let hostId: string | null = null;
+  let gameId: string | null = null;
   let playerColor: 'red' | 'yellow' | null = null;
-  let peer: Peer;
-  let conn: DataConnection;
-  
+  let repository: ActionRepository | undefined;
+  let unsubscribe: (() => void) | undefined;
+  let selectionSignature = '';
 
   let hand: Card[] = [];
   let status = 'Initializing...';
@@ -27,129 +28,59 @@
   // I will add an explicit toggle.
   let selectionMode: 'play' | 'discard' = 'play';
 
-  onMount(() => {
-    // Parse query params from hash
-    // Hash format: #/hand?host=...&color=...
+  onMount(async () => {
     const hash = window.location.hash;
     const queryPart = hash.split('?')[1];
     const urlParams = new URLSearchParams(queryPart);
-    
-    hostId = urlParams.get('host');
+
+    gameId = urlParams.get('game');
     const colorParam = urlParams.get('color');
 
     if (colorParam === 'red' || colorParam === 'yellow') {
         playerColor = colorParam;
     }
 
-    if (!hostId || !playerColor) {
-        status = 'Error: Missing host ID or player color';
+    if (!gameId || !playerColor) {
+        status = 'Error: Missing game ID or player color';
         return;
     }
 
-    status = 'Connecting to server...';
-    
-    // Check for explicit client ID for testing
-    // note: window.location.hash logic above handles 'host' and 'color'
-    // but we might want clientId in the main search params or hash?
-    // Let's check main search params first as that's typical for test overrides
-    const searchParams = new URLSearchParams(window.location.search);
-    // Also check hash params (for QR code injection)
-    const forcedClientId = searchParams.get('clientId') || urlParams.get('clientId');
+    status = 'Connecting to Firebase...';
+    try {
+        const { auth, db } = await initializeFirebase();
+        repository = createActionRepository(db, gameId, auth.currentUser!.uid);
+        unsubscribe = repository.subscribe(
+            (events) => {
+                const latest = events
+                    .filter((event) =>
+                        event.type === 'host/hand-updated' && event.payload.color === playerColor
+                    )
+                    .at(-1);
+                if (!latest) return;
 
-
-    const peerConfig = import.meta.env.VITE_PEER_HOST ? {
-        host: import.meta.env.VITE_PEER_HOST,
-        port: parseInt(import.meta.env.VITE_PEER_PORT || '9000'),
-        path: '/',
-        config: { iceServers: [] }
-    } : undefined;
-
-    if (forcedClientId) {
-        peer = peerConfig ? new Peer(forcedClientId, peerConfig) : new Peer(forcedClientId);
-    } else {
-        peer = peerConfig ? new Peer(peerConfig) : new Peer();
+                const update = latest.payload as HandUpdatedPayload;
+                const currentIds = hand.map((card) => card.id).sort().join(',');
+                const newIds = update.hand.map((card) => card.id).sort().join(',');
+                hand = update.hand;
+                currentTurn = update.turn;
+                turnCount = update.turnCount;
+                if (currentIds !== newIds) clearSelection();
+            },
+            (error) => {
+                status = `Connection Error: ${error.message}`;
+            },
+            (firebaseStatus) => {
+                status = firebaseStatus === 'offline' ? 'Reconnecting...' : 'Connected';
+            },
+        );
+        await repository.append('player/registered', { color: playerColor });
+    } catch (error) {
+        status = `Connection Error: ${error instanceof Error ? error.message : String(error)}`;
     }
-
-    peer.on('open', (id) => {
-        console.log('Client Peer ID:', id);
-        connectToHost();
-    });
-
-    peer.on('error', (err) => {
-        console.error(err);
-        status = `Connection Error: ${err.message}`;
-    });
   });
 
-  let connectionRetryTimeout: NodeJS.Timeout;
-  let retryCount = 0;
-  const RETRY_DELAY = 3000; // User requested 3000ms
-  const MAX_RETRIES = 5;
-
-  function connectToHost() {
-    if (!hostId || !peer) return;
-
-    if (retryCount > 0) {
-       status = `Connecting... (Attempt ${retryCount + 1})`;
-    }
-
-    // Close previous connection if exists
-    if (conn) conn.close();
-
-    conn = peer.connect(hostId);
-    clearTimeout(connectionRetryTimeout);
-
-    // Set a timeout to retry if connection doesn't open
-    connectionRetryTimeout = setTimeout(() => {
-        if (status !== 'Connected' && retryCount < MAX_RETRIES) {
-             console.log(`Connection attempt ${retryCount + 1} timed out or failed. Retrying in ${RETRY_DELAY}ms...`);
-             retryCount++;
-             connectToHost();
-        } else if (retryCount >= MAX_RETRIES) {
-             status = 'Connection Failed: Timeout';
-        }
-    }, RETRY_DELAY);
-
-    conn.on('open', () => {
-        clearTimeout(connectionRetryTimeout);
-        status = 'Connected';
-        retryCount = 0;
-        // Register this player
-        conn.send({ type: 'REGISTER', color: playerColor });
-    });
-
-    conn.on('error', (err) => {
-        console.error('DataConnection Error:', err);
-    });
-
-    conn.on('data', (data: any) => {
-        if (data.type === 'HAND_UPDATE') {
-            const newHand = data.hand;
-            // Only clear selection if hand IDs changed
-            const currentIds = hand.map(c => c.id).sort().join(',');
-            const newIds = newHand.map((c: any) => c.id).sort().join(',');
-            
-            if (currentIds !== newIds) {
-                hand = newHand;
-                playCardId = null;
-                payCardId = null;
-                discardSelection = new Set();
-            } else {
-                // Just update hand data (in case costs/images changed - unlikely)
-                hand = newHand;
-            }
-            if (data.turn) currentTurn = data.turn;
-            if (data.turnCount) turnCount = data.turnCount;
-        }
-    });
-
-    conn.on('close', () => {
-        status = 'Disconnected from Host';
-    });
-  }
-
   onDestroy(() => {
-    if (peer) peer.destroy();
+    unsubscribe?.();
   });
 
   $: handCount = hand.length;
@@ -157,12 +88,15 @@
   
   // Logic for Play/Pay State
   $: {
-      if (conn && conn.open) {
-          conn.send({ 
-              type: 'SELECTION_UPDATE', 
-              color: playerColor, 
-              playCardId, 
-              payCardId 
+      const nextSignature = `${playCardId ?? ''}:${payCardId ?? ''}`;
+      if (repository && playerColor && nextSignature !== selectionSignature) {
+          selectionSignature = nextSignature;
+          repository.append('player/selection-updated', {
+              color: playerColor,
+              playCardId,
+              payCardId,
+          }).catch((error) => {
+              status = `Connection Error: ${error instanceof Error ? error.message : String(error)}`;
           });
       }
   }
@@ -265,19 +199,15 @@
 
   $: remainsValid = !isOverLimit || (isFirstTurn ? (remainingCost <= valueLimit && remainingHandCount <= 7) : (remainingHandCount <= 7));
 
-  function confirmDiscard() {
+  async function confirmDiscard() {
       if (discardSelection.size === 0) return;
       if (!remainsValid) return; // Prevent insufficient discard
-      
-      // Send message to host to discard
-      if (conn && conn.open) {
-          conn.send({
-              type: 'PLAYER_DISCARD',
+
+      if (repository) {
+          await repository.append('player/discarded', {
               color: playerColor,
-              cardIds: Array.from(discardSelection)
+              cardIds: Array.from(discardSelection),
           });
-          // Clear locally immediately or wait for update? 
-          // Wait for update is safer, but clear selection now.
           discardSelection = new Set();
       }
   }

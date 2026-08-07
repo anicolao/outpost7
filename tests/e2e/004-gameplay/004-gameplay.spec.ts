@@ -22,7 +22,7 @@ test.describe('Gameplay Loop', () => {
                 {
                     spec: 'Add Red Player and Start',
                     check: async () => {
-                        await page.goto('/?seed=e2e_test&hostId=e2e_host_gameplay');
+                        await page.goto('/?seed=e2e_test&gameId=e2e_host_gameplay');
                         await page.locator('.bottom .add-btn').click({ force: true });
                         await page.locator('.color-picker button[title="red"]').click({ force: true });
                         await expect(page.locator('.edge-control.bottom .player-token')).toBeVisible();

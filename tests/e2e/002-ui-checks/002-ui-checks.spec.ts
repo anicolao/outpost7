@@ -7,7 +7,7 @@ test.describe('Settings and Cards UI Checks', () => {
     test.beforeEach(async ({ page }, testInfo) => {
         stepHelper = new TestStepHelper(page, testInfo);
         stepHelper.setMetadata('Settings and Cards', 'Verify opening settings, editing values, and navigating to cards.');
-        await page.goto('/?seed=e2e_test&hostId=e2e_host_ui');
+        await page.goto('/?seed=e2e_test&gameId=e2e_host_ui');
         await waitForAnimations(page); // Wait for app to hydrate/stabilize
         await expect(page.locator('.lobby-container')).toBeVisible();
     });

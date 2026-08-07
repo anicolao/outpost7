@@ -12,7 +12,7 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
 
     // 1. Initial Load & Setup
     // Use fixed seed for deterministic behavior
-    await page.goto('/?seed=complete-game-test');
+    await page.goto('/?seed=complete-game-test&gameId=e2e_complete_game');
 
     await tester.step('01-initial-state', {
         description: 'Game Loaded',

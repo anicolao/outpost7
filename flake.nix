@@ -16,6 +16,7 @@
           buildInputs = with pkgs; [
             poppler-utils # For pdftotext
             nodePackages.prettier # For formatting
+            jdk21 # Firebase emulators
           ];
         };
       }
