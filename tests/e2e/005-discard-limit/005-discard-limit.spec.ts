@@ -110,4 +110,62 @@ test.describe('Discard Flow', () => {
 
         helper.generateDocs();
     });
+
+    test('should synchronize an immediate opening-hand discard', async ({ page, context }, testInfo) => {
+        const helper = new TestStepHelper(page, testInfo);
+        helper.setMetadata(
+            'Opening Hand Discard',
+            'Verify an opening-hand discard is applied by the host and synchronized back to the player'
+        );
+        const gameId = 'e2e_opening_discard';
+        let redPage: Page;
+
+        await helper.step('opening-discard-setup', {
+            description: 'Start a game and immediately connect the red player',
+            verifications: [
+                {
+                    spec: 'Red receives the five-card opening hand',
+                    check: async () => {
+                        await page.goto(`/?seed=seed_0&gameId=${gameId}`);
+                        await page.locator('.bottom .add-btn').click();
+                        await page.locator('.color-picker button[title="red"]').click();
+                        await page.locator('.top .add-btn').click();
+                        await page.locator('.color-picker button[title="yellow"]').click();
+                        await page.locator('.play-btn').click();
+                        await expect(page.locator('.board-container')).toBeVisible();
+
+                        redPage = await context.newPage();
+                        await redPage.goto(`/#/hand?game=${gameId}&color=red`);
+                        await expect(redPage.locator('.status')).toHaveText('Connected');
+                        await expect(redPage.locator('.card-wrapper')).toHaveCount(5);
+                    }
+                }
+            ]
+        });
+
+        await helper.step('opening-discard-synchronized', {
+            description: 'Discard the over-limit cards and receive the updated hand',
+            page: redPage!,
+            verifications: [
+                {
+                    spec: 'Host and player both contain the same three remaining cards',
+                    check: async () => {
+                        await redPage.locator('[data-card-id="card_50"]').click();
+                        await redPage.locator('[data-card-id="card_17"]').click();
+                        await expect(redPage.locator('.discard-btn')).toBeEnabled();
+                        await redPage.locator('.discard-btn').click();
+
+                        await expect.poll(() => page.evaluate(() => {
+                            // @ts-ignore
+                            return window.store.getState().game.hands.red.length;
+                        })).toBe(3);
+                        await expect(redPage.locator('.card-wrapper')).toHaveCount(3);
+                        await expect(redPage.locator('.alert-banner')).toBeHidden();
+                    }
+                }
+            ]
+        });
+
+        helper.generateDocs(true);
+    });
 });
