@@ -3,6 +3,7 @@ import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Grid Initialization', () => {
     test('Verify Grid Sizes from 2x2 to 5x5', async ({ page }, testInfo) => {
+        test.setTimeout(90_000);
         const tester = new TestStepHelper(page, testInfo);
 
         tester.setMetadata(

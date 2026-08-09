@@ -27,6 +27,7 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
     await rowsMinus.click(); await rowsMinus.click(); await rowsMinus.click(); // 5->2
     const colsMinus = page.locator('.setting-item:has-text("Grid Columns") button:has-text("-")');
     await colsMinus.click(); await colsMinus.click(); await colsMinus.click(); // 5->2
+    await page.locator('.modal .content').evaluate((content) => content.scrollTo(0, 0));
 
     await tester.step('02-settings-changed', {
         description: 'Settings Updated to 2x2 Grid',

@@ -209,6 +209,7 @@
               cardIds: Array.from(discardSelection),
           });
           discardSelection = new Set();
+          selectionMode = 'play';
       }
   }
 
