@@ -6,9 +6,9 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     retries: 0,
     // Every spec uses a unique Firebase game ID, so files are safe to run concurrently.
-    // Two workers keep Firebase and pixel capture below the hosted runner's contention point;
+    // Three workers keep Firebase and pixel capture below the hosted runner's contention point;
     // fullyParallel stays false to preserve ordering within documentation files.
-    workers: process.env.CI ? 2 : undefined,
+    workers: process.env.CI ? 3 : undefined,
     reporter: 'html',
     // Store snapshots in "screenshots" directory next to test file
     snapshotPathTemplate: 'tests/e2e/{testFileDir}/screenshots/{arg}.png',
