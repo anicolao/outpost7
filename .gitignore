@@ -1,3 +1,4 @@
+.direnv/
 inputs/rules_extracted.txt
 inputs/extracted_assets/
 node_modules/
