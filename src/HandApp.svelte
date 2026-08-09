@@ -20,6 +20,7 @@
   let discardSelection: Set<string> = new Set();
   let currentTurn: string | null = null;
   let turnCount: number = 0;
+  let pendingBonusCardIds: string[] = [];
 
   onMount(async () => {
     const hash = window.location.hash;
@@ -54,10 +55,15 @@
                 const update = latest.payload as HandUpdatedPayload;
                 const currentIds = hand.map((card) => card.id).sort().join(',');
                 const newIds = update.hand.map((card) => card.id).sort().join(',');
+                const nextPendingBonusCardIds = Array.isArray(update.pendingBonusCardIds)
+                    ? update.pendingBonusCardIds.filter((id): id is string => typeof id === 'string')
+                    : [];
+                const bonusActionsStarted = pendingBonusCardIds.length === 0 && nextPendingBonusCardIds.length > 0;
                 hand = update.hand;
                 currentTurn = update.turn;
                 turnCount = update.turnCount;
-                if (currentIds !== newIds) clearSelection();
+                pendingBonusCardIds = nextPendingBonusCardIds;
+                if (currentIds !== newIds || bonusActionsStarted) clearSelection();
             },
             (error) => {
                 status = `Connection Error: ${error.message}`;
@@ -78,6 +84,7 @@
 
   $: handCount = hand.length;
   $: totalCost = hand.reduce((acc, c) => acc + c.cost, 0);
+  $: isBonusBlocked = pendingBonusCardIds.length > 0;
   
   // Logic for Play/Pay State
   $: {
@@ -111,6 +118,8 @@
       : (handCount > 7);
   
   function handleCardTap(cardId: string) {
+      if (isBonusBlocked) return;
+
       if (isOverLimit) {
           if (discardSelection.has(cardId)) {
               discardSelection.delete(cardId);
@@ -222,7 +231,11 @@
     </div>
   </header>
 
-  {#if isOverLimit}
+  {#if isBonusBlocked}
+      <div class="alert-banner bonus-blocked-banner">
+          Resolve cube actions on the glowing cards on the tabletop.
+      </div>
+  {:else if isOverLimit}
       <div class="alert-banner">
           ⚠️ Hand Limit Exceeded! Select cards to discard.
       </div>
@@ -233,7 +246,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         {@const isPlayable = !isOverLimit && !playCardId && hand.some(c => c.id !== card.id && c.cost >= card.cost)}
         {@const isPayable = !isOverLimit && playCardId && playCardId !== card.id && (card.cost >= (hand.find(c => c.id === playCardId)?.cost || 99))}
-        {@const isDisabled = !isOverLimit && ((!playCardId && !isPlayable) || (playCardId && playCardId !== card.id && !isPayable))}
+        {@const isDisabled = isBonusBlocked || (!isOverLimit && ((!playCardId && !isPlayable) || (playCardId && playCardId !== card.id && !isPayable)))}
         
         <div 
           class="card-wrapper" 
@@ -260,7 +273,9 @@
 
   <!-- Contextual Footer -->
   <footer class="actions">
-    {#if isOverLimit}
+    {#if isBonusBlocked}
+      <div class="hint">Waiting for tabletop cube actions</div>
+    {:else if isOverLimit}
       <button class="clear-btn" on:click={clearSelection} disabled={discardSelection.size === 0}>Clear</button>
       <button class="discard-btn" on:click={confirmDiscard} disabled={discardSelection.size === 0 || !remainsValid}>Confirm Discard ({discardSelection.size})</button>
     {:else}
@@ -343,6 +358,12 @@
       font-weight: bold;
       border-radius: 4px;
       margin-top: 10px;
+  }
+
+  .bonus-blocked-banner {
+      background: #ffd700;
+      color: black;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.75);
   }
 
   .card-list {

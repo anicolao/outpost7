@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
-test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
+test('Bonus Mechanics Flow', async ({ page: boardPage, context, browser }, testInfo) => {
     const tester = new TestStepHelper(boardPage, testInfo);
     tester.setMetadata(
         'Bonus Mechanics',
@@ -47,6 +47,22 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
 
     // Verify Red has card_38
     await expect(playerPage.locator('[data-card-id="card_38"]')).toBeVisible();
+
+    // Connect the next player and preselect a move, reproducing the confusing
+    // private-hand state that persisted while cube actions blocked the game.
+    const yellowContext = await browser.newContext();
+    const yellowPage = await yellowContext.newPage();
+    new TestStepHelper(yellowPage, testInfo, false);
+    await yellowPage.goto(`/#/hand?game=${HOST_ID}&color=yellow`);
+    await expect(yellowPage.locator('text=Connected')).toBeVisible();
+    await expect(boardPage.locator('.qr-zone.top .qr-item')).toBeHidden();
+
+    const yellowPlayCard = yellowPage.locator('.card-wrapper:not(.disabled)').first();
+    await yellowPlayCard.click();
+    await expect(yellowPlayCard).toHaveClass(/play-selected/);
+    const yellowPayCard = yellowPage.locator('.card-wrapper:not(.disabled):not(.play-selected)').first();
+    await yellowPayCard.click();
+    await expect(yellowPayCard).toHaveClass(/pay-selected/);
 
     // 2b. Discard Phase (Must get under Cost 12)
     // Current Hand: 38(3), 41(4), 18(3), 50(6), 17(6). Total 22. Target 12.
@@ -96,7 +112,19 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
         description: 'Bonus Phase Active',
         verifications: [
             { spec: 'Turn indicator says BONUS ACTIONS', check: async () => await expect(boardPage.locator('.turn-indicator')).toHaveText('BONUS ACTIONS') },
-            { spec: 'Interactive Bonus Cube Visible', check: async () => await expect(boardPage.locator('.player-cube.interactive')).toBeVisible() }
+            { spec: 'Interactive Bonus Cube Visible', check: async () => await expect(boardPage.locator('.player-cube.interactive')).toBeVisible() },
+            { spec: 'The card requiring attention glows', check: async () => await expect(boardPage.locator('[data-cell-id="2-2"] .played-card.needs-attention')).toBeVisible() },
+            { spec: 'Ordinary tabletop destinations do not glow', check: async () => await expect(boardPage.locator('.cell.valid')).toHaveCount(0) }
+        ]
+    });
+
+    await tester.step('next-player-blocked', {
+        description: 'Next Player Waits For Cube Actions',
+        page: yellowPage,
+        verifications: [
+            { spec: 'The private hand explains what is blocking the game', check: async () => await expect(yellowPage.locator('.bonus-blocked-banner')).toContainText('Resolve cube actions on the glowing cards') },
+            { spec: 'Every private card is disabled', check: async () => await expect(yellowPage.locator('.card-wrapper:not(.disabled)')).toHaveCount(0) },
+            { spec: 'The preselected move is cleared', check: async () => await expect(yellowPage.locator('.selected-overlay')).toHaveCount(0) }
         ]
     });
 
@@ -110,9 +138,12 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
         verifications: [
             { spec: 'Turn indicator says YELLOW TURN', check: async () => await expect(boardPage.locator('.turn-indicator')).toContainText('YELLOW TURN') },
             { spec: 'Bonus Phase Ended', check: async () => await expect(boardPage.locator('.turn-indicator')).not.toContainText('BONUS ACTIONS') },
-            { spec: 'Completed Bonus Visible', check: async () => await expect(boardPage.locator('.player-cube.completed')).toBeVisible() }
+            { spec: 'Completed Bonus Visible', check: async () => await expect(boardPage.locator('.player-cube.completed')).toBeVisible() },
+            { spec: 'No card still requests attention', check: async () => await expect(boardPage.locator('.played-card.needs-attention')).toHaveCount(0) },
+            { spec: 'The next player can select cards again', check: async () => await expect(yellowPage.locator('.card-wrapper:not(.disabled)').first()).toBeVisible() }
         ]
     });
 
     tester.generateDocs();
+    await yellowContext.close();
 });
