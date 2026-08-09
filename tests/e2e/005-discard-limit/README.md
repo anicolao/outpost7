@@ -22,6 +22,7 @@ Verify player can discard when over hand limit
 
 **Specs:**
 - Force Deal to 8 Cards
+- Only the footer confirmation is presented as a discard action
 
 ## Select and Discard Cards
 
