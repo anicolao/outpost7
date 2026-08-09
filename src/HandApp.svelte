@@ -238,7 +238,9 @@
     </div>
     <div class="mode-switch">
         <button class:active={selectionMode === 'play' && !isOverLimit} on:click={() => { selectionMode = 'play'; clearSelection(); }} disabled={isOverLimit}>Play</button>
-        <button class:active={selectionMode === 'discard' || isOverLimit} on:click={() => { selectionMode = 'discard'; clearSelection(); }}>Discard</button>
+        {#if selectionMode === 'play' && !isOverLimit}
+          <button on:click={() => { selectionMode = 'discard'; clearSelection(); }}>Discard</button>
+        {/if}
     </div>
   </header>
 

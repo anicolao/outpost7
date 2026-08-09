@@ -71,6 +71,13 @@ test.describe('Discard Flow', () => {
                         await expect(redPage.locator('.alert-banner')).toBeVisible();
                         await expect(redPage.locator('.card-wrapper')).toHaveCount(8);
                     }
+                },
+                {
+                    spec: 'Only the footer confirmation is presented as a discard action',
+                    check: async () => {
+                        await expect(redPage.getByRole('button', { name: 'Discard', exact: true })).toHaveCount(0);
+                        await expect(redPage.locator('.discard-btn')).toBeVisible();
+                    }
                 }
             ]
         });

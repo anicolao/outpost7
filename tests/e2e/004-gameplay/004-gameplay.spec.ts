@@ -85,7 +85,7 @@ test.describe('Gameplay Loop', () => {
                         const alert = redPage.locator('.alert-banner');
                         if (await alert.isVisible()) {
                             console.log('Hand Limit Exceeded - Discarding...');
-                            await redPage.getByRole('button', { name: 'Discard', exact: true }).click();
+                            await expect(redPage.getByRole('button', { name: 'Discard', exact: true })).toHaveCount(0);
                             const cards = redPage.locator('.card-wrapper');
                             const confirmBtn = redPage.locator('.discard-btn');
 
@@ -104,6 +104,7 @@ test.describe('Gameplay Loop', () => {
                             await confirmBtn.click({ force: true });
                             await expect(alert).toBeHidden();
                             await expect(redPage.getByRole('button', { name: 'Play', exact: true })).toHaveClass(/active/);
+                            await expect(redPage.getByRole('button', { name: 'Discard', exact: true })).toBeVisible();
                             console.log('Discard complete.');
                         } else {
                             console.log('Hand Limit OK.');
