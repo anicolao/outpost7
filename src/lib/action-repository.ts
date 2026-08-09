@@ -30,6 +30,7 @@ export interface HandUpdatedPayload extends Record<string, unknown> {
     hand: Card[];
     turn: PlayerColor;
     turnCount: number;
+    pendingBonusCardIds: string[];
 }
 
 interface StoredEvent {

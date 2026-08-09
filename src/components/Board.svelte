@@ -202,13 +202,19 @@
     }
   }
 
-  function publishHand(color: PlayerColor) {
+  function publishHand(
+    color: PlayerColor,
+    activeBonuses: BonusInstance[],
+    turn: PlayerColor,
+    turnCount: number,
+  ) {
     if (!repository) return;
     const payload = {
       color,
       hand: hands[color],
-      turn: $gameState.game.currentTurn,
-      turnCount: $gameState.game.turnCount,
+      turn,
+      turnCount,
+      pendingBonusCardIds: [...new Set(activeBonuses.map((bonus) => bonus.sourceCardId))],
     };
     const signature = JSON.stringify(payload);
     if (publishedHands[color] === signature) return;
@@ -219,8 +225,8 @@
     });
   }
 
-  $: if (repository && hands.red) publishHand('red');
-  $: if (repository && hands.yellow) publishHand('yellow');
+  $: if (repository && hands.red) publishHand('red', pendingBonuses, currentTurn, $gameState.game.turnCount);
+  $: if (repository && hands.yellow) publishHand('yellow', pendingBonuses, currentTurn, $gameState.game.turnCount);
 
   // Meeple Icon
   const MeepleIcon = (owner: string) => {
@@ -231,7 +237,9 @@
   let rotation = 90;
 
   function isValidMove(rowIndex: number, colIndex: number) { 
-      return !grid[rowIndex]?.[colIndex] && (hasSelection('red') || hasSelection('yellow'));
+      return pendingBonuses.length === 0 &&
+          !grid[rowIndex]?.[colIndex] &&
+          hasSelection(currentTurn);
   }
 
   async function handleCellClick(rowIndex: number, colIndex: number) { 
@@ -385,7 +393,10 @@
                   tabindex="0"
                 >
                   {#if cell}
-                     <div class="played-card">
+                     <div
+                       class="played-card"
+                       class:needs-attention={pendingBonuses.some(b => b.sourceRow === rowIndex && b.sourceCol === colIndex)}
+                     >
                          <CardDisplay 
                              card={cell} 
                              activeBonusSlots={pendingBonuses.filter(b => b.sourceRow === rowIndex && b.sourceCol === colIndex).map(b => b.cubeSlot)}
@@ -744,6 +755,21 @@
       display: flex;
       align-items: center;
       justify-content: center;
+  }
+
+  .played-card.needs-attention {
+      position: relative;
+      z-index: 5;
+      border-radius: 6px;
+      outline: 3px solid #ffd700;
+      box-shadow: 0 0 12px 4px #ffd700, inset 0 0 8px rgba(255, 255, 255, 0.8);
+      animation: attention-glow 1.2s ease-in-out infinite;
+  }
+
+  @keyframes attention-glow {
+      50% {
+          box-shadow: 0 0 20px 8px #ffd700, inset 0 0 12px white;
+      }
   }
   
   .played-card img {
