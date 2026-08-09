@@ -97,12 +97,10 @@
 
 <style>
   .offer-container {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%) rotate(90deg);
+    position: relative;
+    transform: rotate(90deg);
     background: rgba(30, 30, 30, 0.9);
-    padding: 15px;
+    padding: 8px;
     border-radius: 12px;
     color: white;
     display: flex;
@@ -111,7 +109,7 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     border: 1px solid #444;
     transition: border-color 0.3s;
-    width: 400px; /* Fixed width to contain cards comfortably */
+    width: max-content;
   }
 
   .offer-container.active {
@@ -124,7 +122,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
   }
 
   h3 {
@@ -171,15 +169,14 @@
   .cards {
     display: flex;
     flex-direction: row;
-    gap: 10px;
-    width: 100%;
+    gap: var(--table-gap);
     justify-content: center;
   }
 
   .card-wrapper {
     position: relative;
-    width: 60px;
-    height: 84px;
+    width: var(--table-card-width);
+    height: var(--table-card-height);
     cursor: pointer;
     transition: transform 0.2s, opacity 0.2s;
     border-radius: 4px;

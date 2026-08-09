@@ -234,8 +234,6 @@
       return `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="${fill}" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));"><path d="M9 20h-5a1 1 0 0 1 -1 -1c0 -2 3.378 -4.907 4 -6c-1 0 -4 -.5 -4 -2c0 -2 4 -3.5 6 -4c0 -1.5 .5 -4 3 -4s3 2.5 3 4c2 .5 6 2 6 4c0 1.5 -3 2 -4 2c.622 1.093 4 4 4 6a1 1 0 0 1 -1 1h-5c-1 0 -2 -4 -3 -4s-2 4 -3 4z" /></svg>`;
   };
 
-  let rotation = 90;
-
   function isValidMove(rowIndex: number, colIndex: number) { 
       return pendingBonuses.length === 0 &&
           !grid[rowIndex]?.[colIndex] &&
@@ -337,8 +335,8 @@
 </script>
 
 <div class="table-top" data-transport-status={repositoryStatus}>
-  <!-- Rotated Board Container -->
-  <div class="board-container" style:transform={`rotate(${rotation}deg)`}>
+  <!-- Board stage reserves the offer strip; the grid itself is rotated below. -->
+  <div class="board-container">
     {#if rows && cols}
       <div class="game-layout" style:--rows={rows} style:--cols={cols}>
         
@@ -481,15 +479,19 @@
       height: 100vh;
       overflow: hidden;
       background: #1a1a1a;
+      --table-card-width: min(calc((100vh - 96px) / 5), calc((100vw - 150px) / 8.4));
+      --table-card-height: calc(var(--table-card-width) * 1.4);
+      --table-header-size: 56px;
+      --table-gap: 6px;
+      --offer-depth: calc(var(--table-card-height) + 52px);
   }
 
   .board-container {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0 8px 0 var(--offer-depth);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 1s ease-in-out;
   }
 
   /* 
@@ -500,15 +502,11 @@
   .game-layout {
     display: grid;
     /* First col is row header, Rest are game cols */
-    grid-template-columns: 80px repeat(var(--cols), 1fr);
+    grid-template-columns: var(--table-header-size) repeat(var(--cols), var(--table-card-width));
     /* First row is col header, Rest are game rows */
-    grid-template-rows: 80px repeat(var(--rows), 1fr);
-    gap: 8px;
-    
-    width: 95vmin;
-    max-width: 800px;
-    /* Aspect ratio for standard cards (approx 5/7 or 0.71) to ensure cells aren't square */
-    aspect-ratio: 0.76; 
+    grid-template-rows: var(--table-header-size) repeat(var(--rows), var(--table-card-height));
+    gap: var(--table-gap);
+    transform: rotate(90deg);
   }
 
   .spacer {
@@ -588,7 +586,8 @@
 
   .cell {
     background: rgba(255, 255, 255, 0.03);
-    border: 2px dashed rgba(255,255,255,0.1);
+    outline: 2px dashed rgba(255,255,255,0.1);
+    outline-offset: -2px;
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -598,7 +597,7 @@
 
   .cell:hover {
       background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255,255,255,0.2);
+      outline-color: rgba(255,255,255,0.2);
   }
 
   .qr-zone {
@@ -634,23 +633,26 @@
   
   .offer-overlay {
       position: absolute;
-      left: 20px;
-      top: 50%;
-      transform: translateY(-50%);
+      inset: 0 auto 0 8px;
+      width: var(--offer-depth);
       z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
   }
 
   /* Face Down Card at Edges */
   .face-down-card {
       position: absolute;
-      width: 60px; /* Adjust size */
-      height: 84px;
+      width: var(--table-card-width);
+      height: var(--table-card-height);
       z-index: 60;
       /* Animation for appearance */
       animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
   
   .face-down-card img {
+      display: block;
       width: 100%;
       height: 100%;
       object-fit: contain;
@@ -665,7 +667,7 @@
   /* Valid Move Highlight */
   .cell.valid {
       background: rgba(255, 255, 255, 0.15); /* Brighter gray */
-      border-color: rgba(255, 255, 255, 0.4);
+      outline-color: rgba(255, 255, 255, 0.4);
       cursor: pointer;
       box-shadow: inset 0 0 20px rgba(255,255,255,0.1);
       animation: pulse-valid 2s infinite;
@@ -678,8 +680,8 @@
   }
 
   @keyframes popIn {
-      from { transform: scale(0); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
+      from { opacity: 0; }
+      to { opacity: 1; }
   }
 
 
@@ -688,8 +690,8 @@
       position: absolute;
       left: 0;
       top: 0;
-      width: 80px; /* Should match cell size approx */
-      height: 112px;
+      width: var(--table-card-width);
+      height: var(--table-card-height);
       z-index: 100;
       perspective: 1000px;
       pointer-events: none;
@@ -734,13 +736,13 @@
 
   @keyframes flyAndFlip {
       0% {
-          transform: translate(var(--start-x), var(--start-y)) scale(0.8);
+          transform: translate(var(--start-x), var(--start-y));
       }
       50% {
-          transform: translate(calc(var(--start-x) + (var(--end-x) - var(--start-x)) * 0.5), calc(var(--start-y) + (var(--end-y) - var(--start-y)) * 0.5)) scale(1.2);
+          transform: translate(calc(var(--start-x) + (var(--end-x) - var(--start-x)) * 0.5), calc(var(--start-y) + (var(--end-y) - var(--start-y)) * 0.5));
       }
       100% {
-          transform: translate(var(--end-x), var(--end-y)) scale(1);
+          transform: translate(var(--end-x), var(--end-y));
       }
   }
 

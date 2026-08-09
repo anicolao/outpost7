@@ -291,6 +291,7 @@
       background: #222;
       color: white;
       font-family: sans-serif;
+      overflow: hidden;
   }
 
   .hand-container {
@@ -368,11 +369,15 @@
 
   .card-list {
       flex: 1;
-      display: flex; /* Horizontal scroll */
-      overflow-x: auto;
-      gap: 10px;
-      padding: 20px 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-content: center;
       align-items: center;
+      min-height: 0;
+      overflow: hidden;
+      gap: clamp(4px, 1vw, 10px);
+      padding: clamp(4px, 2vh, 12px) 0;
   }
 
   .card {
@@ -392,7 +397,9 @@
 
   .card-wrapper {
     position: relative;
-    width: 80px;
+    flex: 0 0 auto;
+    width: min(11vw, calc((100dvh - 190px) / 4.2));
+    aspect-ratio: 2.5 / 3.5;
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.2s;
@@ -515,5 +522,104 @@
       0% { opacity: 1; }
       50% { opacity: 0.6; }
       100% { opacity: 1; }
+  }
+
+  @media (max-width: 600px) and (orientation: portrait) {
+      .hand-container {
+          padding: 8px;
+      }
+
+      header {
+          align-items: flex-start;
+          flex-wrap: wrap;
+          gap: 6px;
+          padding-bottom: 6px;
+      }
+
+      .info,
+      .stats {
+          display: flex;
+          align-items: center;
+      }
+
+      .status {
+          font-size: 0.75rem;
+      }
+
+      .stats {
+          width: 100%;
+          justify-content: space-between;
+          gap: 6px;
+      }
+
+      .stat {
+          font-size: 0.85rem;
+      }
+
+      .alert-banner {
+          margin-top: 6px;
+          padding: 6px;
+          font-size: 0.85rem;
+      }
+
+      .card-wrapper {
+          width: min(calc((100vw - 36px) / 3), calc((100dvh - 190px) / 4.2));
+      }
+
+      footer.actions {
+          min-height: 40px;
+          align-items: center;
+          padding-top: 6px;
+      }
+
+      button {
+          padding: 8px 12px;
+          font-size: 0.9rem;
+      }
+
+      .hint {
+          font-size: 0.85rem;
+      }
+  }
+
+  @media (max-height: 500px) and (orientation: landscape) {
+      .hand-container {
+          padding: 6px;
+      }
+
+      header {
+          padding-bottom: 4px;
+      }
+
+      .status,
+      .stat,
+      .hint {
+          font-size: 0.75rem;
+      }
+
+      .alert-banner {
+          margin-top: 4px;
+          padding: 4px;
+          font-size: 0.75rem;
+      }
+
+      .card-list {
+          flex-wrap: nowrap;
+          padding: 4px 0;
+      }
+
+      .card-wrapper {
+          width: min(calc((100vw - 72px) / 7), calc((100dvh - 105px) / 1.4));
+      }
+
+      footer.actions {
+          min-height: 34px;
+          padding-top: 4px;
+      }
+
+      button {
+          padding: 6px 10px;
+          font-size: 0.8rem;
+      }
   }
 </style>
