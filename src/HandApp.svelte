@@ -20,13 +20,6 @@
   let discardSelection: Set<string> = new Set();
   let currentTurn: string | null = null;
   let turnCount: number = 0;
-  
-  // Modes: 'play' | 'discard'
-  // Auto-switch to discard if over limit, otherwise user can toggle?
-  // User asked to RESTORE old logic. Old logic likely didn't have modes, just worked?
-  // But Play/Pay consumes taps.
-  // I will add an explicit toggle.
-  let selectionMode: 'play' | 'discard' = 'play';
 
   onMount(async () => {
     const hash = window.location.hash;
@@ -119,14 +112,6 @@
   
   function handleCardTap(cardId: string) {
       if (isOverLimit) {
-          // Force Discard Mode behavior if over limit?
-          // Or just ensure we are in a state that allows it.
-          // Let's rely on selectionMode, but force it to discard if over limit?
-          // User said "discard logic is not the same".
-          // I'll adhere to selectionMode, but auto-set mode to discard if over limit?
-      }
-      
-      if (selectionMode === 'discard' || isOverLimit) {
           if (discardSelection.has(cardId)) {
               discardSelection.delete(cardId);
           } else {
@@ -209,7 +194,6 @@
               cardIds: Array.from(discardSelection),
           });
           discardSelection = new Set();
-          selectionMode = 'play';
       }
   }
 
@@ -236,12 +220,6 @@
             Value: {remainingCost}{isFirstTurn ? `/${valueLimit}` : ''}
         </div>
     </div>
-    <div class="mode-switch">
-        <button class:active={selectionMode === 'play' && !isOverLimit} on:click={() => { selectionMode = 'play'; clearSelection(); }} disabled={isOverLimit}>Play</button>
-        {#if selectionMode === 'play' && !isOverLimit}
-          <button on:click={() => { selectionMode = 'discard'; clearSelection(); }}>Discard</button>
-        {/if}
-    </div>
   </header>
 
   {#if isOverLimit}
@@ -253,27 +231,27 @@
   <main class="card-list">
       {#each hand as card}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        {@const isPlayable = selectionMode === 'play' && !isOverLimit && !playCardId && hand.some(c => c.id !== card.id && c.cost >= card.cost)}
-        {@const isPayable = selectionMode === 'play' && !isOverLimit && playCardId && playCardId !== card.id && (card.cost >= (hand.find(c => c.id === playCardId)?.cost || 99))}
-        {@const isDisabled = selectionMode === 'play' && !isOverLimit && ((!playCardId && !isPlayable) || (playCardId && playCardId !== card.id && !isPayable))}
+        {@const isPlayable = !isOverLimit && !playCardId && hand.some(c => c.id !== card.id && c.cost >= card.cost)}
+        {@const isPayable = !isOverLimit && playCardId && playCardId !== card.id && (card.cost >= (hand.find(c => c.id === playCardId)?.cost || 99))}
+        {@const isDisabled = !isOverLimit && ((!playCardId && !isPlayable) || (playCardId && playCardId !== card.id && !isPayable))}
         
         <div 
           class="card-wrapper" 
           data-card-id={card.id}
-          class:play-selected={selectionMode === 'play' && !isOverLimit && playCardId === card.id}
-          class:pay-selected={selectionMode === 'play' && !isOverLimit && payCardId === card.id}
-          class:discard-selected={(selectionMode === 'discard' || isOverLimit) && discardSelection.has(card.id)}
+          class:play-selected={!isOverLimit && playCardId === card.id}
+          class:pay-selected={!isOverLimit && payCardId === card.id}
+          class:discard-selected={isOverLimit && discardSelection.has(card.id)}
           class:disabled={isDisabled}
           on:click={() => !isDisabled && handleCardTap(card.id)}
         >
             <CardDisplay {card} />
-            {#if selectionMode === 'play' && !isOverLimit && playCardId === card.id}
+            {#if !isOverLimit && playCardId === card.id}
                 <div class="selected-overlay play">✓</div>
             {/if}
-            {#if selectionMode === 'play' && !isOverLimit && payCardId === card.id}
+            {#if !isOverLimit && payCardId === card.id}
                 <div class="selected-overlay pay">✕</div>
             {/if}
-            {#if (selectionMode === 'discard' || isOverLimit) && discardSelection.has(card.id)}
+            {#if isOverLimit && discardSelection.has(card.id)}
                 <div class="selected-overlay discard">🗑️</div>
             {/if}
         </div>
@@ -282,7 +260,7 @@
 
   <!-- Contextual Footer -->
   <footer class="actions">
-    {#if selectionMode === 'discard' || isOverLimit}
+    {#if isOverLimit}
       <button class="clear-btn" on:click={clearSelection} disabled={discardSelection.size === 0}>Clear</button>
       <button class="discard-btn" on:click={confirmDiscard} disabled={discardSelection.size === 0 || !remainsValid}>Confirm Discard ({discardSelection.size})</button>
     {:else}
@@ -357,25 +335,6 @@
       animation: pulse 2s infinite;
   }
   
-  .mode-switch {
-      display: flex;
-      gap: 5px;
-      margin-left: 10px;
-  }
-  .mode-switch button {
-      padding: 4px 8px;
-      font-size: 0.8rem;
-      background: #333;
-      color: #aaa;
-      border: 1px solid #555;
-  }
-  .mode-switch button.active {
-      background: #666;
-      color: white;
-      border-color: #888;
-      box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
-  }
-
   .alert-banner {
       background: #ff4d4d;
       color: white;
