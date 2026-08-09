@@ -3,6 +3,7 @@ import reducer, { type GameState, playCard, resolveBonus } from './gameSlice';
 
 // Helper to create a minimal valid state
 const createInitialState = (): GameState => ({
+    seed: 'test',
     players: [
         { color: 'red', edge: 'bottom', type: 'human' },
         { color: 'yellow', edge: 'top', type: 'human' }

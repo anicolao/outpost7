@@ -29,6 +29,7 @@ export interface BonusInstance {
 }
 
 export interface GameState {
+    seed: string;
     players: Player[];
     phase: GamePhase;
     orientation: number;

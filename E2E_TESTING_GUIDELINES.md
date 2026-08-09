@@ -44,6 +44,10 @@ export async function waitForAnimations(page: Page) {
 
 The `TestStepHelper` automatically calls this before every screenshot.
 
+## 1.2 Seeded Randomness
+
+Every host E2E URL must provide a fixed `seed` query parameter. Application and AI code must route gameplay randomness through `src/lib/random.ts`; never patch `Math.random` in a test. The game persists its seed in `GameState`, and each random consumer uses a named stream derived from that seed so a scenario can be replayed exactly without coupling unrelated random choices.
+
 ## 2. Test Structure
 
 

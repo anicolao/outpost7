@@ -4,6 +4,7 @@
   import { store } from './lib/store';
   import { startGame, type Card } from './lib/gameSlice';
   import { loadCards } from './lib/cardLoader';
+  import { getGameSeed } from './lib/random';
   import { settingsStore } from './lib/settingsStore';
   
   import Lobby from './components/Lobby.svelte';
@@ -57,8 +58,7 @@
   function start() {
       // Dispatch startGame with loaded deck
       if (deck.length > 0) {
-          const urlParams = new URLSearchParams(window.location.search);
-          const seed = urlParams.get('seed') || undefined;
+          const seed = getGameSeed(window.location.search);
 
           store.dispatch(startGame({ 
             rows: $settingsStore.GRID_ROWS, 

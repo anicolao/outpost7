@@ -1,5 +1,6 @@
 import type { GameState, Card, PlayerColor } from '../types';
 import { hasValidMoves, evaluateOwnership } from '../gameUtils';
+import { createSeededRandom, type RandomSource } from '../random';
 
 // Move Actions
 type MoveAction =
@@ -9,7 +10,11 @@ type MoveAction =
     | { type: 'RESOLVE_BONUS', bonusId: string };
 
 export class BasicAI {
-    constructor(private playerColor: PlayerColor) { }
+    private readonly random: RandomSource;
+
+    constructor(private playerColor: PlayerColor, seed: string) {
+        this.random = createSeededRandom(seed, `basic-ai:${playerColor}`);
+    }
 
     public computeMove(state: GameState): MoveAction {
         // 0. Handle Bonuses (Highest Priority)
@@ -51,7 +56,7 @@ export class BasicAI {
     private findBestRepairMove(state: GameState, hand: Card[]): MoveAction | null {
         if (hand.length < 2) return null;
 
-        let bestMove: MoveAction | null = null;
+        let bestMoves: MoveAction[] = [];
         let maxScore = -1;
 
         // Iterate all possible Play/Pay pairs
@@ -72,13 +77,21 @@ export class BasicAI {
                             const score = this.evaluateMove(state, playCard, payCard, r, c);
                             if (score > maxScore) {
                                 maxScore = score;
-                                bestMove = {
+                                bestMoves = [{
                                     type: 'REPAIR',
                                     playCardId: playCard.id,
                                     payCardId: payCard.id,
                                     row: r,
                                     col: c
-                                };
+                                }];
+                            } else if (score === maxScore) {
+                                bestMoves.push({
+                                    type: 'REPAIR',
+                                    playCardId: playCard.id,
+                                    payCardId: payCard.id,
+                                    row: r,
+                                    col: c
+                                });
                             }
                         }
                     }
@@ -86,11 +99,9 @@ export class BasicAI {
             }
         }
 
-        // Threshold: If best move accounts for < 0 value (e.g. detrimental?), don't do it?
-        // Basic AI: Just do the best positive/neutral thing.
-        // If maxScore is very low (e.g. 0 cubes placed?), maybe prefer Salvage?
-        // For now, if we can play, we play.
-        return bestMove;
+        if (bestMoves.length === 0) return null;
+
+        return bestMoves[Math.floor(this.random() * bestMoves.length)];
     }
 
     private isValidPlacement(state: GameState, r: number, c: number): boolean {
