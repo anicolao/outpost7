@@ -118,7 +118,7 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
                 spec: 'Board orientation should be 90°',
                 check: async () => {
                     // matrix(0, 1, -1, 0, 0, 0) corresponds to 90deg, but 0 might be represented as very small number
-                    await expect(page.locator('.board-container')).toHaveCSS('transform', /matrix\(.*, 1, -1, .*, 0, 0\)/);
+                    await expect(page.locator('.game-layout')).toHaveCSS('transform', /matrix\(.*, 1, -1, .*, 0, 0\)/);
                 }
             },
             {
