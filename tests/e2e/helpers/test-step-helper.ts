@@ -18,30 +18,31 @@ export interface StepOptions {
 export async function waitForAnimations(page: Page) {
     await page.evaluate(async () => {
         let stableFrames = 0;
-        // Wait for 2 consecutive frames with no active animations to ensure steady state.
-        // This catches cases where animations start a few frames after DOM insertion.
         const requiredStableFrames = 2;
+        const signal = AbortSignal.timeout(2000);
 
         while (stableFrames < requiredStableFrames) {
+            if (signal.aborted) throw new Error('Animations did not settle within 2000ms');
+
             const animations = document.getAnimations().filter(a => {
                 if (a.playState === 'finished') return false;
-                // Ignore infinite animations
                 const timing = a.effect && a.effect.getTiming();
                 if (timing && timing.iterations === Infinity) return false;
                 return true;
             });
 
             if (animations.length > 0) {
-                // If animations are running, wait for them to finish (or be cancelled)
                 stableFrames = 0;
-                // Animations might be cancelled (e.g. element removed), which rejects 'finished'.
-                // We should catch that.
-                await Promise.all(animations.map(a => a.finished.catch(() => { })));
+                // Move finite animations to their real terminal state. This preserves
+                // finish events and final styles without paying wall-clock animation time.
+                animations.forEach(animation => animation.finish());
             } else {
-                // If quiet, count this frame
                 stableFrames++;
-                await new Promise(resolve => requestAnimationFrame(resolve));
             }
+
+            // Rendering is event-driven: require two animation-free frames so any
+            // state changes caused by finish handlers have time to render.
+            await new Promise<void>(requestAnimationFrame);
         }
     });
 }
@@ -98,8 +99,13 @@ export class TestStepHelper {
             const style = document.createElement('style');
             style.innerHTML = `
                 *, *::before, *::after {
-                    transition: none !important;
+                    transition-property: none !important;
+                    transition-duration: 0s !important;
+                    transition-delay: 0s !important;
                     animation: none !important;
+                    animation-duration: 0s !important;
+                    animation-delay: 0s !important;
+                    animation-iteration-count: 1 !important;
                     caret-color: transparent !important;
                 }
             `;

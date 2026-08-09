@@ -173,26 +173,7 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
                     await waitForAnimations(page);
                 }
             } else {
-                // Hand full. We should simply WAIT?
-                // Wait, if hand is full and we can't play, we do nothing?
-                // If it's our turn, we are stuck?
-                // NO, `endTurn` should have detected we assume?
-                // If `endTurn` was called by PREVIOUS player.
-                // And `hasValidMoves` returned FALSE.
-                // Then `currentTurn` would NOT be set to us. We would be added to `finishedPlayers`.
-                // So if `phase` is not `game_over`, then SOMEONE has a move.
-                // We loop until game over.
-
-                // CAUTION: If no animations happen, waitForAnimations might hang or finish instantly.
-                // But we need to yield to event loop.
-
-                // If banned, we can use simple Promise timeout?
-                // Or try checking store again after delay.
-                // `waitForAnimations` is good.
-                await waitForAnimations(page);
-
-                // Add explicit small wait to avoid tight loop if no animations?
-                await new Promise(resolve => setTimeout(resolve, 100));
+                throw new Error(`${color} has a full hand but the game did not finish the player`);
             }
         }
     };

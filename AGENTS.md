@@ -29,6 +29,7 @@ Always write tests before implementation.
 *   **Definitive Guide**: Follow `E2E_TESTING_GUIDELINES.md` strictly.
 *   **Visual Regression**: Every UI change must be verified with visual snapshots.
 *   **Documentation**: Tests must generate their own documentation using `TestDocumentationHelper`.
+*   **Event-Driven Waiting**: Never sleep or poll in E2E tests. Wait for observable UI or application events, and cap every event timeout at 2 seconds.
 
 ### 3. Documentation
 *   Keep `docs/` up to date.
@@ -46,5 +47,5 @@ Always write tests before implementation.
 ### Modifying UI
 1.  Run `npm run test:e2e` to establish baseline.
 2.  Make changes.
-3.  Run `npm run test:e2e -- --update-snapshots` to generate new snapshots.
+3.  Run `npm run test:e2e:update-snapshots` to generate new snapshots.
 4.  Manually inspect the diffs to ensure they are correct.

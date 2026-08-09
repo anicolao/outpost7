@@ -5,12 +5,14 @@ export default defineConfig({
     fullyParallel: false,
     forbidOnly: !!process.env.CI,
     retries: 0,
-    workers: 1,
+    // Every spec uses a unique Firebase game ID, so files are safe to run concurrently.
+    // fullyParallel stays false to preserve ordering within multi-test documentation files.
+    workers: process.env.CI ? 4 : undefined,
     reporter: 'html',
     // Store snapshots in "screenshots" directory next to test file
     snapshotPathTemplate: 'tests/e2e/{testFileDir}/screenshots/{arg}.png',
     expect: {
-        timeout: 5000,
+        timeout: 2000,
         toHaveScreenshot: {
             maxDiffPixels: 0,
         },
@@ -18,8 +20,8 @@ export default defineConfig({
     use: {
         baseURL: 'http://localhost:5177',
         trace: 'on-first-retry',
-        actionTimeout: 5000,
-        navigationTimeout: 5000,
+        actionTimeout: 2000,
+        navigationTimeout: 2000,
     },
     projects: [
         {
