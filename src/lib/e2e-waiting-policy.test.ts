@@ -27,6 +27,34 @@ function location(source: ts.SourceFile, node: ts.Node) {
 }
 
 describe('E2E waiting policy', () => {
+    it('gives every host game navigation an explicit seed', () => {
+        const violations: string[] = [];
+
+        for (const file of sourceFiles()) {
+            const source = ts.createSourceFile(
+                file,
+                readFileSync(file, 'utf8'),
+                ts.ScriptTarget.Latest,
+                true,
+            );
+
+            const visit = (node: ts.Node) => {
+                if (ts.isCallExpression(node) && node.expression.getText(source).endsWith('.goto')) {
+                    const destination = node.arguments[0]?.getText(source) ?? '';
+                    const isControllerRoute = destination.includes('/#/hand');
+                    if (!isControllerRoute && !destination.includes('seed=')) {
+                        violations.push(`${location(source, node)} navigates to an unseeded host game`);
+                    }
+                }
+                ts.forEachChild(node, visit);
+            };
+
+            visit(source);
+        }
+
+        expect(violations).toEqual([]);
+    });
+
     it('uses condition-driven waits instead of fixed-duration sleeps', () => {
         const violations: string[] = [];
 

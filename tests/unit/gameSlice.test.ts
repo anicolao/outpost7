@@ -432,4 +432,14 @@ describe('Grid Initialization', () => {
         expect(state.colHeaders.length).toBe(5);
         expect(state.rowHeaders.length).toBe(5);
     });
+
+    it('should retain the game seed for deterministic consumers', () => {
+        let state = gameReducer(undefined, { type: 'unknown' });
+        state = gameReducer(state, addPlayer(RED_PLAYER));
+        state = gameReducer(state, addPlayer(YELLOW_PLAYER));
+
+        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'replayable-game' }));
+
+        expect(state.seed).toBe('replayable-game');
+    });
 });

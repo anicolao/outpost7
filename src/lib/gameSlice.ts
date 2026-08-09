@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction, current } from '@reduxjs/toolkit';
-import seedrandom from 'seedrandom';
 import type { CardData, BonusDefinition } from './cardLoader';
 import type { GameSettings } from './settingsStore';
+import { createSeededRandom } from './random';
 import type {
     PlayerColor,
     Edge,
@@ -19,6 +19,7 @@ export type { PlayerColor, Edge, Player, Card, PopulationCard, GamePhase, BonusI
 
 
 const initialState: GameState = {
+    seed: '',
     players: [],
     phase: 'lobby',
     orientation: 0,
@@ -54,7 +55,7 @@ const gameSlice = createSlice({
         removePlayer: (state, action: PayloadAction<Edge>) => {
             state.players = state.players.filter(p => p.edge !== action.payload);
         },
-        startGame: (state, action: PayloadAction<{ rows: number, cols: number, deck?: Card[], headers?: Card[], seed?: string }>) => {
+        startGame: (state, action: PayloadAction<{ rows: number, cols: number, deck?: Card[], headers?: Card[], seed: string }>) => {
             console.log('startGame called. Players:', state.players.length);
             if (state.players.length === 2) {
                 state.phase = 'playing';
@@ -65,7 +66,8 @@ const gameSlice = createSlice({
 
 
                 // Initialize RNG
-                const rng = seedrandom(action.payload.seed);
+                state.seed = action.payload.seed;
+                const rng = createSeededRandom(state.seed);
 
                 // Orientation logic
                 const hasBottom = state.players.some(p => p.edge === 'bottom');

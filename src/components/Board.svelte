@@ -103,7 +103,7 @@
       
       if (player && player.type === 'ai') {
           if (!aiInstances[turnColor]) {
-              aiInstances[turnColor] = new BasicAI(turnColor);
+              aiInstances[turnColor] = new BasicAI(turnColor, $gameState.game.seed);
           }
           
           const ai = aiInstances[turnColor];

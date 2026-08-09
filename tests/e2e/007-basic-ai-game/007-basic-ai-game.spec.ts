@@ -54,8 +54,8 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
     let turnCount = 1;
     let safeguard = 0; // Prevent infinite loops
 
-    const aiRed = new BasicAI('red');
-    const aiYellow = new BasicAI('yellow');
+    const aiRed = new BasicAI('red', 'ai_battle_001');
+    const aiYellow = new BasicAI('yellow', 'ai_battle_001');
 
     while (gameActive && safeguard < 300) {
         safeguard++;
