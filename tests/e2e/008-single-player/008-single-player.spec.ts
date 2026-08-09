@@ -14,7 +14,6 @@ test.describe('Single Player Mode', () => {
                     spec: 'Start Game with 1 Player',
                     check: async () => {
                         await page.goto('/?seed=e2e_test_solo&gameId=e2e_solo'); // Use simple seed
-                        await page.waitForLoadState('networkidle');
                         await expect(page.locator('.lobby-container')).toBeVisible();
 
                         // Add Red Player on Bottom
@@ -163,40 +162,39 @@ test.describe('Single Player Mode', () => {
                 {
                     spec: 'Wait for Turn Change or Move',
                     check: async () => {
-                        // Wait for turn count to increase (Red played (1) -> Yellow Played (2) -> Red's Turn (3))
-                        // Or at least Red -> Yellow (2) -> ...
-                        // If AI plays, turn should eventually go back to Red (3) OR Yellow plays something.
-                        // AI has a 1s delay.
+                        await page.evaluate(() => {
+                            // @ts-ignore
+                            const store = window.store;
+                            const signal = AbortSignal.timeout(2000);
 
-                        await expect.poll(async () => {
-                            return page.evaluate(() => {
-                                // @ts-ignore
-                                return window.store.getState().game.turnCount;
-                            });
-                        }, { timeout: 15000 }).toBeGreaterThan(1);
-
-                        // Check logs or state to see if Yellow played
-                        await expect.poll(async () => {
-                            return page.evaluate(() => {
-                                // @ts-ignore
-                                const grid = window.store.getState().game.grid;
-                                // Check if any cell is owned by yellow
-                                return grid.flat().some((c: any) => c && c.owner === 'yellow');
-                            });
-                        }, { timeout: 15000 }).toBe(true);
-
-                        await expect.poll(async () => {
-                            return page.evaluate(() => {
-                                // @ts-ignore
-                                const game = window.store.getState().game;
-                                return {
-                                    currentTurn: game.currentTurn,
-                                    pendingBonuses: game.pendingBonuses.length
+                            return new Promise<void>((resolve, reject) => {
+                                let unsubscribe = () => {};
+                                const onAbort = () => {
+                                    unsubscribe();
+                                    reject(new Error('AI did not complete its turn within 2000ms'));
                                 };
+                                const check = () => {
+                                    const game = store.getState().game;
+                                    const yellowPlayed = game.grid
+                                        .flat()
+                                        .some((cell: any) => cell?.owner === 'yellow');
+
+                                    if (
+                                        game.turnCount > 1 &&
+                                        yellowPlayed &&
+                                        game.currentTurn === 'red' &&
+                                        game.pendingBonuses.length === 0
+                                    ) {
+                                        signal.removeEventListener('abort', onAbort);
+                                        unsubscribe();
+                                        resolve();
+                                    }
+                                };
+
+                                signal.addEventListener('abort', onAbort, { once: true });
+                                unsubscribe = store.subscribe(check);
+                                check();
                             });
-                        }, { timeout: 15000 }).toEqual({
-                            currentTurn: 'red',
-                            pendingBonuses: 0
                         });
                     }
                 }

@@ -81,10 +81,9 @@ test.describe('Hand and Phone UI', () => {
                     spec: 'Click Red QR code and wait for popup',
                     check: async () => {
                         const [popup] = await Promise.all([
-                            page.waitForEvent('popup'),
+                            page.waitForEvent('popup', { timeout: 2000 }),
                             page.locator('.qr-zone.bottom .qr-item').click({ force: true })
                         ]);
-                        await popup.waitForLoadState();
                         redPopup = popup;
                         clientHelper = new TestStepHelper(redPopup, testInfo, false);
 
@@ -104,7 +103,7 @@ test.describe('Hand and Phone UI', () => {
                     spec: 'Verify Red player connected',
                     check: async () => {
                         await expect(redPopup.locator('.player-badge')).toHaveText('RED');
-                        await expect(redPopup.locator('.status')).toHaveText('Connected', { timeout: 15000 });
+                        await expect(redPopup.locator('.status')).toHaveText('Connected');
                         await expect(redPopup.locator('.card-wrapper')).toHaveCount(5);
                     }
                 }

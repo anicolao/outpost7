@@ -149,16 +149,11 @@ test.describe('Ownership Evaluation', () => {
                     spec: 'Open Red Client',
                     check: async () => {
                         const qrItem = page.locator('.qr-zone.bottom .qr-item');
-                        // It might be hidden if Red's turn passed? 
-                        // No, QR should be visible if not connected.
-                        // But wait, if Red "missed" turns? 
-                        // Connection is independent of turn.
-                        await qrItem.waitFor({ state: 'visible' });
+                        await expect(qrItem).toBeVisible();
                         const [popup] = await Promise.all([
-                            page.waitForEvent('popup'),
+                            page.waitForEvent('popup', { timeout: 2000 }),
                             qrItem.click({ force: true })
                         ]);
-                        await popup.waitForLoadState();
                         redPage = popup;
                         await expect(redPage.locator('.status')).toHaveText('Connected');
                         await expect(page.locator('.qr-zone.bottom')).toBeHidden();

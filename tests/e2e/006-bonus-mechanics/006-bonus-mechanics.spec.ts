@@ -104,9 +104,6 @@ test('Bonus Mechanics Flow', async ({ page: boardPage, context }, testInfo) => {
     // Click Interactive Cube
     await boardPage.locator('.player-cube.interactive').first().click();
 
-    // Wait for animation
-    await new Promise(r => setTimeout(r, 600));
-
     // 9. Verify Turn End (Red -> Yellow)
     await tester.step('turn-ended', {
         description: 'Turn Completed',

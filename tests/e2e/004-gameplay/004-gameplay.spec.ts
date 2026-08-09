@@ -47,20 +47,15 @@ test.describe('Gameplay Loop', () => {
                     spec: 'Open Red Client',
                     check: async () => {
                         const qrItem = page.locator('.qr-zone.bottom .qr-item');
-                        await qrItem.waitFor({ state: 'visible', timeout: 5000 });
-
-                        // Ensure it's stable and clickable
                         await expect(qrItem).toBeVisible();
 
                         console.log('Attempting to click QR code for popup...');
-                        // Use a slightly longer timeout for the popup event
                         const [popup] = await Promise.all([
-                            page.waitForEvent('popup', { timeout: 15000 }),
+                            page.waitForEvent('popup', { timeout: 2000 }),
                             qrItem.click() // Removing force: true to ensure it's actually clickable/visible
                         ]);
 
-                        console.log('Popup detected, waiting for load...');
-                        await popup.waitForLoadState();
+                        console.log('Popup detected.');
                         redPage = popup;
 
                         await expect(redPage.locator('.status')).toHaveText('Connected');
@@ -96,8 +91,7 @@ test.describe('Gameplay Loop', () => {
                                 console.log(`Selecting card ${i} for discard...`);
                                 await cards.nth(i).click({ force: true });
                                 selectedCount++;
-                                // Wait briefly for UI update
-                                await redPage.evaluate(() => new Promise(r => setTimeout(r, 200)));
+                                await expect(cards.nth(i)).toHaveClass(/selected/);
                                 i++;
                             }
                             console.log(`Selected ${selectedCount} cards. Enable state: ${!(await confirmBtn.isDisabled())}`);
@@ -121,10 +115,8 @@ test.describe('Gameplay Loop', () => {
                 {
                     spec: 'Select Valid Play/Pay pair',
                     check: async () => {
-                        // Wait for hand to stabilize
-                        await redPage.evaluate(() => new Promise(r => setTimeout(r, 2000)));
-
                         // Smart Selection Logic: Find a valid pair (Pay >= Play)
+                        await expect(redPage.locator('.card-wrapper').nth(1)).toBeVisible();
                         const indices = await redPage.evaluate(() => {
                             const cards = Array.from(document.querySelectorAll('.card-wrapper'));
                             const cardData = cards.map((el, index) => {
@@ -197,14 +189,12 @@ test.describe('Gameplay Loop', () => {
                         // Verify cell has the card content (CardDisplay)
                         const cell = page.locator('[data-cell-id="0-0"]');
 
-                        await expect(cell.locator('.card-bg')).toBeVisible({ timeout: 10000 });
+                        await expect(cell.locator('.card-bg')).toBeVisible();
 
                         console.log('Verified Card Rendered (CardDisplay)');
 
                         // Wait for update - Should enter BONUS ACTIONS or YELLOW TURN
-                        await expect.poll(async () => {
-                            return await page.locator('.turn-indicator').innerText();
-                        }, { timeout: 3000 }).toMatch(/BONUS ACTIONS|YELLOW TURN/);
+                        await expect(page.locator('.turn-indicator')).toHaveText(/BONUS ACTIONS|YELLOW TURN/);
                     }
                 }
             ]
@@ -231,8 +221,7 @@ test.describe('Gameplay Loop', () => {
                             // Click it
                             await interactiveCube.click();
 
-                            // Wait for resolution
-                            await new Promise(r => setTimeout(r, 600)); // Animation time
+                            await expect(interactiveCube).toBeHidden();
                         } else {
                             console.log('No Bonus Phase triggered.');
                         }

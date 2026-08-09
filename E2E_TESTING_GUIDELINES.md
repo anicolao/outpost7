@@ -10,16 +10,34 @@ We enforce a strict **Zero-Pixel Tolerance** policy for visual regression.
 
 ## 1.1 Handling Animations
 
-**NEVER** use `waitForTimeout` to wait for animations. It is flaky and slow.
-Instead, use the `waitForAnimations` utility which waits for all CSS animations/transitions to complete using the Web Animations API.
+**NEVER** use `waitForTimeout`, `setTimeout`, or polling loops to wait for UI state. They are flaky and slow. Wait for an observable locator, browser event, or application event instead. Every event wait must have an explicit timeout of at most 2,000 ms; the global assertion, action, and navigation timeouts enforce the same limit.
+
+Use `waitForAnimations` before screenshots. It moves finite animations to their real terminal state, preserving final styles and finish events, and then waits for two consecutive animation-free frames. This retains deterministic final-state coverage without paying production animation durations in every test step.
 
 ```typescript
 // Shared Utility
 export async function waitForAnimations(page: Page) {
-  await page.evaluate(() => {
-    return Promise.all(
-      document.getAnimations().map(animation => animation.finished)
-    );
+  await page.evaluate(async () => {
+    let stableFrames = 0;
+    const signal = AbortSignal.timeout(2000);
+
+    while (stableFrames < 2) {
+      if (signal.aborted) throw new Error('Animations did not settle within 2000ms');
+
+      const animations = document.getAnimations().filter(animation => {
+        if (animation.playState === 'finished') return false;
+        return animation.effect?.getTiming().iterations !== Infinity;
+      });
+
+      if (animations.length > 0) {
+        stableFrames = 0;
+        animations.forEach(animation => animation.finish());
+      } else {
+        stableFrames++;
+      }
+
+      await new Promise<void>(requestAnimationFrame);
+    }
   });
 }
 ```

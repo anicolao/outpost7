@@ -35,10 +35,9 @@ test.describe('Discard Flow', () => {
                     spec: 'Connect Red',
                     check: async () => {
                         const [popup] = await Promise.all([
-                            page.waitForEvent('popup'),
+                            page.waitForEvent('popup', { timeout: 2000 }),
                             page.locator('.qr-zone.bottom .qr-item').click({ force: true })
                         ]);
-                        await popup.waitForLoadState();
                         redPage = popup;
                         await expect(redPage.locator('.status')).toHaveText('Connected');
 
@@ -97,7 +96,7 @@ test.describe('Discard Flow', () => {
                         let i = 0;
                         while (await confirmBtn.isDisabled() && i < 8) {
                             await cards.nth(i).click({ force: true });
-                            await redPage.evaluate(() => new Promise(r => setTimeout(r, 200)));
+                            await expect(cards.nth(i)).toHaveClass(/selected/);
                             i++;
                         }
 
@@ -162,10 +161,30 @@ test.describe('Discard Flow', () => {
                         await expect(redPage.locator('.discard-btn')).toBeEnabled();
                         await redPage.locator('.discard-btn').click();
 
-                        await expect.poll(() => page.evaluate(() => {
+                        await page.evaluate(() => {
                             // @ts-ignore
-                            return window.store.getState().game.hands.red.length;
-                        })).toBe(3);
+                            const store = window.store;
+                            const signal = AbortSignal.timeout(2000);
+
+                            return new Promise<void>((resolve, reject) => {
+                                let unsubscribe = () => {};
+                                const onAbort = () => {
+                                    unsubscribe();
+                                    reject(new Error('Host hand did not synchronize within 2000ms'));
+                                };
+                                const check = () => {
+                                    if (store.getState().game.hands.red.length === 3) {
+                                        signal.removeEventListener('abort', onAbort);
+                                        unsubscribe();
+                                        resolve();
+                                    }
+                                };
+
+                                signal.addEventListener('abort', onAbort, { once: true });
+                                unsubscribe = store.subscribe(check);
+                                check();
+                            });
+                        });
                         await expect(redPage.locator('.card-wrapper')).toHaveCount(3);
                         await expect(redPage.locator('.alert-banner')).toBeHidden();
                     }
