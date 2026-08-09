@@ -161,6 +161,7 @@ test.describe('Ownership Evaluation', () => {
                         await popup.waitForLoadState();
                         redPage = popup;
                         await expect(redPage.locator('.status')).toHaveText('Connected');
+                        await expect(page.locator('.qr-zone.bottom')).toBeHidden();
                     }
                 }
             ]
