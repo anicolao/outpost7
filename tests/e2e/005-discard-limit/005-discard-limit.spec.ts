@@ -73,9 +73,9 @@ test.describe('Discard Flow', () => {
                     }
                 },
                 {
-                    spec: 'Only the footer confirmation is presented as a discard action',
+                    spec: 'Discarding is automatic with no manual mode switch',
                     check: async () => {
-                        await expect(redPage.getByRole('button', { name: 'Discard', exact: true })).toHaveCount(0);
+                        await expect(redPage.locator('.mode-switch')).toHaveCount(0);
                         await expect(redPage.locator('.discard-btn')).toBeVisible();
                     }
                 }
