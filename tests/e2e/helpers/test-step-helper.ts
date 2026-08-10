@@ -146,7 +146,11 @@ export class TestStepHelper {
 
         // Assert equality (Pixel Perfect)
         if (!options.skipScreenshot) {
-            await expect(targetPage).toHaveScreenshot(filename);
+            const platformFilename = `${filename}-${process.platform}`;
+            const platformSnapshot = path.join(screenshotDir, `${platformFilename}.png`);
+            await expect(targetPage).toHaveScreenshot(
+                fs.existsSync(platformSnapshot) ? platformFilename : filename,
+            );
         }
 
         // 4. Record for Docs
