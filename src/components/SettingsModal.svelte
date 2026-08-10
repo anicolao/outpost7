@@ -102,7 +102,7 @@
     color: white;
     width: 90%;
     max-width: 960px;
-    max-height: 95dvh;
+    max-height: 95vh;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     display: flex;

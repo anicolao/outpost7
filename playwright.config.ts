@@ -50,10 +50,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        // Compile before Playwright's two-second event budgets begin. Serving the
-        // production bundle avoids first-request Vite compilation contending with
-        // Firebase emulator startup on hosted runners.
-        command: 'npm run build && npm run preview -- --port 5177',
+        command: 'npm run dev -- --port 5177',
         port: 5177,
         reuseExistingServer: !process.env.CI,
         env: {
