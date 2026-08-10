@@ -417,7 +417,7 @@
       {#each ['top', 'bottom', 'left', 'right'] as edge (edge)}
           {@const player = players.find(p => p.edge === edge)}
           <!-- QR Code (Only if not connected) -->
-          {#if player && !connectedPlayers[player.color]}
+          {#if player?.type === 'human' && !connectedPlayers[player.color]}
              <div class="qr-zone {edge}"> 
                  <PlayerQR 
                      url={`${window.location.origin}${baseUrl}#/hand?game=${gameId}&color=${player.color}`}

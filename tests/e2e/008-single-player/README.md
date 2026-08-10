@@ -9,6 +9,7 @@ Verify starting a solo game and AI Opponent response
 **Specs:**
 - Start Game with 1 Player
 - Verify AI Player Added
+- Only the human player has a join QR code
 
 ## Human (Red) plays a move
 

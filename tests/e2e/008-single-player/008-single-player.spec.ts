@@ -47,6 +47,16 @@ test.describe('Single Player Mode', () => {
                             if (ai.edge !== 'top') throw new Error('AI should be top (opposite bottom)');
                         });
                     }
+                },
+                {
+                    spec: 'Only the human player has a join QR code',
+                    check: async () => {
+                        const humanJoin = page.locator('.qr-zone.bottom .qr-item');
+                        await expect(humanJoin).toBeVisible();
+                        await expect(humanJoin).toContainText('RED JOIN');
+                        await expect(page.locator('.qr-zone.top .qr-item')).toHaveCount(0);
+                        await expect(page.getByText('YELLOW JOIN', { exact: true })).toHaveCount(0);
+                    }
                 }
             ]
         });
