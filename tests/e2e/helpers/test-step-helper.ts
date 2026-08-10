@@ -146,37 +146,7 @@ export class TestStepHelper {
 
         // Assert equality (Pixel Perfect)
         if (!options.skipScreenshot) {
-            const logPlayerJoinDiagnostics = async (stage: string) => {
-                if (!filename.endsWith('02b-players-joined')) return;
-                const metrics = await targetPage.evaluate(() => {
-                    const bounds = (selector: string) => {
-                        const rect = document.querySelector(selector)?.getBoundingClientRect();
-                        return rect && { left: rect.left, right: rect.right, width: rect.width };
-                    };
-                    return {
-                        innerWidth: window.innerWidth,
-                        outerWidth: window.outerWidth,
-                        devicePixelRatio: window.devicePixelRatio,
-                        scrollX: window.scrollX,
-                        documentClientWidth: document.documentElement.clientWidth,
-                        documentScrollWidth: document.documentElement.scrollWidth,
-                        body: bounds('body'),
-                        app: bounds('#app'),
-                        main: bounds('main'),
-                        lobby: bounds('.lobby-container'),
-                        animations: document.getAnimations().map((animation) => animation.playState),
-                    };
-                });
-                console.log(`PLAYER JOIN SCREENSHOT ${stage}: ${JSON.stringify(metrics)}`);
-            };
-
-            await logPlayerJoinDiagnostics('before');
-            try {
-                await expect(targetPage).toHaveScreenshot(filename);
-            } catch (error) {
-                await logPlayerJoinDiagnostics('after');
-                throw error;
-            }
+            await expect(targetPage).toHaveScreenshot(filename);
         }
 
         // 4. Record for Docs

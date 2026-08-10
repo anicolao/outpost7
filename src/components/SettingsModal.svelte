@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import {
     GAME_SETTING_DEFINITIONS,
@@ -8,8 +8,12 @@
   } from '../lib/settingsStore';
 
   const dispatch = createEventDispatcher();
+  let closing = false;
 
-  function close() {
+  async function close() {
+    if (closing) return;
+    closing = true;
+    await tick();
     dispatch('close');
   }
 
@@ -32,7 +36,7 @@
   }
 </script>
 
-<div class="backdrop" onclick={close} transition:fade>
+<div class="backdrop" class:closing onclick={close} transition:fade>
   <div class="modal" onclick={(e) => e.stopPropagation()} transition:scale role="dialog" aria-modal="true">
     <div class="header">
         <h2>Game Settings</h2>
@@ -95,6 +99,10 @@
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(5px);
+  }
+
+  .backdrop.closing {
+    backdrop-filter: none;
   }
 
   .modal {
