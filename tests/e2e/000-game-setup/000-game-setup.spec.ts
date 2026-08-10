@@ -115,6 +115,10 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
                 check: async () => await expect(page.locator('.board-container')).toBeVisible()
             },
             {
+                spec: 'The tabletop identifies the exact E2E build without masking',
+                check: async () => await expect(page.getByTestId('build-marker')).toHaveText('Build e2e-tes')
+            },
+            {
                 spec: 'Board orientation should be 90°',
                 check: async () => {
                     // matrix(0, 1, -1, 0, 0, 0) corresponds to 90deg, but 0 might be represented as very small number

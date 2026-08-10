@@ -47,6 +47,7 @@
 
 **Specs:**
 - Board container should be visible
+- The tabletop identifies the exact E2E build without masking
 - Board orientation should be 90°
 - Should have 11 header cells (5 cols + 5 rows + 1 spacer)
 - Should have 25 empty grid cells

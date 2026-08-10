@@ -30,6 +30,7 @@
   $: currentTurn = $gameState.game.currentTurn;
 
   const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+  const buildHash = (import.meta.env.VITE_GIT_HASH ?? 'local').slice(0, 7);
 
   let gameId: string | null = null;
   let repository: ActionRepository | undefined;
@@ -714,6 +715,8 @@
   {#if isE2E}
       <E2EHandDisplay />
   {/if}
+
+  <span class="build-marker" data-testid="build-marker">Build {buildHash}</span>
 </div>
 
 
@@ -740,6 +743,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .build-marker {
+      position: absolute;
+      right: 4px;
+      bottom: 3px;
+      z-index: 130;
+      color: rgba(255, 255, 255, 0.38);
+      font: 9px/1 monospace;
+      letter-spacing: 0.04em;
+      pointer-events: none;
+      user-select: text;
   }
 
   /* The grid has one header row/column plus the configured board dimensions. */
