@@ -54,8 +54,14 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
     let turnCount = 1;
     let safeguard = 0; // Prevent infinite loops
 
-    const aiRed = new BasicAI('red', 'ai_battle_001');
-    const aiYellow = new BasicAI('yellow', 'ai_battle_001');
+    const aiSettings = {
+        SALVAGE_MAX_COST: 12,
+        CUBES_PER_PLAY: 1,
+        CUBES_PER_COLOR_MATCH: 1,
+        CUBES_PER_OVERPAYMENT: 1,
+    };
+    const aiRed = new BasicAI('red', 'ai_battle_001', aiSettings);
+    const aiYellow = new BasicAI('yellow', 'ai_battle_001', aiSettings);
 
     while (gameActive && safeguard < 300) {
         safeguard++;
@@ -128,14 +134,10 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
                                         payCardId: m.payCardId,
                                         row: m.row,
                                         col: m.col,
-                                        settings: {
-                                            CUBES_PER_PLAY: 1,
-                                            CUBES_PER_COLOR_MATCH: 1,
-                                            CUBES_PER_OVERPAYMENT: 1,
-                                        }
+                                        settings: m.settings
                                     }
                                 });
-                            }, { ...move, color: currentPlayer });
+                            }, { ...move, color: currentPlayer, settings: aiSettings });
                         } else if (move.type === 'RESOLVE_BONUS') {
                             await page.evaluate((m) => {
                                 // @ts-ignore

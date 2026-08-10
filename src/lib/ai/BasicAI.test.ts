@@ -170,3 +170,122 @@ describe('BasicAI repair outcome scoring', () => {
         });
     });
 });
+
+describe('BasicAI board strategy', () => {
+    it('takes control of the highest-population line', () => {
+        const state = gameState();
+        state.grid = [
+            [card('anchor', { owner: 'yellow', cubes: 1 }), null],
+            [null, null],
+        ];
+        state.rowHeaders = [
+            { card: 'high-value-row', count: 6, owner: 'yellow' },
+            { card: 'low-value-row', count: 1, owner: 'yellow' },
+        ];
+        state.colHeaders = [
+            { card: 'zero-value-column', count: 0, owner: 'yellow' },
+            { card: 'zero-value-column', count: 0, owner: 'yellow' },
+        ];
+        state.hands.red = [
+            card('module', {
+                cost: 2,
+                maxCubes: 2,
+                bonuses: { 2: { type: 'ADD_POPULATION', color: 'blue' } },
+            }),
+            card('payment', { cost: 2, maxCubes: 2 }),
+        ];
+        state.hands.yellow = [];
+        const ai = new BasicAI('red', 'valuable-line', settings({
+            CUBES_PER_COLOR_MATCH: 0,
+            CUBES_PER_PLAY: 2,
+            CUBES_PER_OVERPAYMENT: 0,
+        }));
+
+        const move = ai.computeMove(state);
+
+        expect(move).toMatchObject({
+            type: 'REPAIR',
+            playCardId: 'module',
+            row: 0,
+            col: 1,
+        });
+    });
+
+    it('prefers control that survives the opponent strongest next placement', () => {
+        const state = gameState();
+        state.grid = [
+            [null, card('anchor', { owner: 'yellow', cubes: 1 }), null],
+            [null, null, null],
+        ];
+        state.rowHeaders = [
+            { card: 'valuable-row', count: 5, owner: 'yellow' },
+            { card: 'zero-value-row', count: 0, owner: 'yellow' },
+        ];
+        state.colHeaders = [
+            { card: 'zero-value-column', count: 0, owner: 'yellow' },
+            { card: 'valuable-column', count: 5, owner: 'yellow' },
+            { card: 'zero-value-column', count: 0, owner: 'yellow' },
+        ];
+        state.hands.red = [
+            card('module', {
+                cost: 2,
+                maxCubes: 2,
+                bonuses: { 2: { type: 'ADD_POPULATION', color: 'blue' } },
+            }),
+            card('payment', { cost: 2, maxCubes: 2 }),
+        ];
+        state.hands.yellow = [
+            card('opponent-module', { cost: 2, color: 'yellow', maxCubes: 2 }),
+            card('opponent-payment', { cost: 2, color: 'yellow', maxCubes: 2 }),
+        ];
+        const ai = new BasicAI('red', 'defend-control', settings({
+            CUBES_PER_COLOR_MATCH: 0,
+            CUBES_PER_PLAY: 2,
+            CUBES_PER_OVERPAYMENT: 0,
+        }));
+
+        const move = ai.computeMove(state);
+
+        expect(move).toMatchObject({
+            type: 'REPAIR',
+            playCardId: 'module',
+            row: 1,
+            col: 1,
+        });
+    });
+
+    it('chooses the least damaging legal repair instead of passing', () => {
+        const state = gameState();
+        state.grid = [[card('anchor', { owner: 'red', cubes: 1 }), null, null]];
+        state.rowHeaders = [{ card: 'vulnerable-row', count: 10, owner: 'red' }];
+        state.colHeaders = [
+            { card: 'zero-value-column', count: 0, owner: 'red' },
+            { card: 'zero-value-column', count: 0, owner: 'red' },
+            { card: 'zero-value-column', count: 0, owner: 'red' },
+        ];
+        state.hands.red = [
+            card('module', {
+                cost: 2,
+                maxCubes: 1,
+                bonuses: { 1: { type: 'ADD_POPULATION', color: 'blue' } },
+            }),
+            card('payment', { cost: 2, maxCubes: 1 }),
+        ];
+        state.hands.yellow = [
+            card('opponent-module', { cost: 2, color: 'yellow', maxCubes: 3 }),
+            card('opponent-payment', { cost: 2, color: 'yellow', maxCubes: 3 }),
+        ];
+        const ai = new BasicAI('red', 'least-damaging', settings({
+            CUBES_PER_COLOR_MATCH: 0,
+            CUBES_PER_PLAY: 3,
+            CUBES_PER_OVERPAYMENT: 0,
+        }));
+
+        expect(ai.computeMove(state)).toMatchObject({
+            type: 'REPAIR',
+            playCardId: 'module',
+            row: 0,
+            col: 1,
+        });
+    });
+});
