@@ -60,13 +60,11 @@
                     <div class="controls">
                         <button
                           class="control-btn"
-                          disabled={value === definition.min}
                           onclick={() => updateNumberSetting(settingKey, -1)}
                         >-</button>
                         <span class="value">{value}</span>
                         <button
                           class="control-btn"
-                          disabled={value === definition.max}
                           onclick={() => updateNumberSetting(settingKey, 1)}
                         >+</button>
                     </div>
@@ -94,6 +92,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(5px);
   }
 
   .modal {
@@ -203,11 +202,6 @@
 
   .control-btn:active {
       background: #666;
-  }
-
-  .control-btn:disabled {
-      opacity: 0.35;
-      cursor: default;
   }
 
   .value {
