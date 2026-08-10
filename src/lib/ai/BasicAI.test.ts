@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { GameSettings } from '../settingsStore';
 import type { Card, GameState, PlayerColor } from '../types';
 import { BasicAI } from './BasicAI';
 
-function card(id: string): Card {
+function card(id: string, overrides: Partial<Card> = {}): Card {
     return {
         id,
         index: id,
@@ -19,6 +20,21 @@ function card(id: string): Card {
         color: 'red',
         bonuses: {},
         maxCubes: 1,
+        ...overrides,
+    };
+}
+
+function settings(overrides: Partial<GameSettings> = {}): GameSettings {
+    return {
+        SALVAGE_MAX_COST: 12,
+        CUBES_PER_COLOR_MATCH: 1,
+        CUBES_PER_PLAY: 0,
+        CUBES_PER_OVERPAYMENT: 1,
+        GRID_ROWS: 2,
+        GRID_COLS: 2,
+        STARTING_HAND_LIMIT_P1: 12,
+        STARTING_HAND_LIMIT_P2: 16,
+        ...overrides,
     };
 }
 
@@ -97,5 +113,60 @@ describe('BasicAI seeded tie-breaking', () => {
             if (move.type !== 'REPAIR') throw new Error(`Expected REPAIR, received ${move.type}`);
             expect(move.playCardId).toBe('a');
         }
+    });
+});
+
+describe('BasicAI repair outcome scoring', () => {
+    it('uses the configured cube rules when choosing a repair', () => {
+        const state = gameState();
+        state.hands.red = [
+            card('module', {
+                cost: 4,
+                color: 'red',
+                maxCubes: 3,
+                bonuses: { 3: { type: 'ADD_CUBE' } },
+            }),
+            card('off-color-payment', { cost: 4, color: 'blue', maxCubes: 3 }),
+            card('matching-payment', { cost: 4, color: 'red', maxCubes: 3 }),
+        ];
+        const ai = new BasicAI('red', 'configured-rules', settings({
+            CUBES_PER_COLOR_MATCH: 0,
+            CUBES_PER_PLAY: 3,
+            CUBES_PER_OVERPAYMENT: 0,
+        }));
+
+        const move = ai.computeMove(state);
+
+        expect(move).toMatchObject({
+            type: 'REPAIR',
+            playCardId: 'module',
+        });
+    });
+
+    it('respects cube capacity and preserves an expensive payment when it adds no value', () => {
+        const state = gameState();
+        state.hands.red = [
+            card('module', {
+                cost: 1,
+                color: 'red',
+                maxCubes: 1,
+                bonuses: { 1: { type: 'ADD_POPULATION', color: 'red' } },
+            }),
+            card('exact-payment', { cost: 1, color: 'blue' }),
+            card('wasteful-payment', { cost: 6, color: 'blue' }),
+        ];
+        const ai = new BasicAI('red', 'payment-efficiency', settings({
+            CUBES_PER_COLOR_MATCH: 0,
+            CUBES_PER_PLAY: 1,
+            CUBES_PER_OVERPAYMENT: 1,
+        }));
+
+        const move = ai.computeMove(state);
+
+        expect(move).toMatchObject({
+            type: 'REPAIR',
+            playCardId: 'module',
+            payCardId: 'exact-payment',
+        });
     });
 });
