@@ -101,8 +101,8 @@
     background: #2a2a2a;
     color: white;
     width: 90%;
-    max-width: 960px;
-    max-height: 95vh;
+    max-width: 600px;
+    max-height: 80vh;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     display: flex;
@@ -140,7 +140,7 @@
   }
 
   .content {
-    padding: 1rem 1.5rem;
+    padding: 1.5rem;
     overflow-y: auto;
   }
 
@@ -148,18 +148,14 @@
     list-style: none;
     padding: 0;
     margin: 0;
-    margin-bottom: 1rem;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 2rem;
+    margin-bottom: 2rem;
   }
 
   .setting-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    min-height: 48px;
-    padding: 0.5rem 0;
+    padding: 1rem 0;
     border-bottom: 1px solid #444;
   }
 
@@ -261,11 +257,5 @@
   .action-btn:hover {
       background: #444;
       border-color: #666;
-  }
-
-  @media (max-width: 700px) {
-      .settings-list {
-          grid-template-columns: 1fr;
-      }
   }
 </style>
