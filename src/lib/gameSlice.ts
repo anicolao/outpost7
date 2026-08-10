@@ -13,6 +13,7 @@ import type {
     GameState
 } from './types';
 import { hasValidMoves, evaluateOwnership } from './gameUtils';
+import { calculateRepairCubes } from './repairRules';
 
 // Export types for potential external use (consistency)
 export type { PlayerColor, Edge, Player, Card, PopulationCard, GamePhase, BonusInstance, GameState };
@@ -185,11 +186,7 @@ const gameSlice = createSlice({
 
                 // Calculate Cubes
                 // Rule: CUBES_PER_PLAY + (ColorMatch ? CUBES_PER_COLOR_MATCH : 0) + (Overpay * CUBES_PER_OVERPAYMENT)
-                const colorMatch = payCard.color === playCard.color ? settings.CUBES_PER_COLOR_MATCH : 0;
-                const overpay = Math.max(0, payCard.cost - playCard.cost);
-                const overpayBonus = overpay * settings.CUBES_PER_OVERPAYMENT;
-                const maxCubes = playCard.maxCubes !== undefined ? playCard.maxCubes : 6;
-                const cubes = Math.min(settings.CUBES_PER_PLAY + colorMatch + overpayBonus, maxCubes);
+                const cubes = calculateRepairCubes(playCard, payCard, settings);
 
                 // Remove both from hand
                 // Remove both from hand

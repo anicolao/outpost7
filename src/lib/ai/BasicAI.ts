@@ -1,6 +1,19 @@
 import type { GameState, Card, PlayerColor } from '../types';
-import { hasValidMoves, evaluateOwnership } from '../gameUtils';
 import { createSeededRandom, type RandomSource } from '../random';
+import type { GameSettings } from '../settingsStore';
+import { calculateRepairCubes } from '../repairRules';
+
+type AISettings = Pick<
+    GameSettings,
+    'SALVAGE_MAX_COST' | 'CUBES_PER_PLAY' | 'CUBES_PER_COLOR_MATCH' | 'CUBES_PER_OVERPAYMENT'
+>;
+
+const DEFAULT_AI_SETTINGS: AISettings = {
+    SALVAGE_MAX_COST: 12,
+    CUBES_PER_PLAY: 0,
+    CUBES_PER_COLOR_MATCH: 1,
+    CUBES_PER_OVERPAYMENT: 1,
+};
 
 // Move Actions
 type MoveAction =
@@ -12,7 +25,11 @@ type MoveAction =
 export class BasicAI {
     private readonly random: RandomSource;
 
-    constructor(private playerColor: PlayerColor, seed: string) {
+    constructor(
+        private playerColor: PlayerColor,
+        seed: string,
+        private readonly settings: AISettings = DEFAULT_AI_SETTINGS,
+    ) {
         this.random = createSeededRandom(seed, `basic-ai:${playerColor}`);
     }
 
@@ -127,22 +144,8 @@ export class BasicAI {
     }
 
     private evaluateMove(state: GameState, playCard: Card, payCard: Card, r: number, c: number): number {
-        // Heuristic Score
-        // 1. Cubes placed (Immediate Control)
-        // 2. Bonuses triggered (Approximation)
-
-        // Calculate Cubes
-        // Hardcoded constants mirroring settingsStore default for now, or pass settings?
-        // Let's assume defaults: 1 base, 1 match, 1 per overpay
-        const CUBES_PER_PLAY = 1;
-        const CUBES_PER_COLOR_MATCH = 1;
-        const CUBES_PER_OVERPAYMENT = 1;
-
-        const colorMatch = payCard.color === playCard.color ? CUBES_PER_COLOR_MATCH : 0;
-        const overpay = Math.max(0, payCard.cost - playCard.cost);
-        const cubes = CUBES_PER_PLAY + colorMatch + (overpay * CUBES_PER_OVERPAYMENT);
-
-        let score = cubes * 10;
+        const cubes = calculateRepairCubes(playCard, payCard, this.settings);
+        let score = cubes * 100;
 
         // Bonus Analysis (Simple)
         if (playCard.bonuses) {
@@ -150,16 +153,16 @@ export class BasicAI {
                 if (playCard.bonuses[i]) {
                     // Bonus triggered!
                     const type = playCard.bonuses[i].type;
-                    if (type === 'ADD_CUBE') score += 5; // Good
-                    if (type === 'REMOVE_CUBE') score += 5; // Good
-                    if (type === 'ADD_POPULATION') score += 2; // Okay
+                    if (type === 'ADD_CUBE') score += 40;
+                    if (type === 'REMOVE_CUBE') score += 40;
+                    if (type === 'ADD_POPULATION') score += 30;
                 }
             }
         }
 
-        // Strategic Placement (Very Basic)
-        // Prefer rows/cols where we are losing? Or winning?
-        // For now just random preference via order.
+        // A payment card leaves the game. When two payments produce the same
+        // outcome, preserve the more valuable card for a future repair.
+        score -= payCard.cost;
 
         return score;
     }
