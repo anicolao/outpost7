@@ -16,6 +16,24 @@ const NUMBER_SETTINGS = {
     OPENING_HAND_VALUE_LIMIT_P2: 1,
 } as const;
 
+const ACTION_SETTING_KEYS = [
+    'SALVAGE_MAX_COST',
+    'CUBES_PER_COLOR_MATCH',
+    'CUBES_PER_PLAY',
+    'CUBES_PER_OVERPAYMENT',
+] as const;
+
+const SETUP_SETTING_KEYS = [
+    'GRID_ROWS',
+    'GRID_COLS',
+    'MAX_HAND_SIZE',
+    'STARTING_HAND_SIZE',
+    'BURN_CARD_COUNT',
+    'OFFER_SIZE',
+    'OPENING_HAND_VALUE_LIMIT_P1',
+    'OPENING_HAND_VALUE_LIMIT_P2',
+] as const;
+
 async function setNumber(row: Locator, target: number) {
     const value = row.locator('.value');
     let current = Number(await value.textContent());
@@ -47,23 +65,45 @@ test('one settings snapshot governs setup, tabletop, and private hands', async (
     await page.locator('.settings-btn.top-left').click();
     await expect(page.locator('.modal')).toBeVisible();
 
-    for (const [key, target] of Object.entries(NUMBER_SETTINGS)) {
-        await setNumber(page.locator(`[data-setting-key="${key}"]`), target);
+    await page.getByRole('button', { name: 'Setup rules' }).click();
+    for (const key of SETUP_SETTING_KEYS) {
+        await setNumber(page.locator(`[data-setting-key="${key}"]`), NUMBER_SETTINGS[key]);
+    }
+
+    await helper.step('setup-rules-configured', {
+        description: 'Every setup constant has a visible control',
+        verifications: [
+            {
+                spec: 'All eight setup settings are represented',
+                check: async () => await expect(page.locator('[data-setting-key]')).toHaveCount(8),
+            },
+            ...SETUP_SETTING_KEYS.map((key) => ({
+                spec: `${key} is set to ${NUMBER_SETTINGS[key]}`,
+                check: async () => await expect(
+                    page.locator(`[data-setting-key="${key}"] .value`),
+                ).toHaveText(String(NUMBER_SETTINGS[key])),
+            })),
+        ],
+    });
+
+    await page.getByRole('button', { name: 'Action rules' }).click();
+    for (const key of ACTION_SETTING_KEYS) {
+        await setNumber(page.locator(`[data-setting-key="${key}"]`), NUMBER_SETTINGS[key]);
     }
     await page.locator('[data-setting-key="ALLOW_ZERO_CUBE_REPAIRS"] .toggle-btn').click();
 
-    await helper.step('all-rules-configured', {
-        description: 'Every gameplay constant has a visible control',
+    await helper.step('action-rules-configured', {
+        description: 'Every action constant has a visible control',
         verifications: [
             {
-                spec: 'All thirteen rule settings are represented',
-                check: async () => await expect(page.locator('[data-setting-key]')).toHaveCount(13),
+                spec: 'All five action settings are represented',
+                check: async () => await expect(page.locator('[data-setting-key]')).toHaveCount(5),
             },
-            ...Object.entries(NUMBER_SETTINGS).map(([key, value]) => ({
-                spec: `${key} is set to ${value}`,
+            ...ACTION_SETTING_KEYS.map((key) => ({
+                spec: `${key} is set to ${NUMBER_SETTINGS[key]}`,
                 check: async () => await expect(
                     page.locator(`[data-setting-key="${key}"] .value`),
-                ).toHaveText(String(value)),
+                ).toHaveText(String(NUMBER_SETTINGS[key])),
             })),
             {
                 spec: 'Zero-cube repairs can be explicitly enabled',

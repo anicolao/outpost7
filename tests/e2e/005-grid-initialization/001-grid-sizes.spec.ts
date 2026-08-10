@@ -32,6 +32,7 @@ test.describe('Grid Initialization', () => {
                 // 2. Open Settings
                 await page.click('.settings-btn.top-left');
                 await expect(page.locator('.modal')).toBeVisible();
+                await page.getByRole('button', { name: 'Setup rules' }).click();
 
                 // 3. Set Grid Size
                 // We assume default is 5. We need to reach 'size'.
