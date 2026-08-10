@@ -36,7 +36,7 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
         ]
     });
     await page.click('.close-btn');
-    await expect(page.locator('.modal')).toHaveCount(0);
+    await expect(page.locator('.backdrop')).toHaveCount(0);
 
     // 3. Add Players
     await page.locator('.edge-control.bottom .add-btn').click();
