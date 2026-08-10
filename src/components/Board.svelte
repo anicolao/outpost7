@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
 
   import { gameState } from '../lib/redux-svelte';
   import { dealCards, playerDiscard, resolveBonus, salvage, type BonusInstance } from '../lib/gameSlice';
-  import { getAssetUrl, type CardData } from '../lib/cardLoader';
   import { createActionRepository, type ActionRepository, type ControllerEvent } from '../lib/action-repository';
   import { initializeFirebase } from '../lib/firebase';
-  import type { PlayerColor } from '../lib/types';
+  import type { Card, Edge, PlayerColor } from '../lib/types';
   import { store } from '../lib/store';
   import Offer from './Offer.svelte';
   import PlayerQR from './PlayerQR.svelte';
@@ -88,59 +87,213 @@
   
   // AI Instances
   const aiInstances: Record<string, BasicAI> = {};
+  const AI_STAGE_EVENT = 'outpost7:continue-ai-stage';
+
+  type AIStage =
+      | 'thinking'
+      | 'repair-selection'
+      | 'repair-flight'
+      | 'salvage-selection'
+      | 'salvage-flight'
+      | 'bonus'
+      | 'pass';
+
+  type AIPresentation = {
+      color: PlayerColor;
+      edge: Edge;
+      stage: AIStage;
+      playCard?: Card;
+      payCard?: Card;
+      selectedCardIds?: string[];
+      latestSelectedCardId?: string;
+  };
+
+  type SalvageFlight = {
+      card: Card;
+      startRect: DOMRect;
+      endRect: DOMRect;
+  };
+
+  let aiPresentation: AIPresentation | null = null;
+  let aiSalvageFlights: SalvageFlight[] = [];
+  let aiRunning = false;
+  let lastAIStateSignature = '';
+
+  async function holdAIStage(stage: string) {
+      await tick();
+      const holds = (window as typeof window & { E2E_AI_STAGE_HOLDS?: string[] }).E2E_AI_STAGE_HOLDS;
+      const holdIndex = holds?.indexOf(stage) ?? -1;
+      if (holdIndex < 0 || !holds) return;
+
+      holds.splice(holdIndex, 1);
+      await new Promise<void>((resolve) => {
+          window.addEventListener(AI_STAGE_EVENT, () => resolve(), { once: true });
+      });
+  }
+
+  async function waitForStageAnimations(selector: string) {
+      await tick();
+      const animations = Array.from(document.querySelectorAll<HTMLElement>(selector))
+          .flatMap((element) => element.getAnimations({ subtree: true }))
+          .filter((animation) => animation.effect?.getTiming().iterations !== Infinity);
+      await Promise.all(animations.map((animation) => animation.finished.catch(() => undefined)));
+  }
+
+  async function presentAIStage(stageKey: string, selector: string) {
+      await holdAIStage(stageKey);
+      await waitForStageAnimations(selector);
+  }
+
+  function destinationRect(edge: Edge, sourceRect: DOMRect) {
+      const margin = 20;
+      const left = edge === 'left'
+          ? margin
+          : edge === 'right'
+            ? window.innerWidth - sourceRect.width - margin
+            : (window.innerWidth - sourceRect.width) / 2;
+      const top = edge === 'top'
+          ? margin
+          : edge === 'bottom'
+            ? window.innerHeight - sourceRect.height - margin
+            : (window.innerHeight - sourceRect.height) / 2;
+      return new DOMRect(left, top, sourceRect.width, sourceRect.height);
+  }
+
+  function aiStateSignature() {
+      const game = $gameState.game;
+      return JSON.stringify({
+          phase: game.phase,
+          turn: game.currentTurn,
+          turnCount: game.turnCount,
+          hand: game.hands[game.currentTurn].map((card) => card.id),
+          offer: game.offer.map((card) => card.id),
+          grid: game.grid.flat().map((card) => card?.id ?? null),
+          bonuses: game.pendingBonuses.map((bonus) => bonus.id),
+      });
+  }
+
+  async function executeAIMove(turnColor: PlayerColor, edge: Edge, ai: BasicAI) {
+      aiPresentation = { color: turnColor, edge, stage: 'thinking' };
+      await presentAIStage('thinking', '.ai-action-feedback');
+
+      if ($gameState.game.currentTurn !== turnColor) return;
+      const move = ai.computeMove($gameState.game);
+      if (!move) return;
+      console.log(`AI (${turnColor}) doing:`, move);
+
+      if (move.type === 'PASS') {
+          aiPresentation = { color: turnColor, edge, stage: 'pass' };
+          await presentAIStage('pass', '.ai-action-feedback');
+          store.dispatch({ type: 'game/passTurn', payload: { color: turnColor } });
+          return;
+      }
+
+      if (move.type === 'RESOLVE_BONUS') {
+          aiPresentation = { color: turnColor, edge, stage: 'bonus' };
+          executingBonuses.add(move.bonusId);
+          executingBonuses = new Set(executingBonuses);
+          await presentAIStage('bonus', '.ai-action-feedback, .player-cube.executing');
+          store.dispatch(resolveBonus({ bonusId: move.bonusId }));
+          executingBonuses.delete(move.bonusId);
+          executingBonuses = new Set(executingBonuses);
+          return;
+      }
+
+      if (move.type === 'REPAIR') {
+          const hand = $gameState.game.hands[turnColor];
+          const play = hand.find((card) => card.id === move.playCardId);
+          const pay = hand.find((card) => card.id === move.payCardId);
+          const target = document.querySelector<HTMLElement>(`[data-cell-id="${move.row}-${move.col}"]`);
+          if (!play || !pay || !target) return;
+
+          aiPresentation = {
+              color: turnColor,
+              edge,
+              stage: 'repair-selection',
+              playCard: play,
+              payCard: pay,
+          };
+          await presentAIStage('repair-selection', '.ai-repair-choice .choice-card');
+
+          const source = document.querySelector<HTMLElement>('.ai-repair-choice .play-choice .choice-card');
+          if (!source) return;
+          animatingCard = {
+              id: play.id,
+              startRect: source.getBoundingClientRect(),
+              endRect: target.getBoundingClientRect(),
+              cardData: play,
+              controlledByAI: true,
+          };
+          aiPresentation = { ...aiPresentation, stage: 'repair-flight' };
+          await presentAIStage('repair-flight', '.flying-card.ai-controlled');
+
+          animatingCard = null;
+          store.dispatch(playCard({
+              color: turnColor,
+              playCardId: move.playCardId,
+              payCardId: move.payCardId,
+              row: move.row,
+              col: move.col,
+          }));
+          return;
+      }
+
+      const selectedCards = move.cardIds
+          .map((cardId) => $gameState.game.offer.find((card) => card.id === cardId))
+          .filter((card): card is Card => Boolean(card));
+      const selectedCardIds: string[] = [];
+      for (const card of selectedCards) {
+          selectedCardIds.push(card.id);
+          aiPresentation = {
+              color: turnColor,
+              edge,
+              stage: 'salvage-selection',
+              selectedCardIds: [...selectedCardIds],
+              latestSelectedCardId: card.id,
+          };
+          await presentAIStage(
+              `salvage-selection:${selectedCardIds.length}`,
+              `.offer-container [data-card-id="${card.id}"].ai-new-selection`,
+          );
+      }
+
+      aiSalvageFlights = selectedCards.flatMap((card) => {
+          const source = document.querySelector<HTMLElement>(
+              `.offer-container [data-card-id="${card.id}"]`,
+          );
+          if (!source) return [];
+          const startRect = source.getBoundingClientRect();
+          return [{ card, startRect, endRect: destinationRect(edge, startRect) }];
+      });
+      aiPresentation = {
+          color: turnColor,
+          edge,
+          stage: 'salvage-flight',
+          selectedCardIds: [...selectedCardIds],
+      };
+      await presentAIStage('salvage-flight', '.ai-salvage-card');
+
+      aiSalvageFlights = [];
+      store.dispatch(salvage({ color: turnColor, cardIds: move.cardIds }));
+  }
 
   // AI Loop
-  $: if ($gameState.game.phase === 'playing') { // Removed !isE2E to allow testing Single Player mode
-      // Logic relies on player.type === 'ai' which is only true for Single Player mode or specific AI tests.
-      // Other E2E tests use default 'human' players so this won't interfere.
+  $: if ($gameState.game.phase === 'playing' && !aiRunning) {
       const turnColor = $gameState.game.currentTurn;
-      // So if window.E2E_TEST is true, we should probably DISABLE this auto-loop
-      // UNLESS we are specifically testing the "Single Player Mode" flow where the UI drives it.
-      // For now, let's keep !isE2E check to be safe for existing tests.
-      // The user can manually Verification test Single Player mode.
-
       const player = $gameState.game.players.find(p => p.color === turnColor);
-      
       if (player && player.type === 'ai') {
           if (!aiInstances[turnColor]) {
               aiInstances[turnColor] = new BasicAI(turnColor, $gameState.game.seed, rules);
           }
-          
-          const ai = aiInstances[turnColor];
-          
-          // Small delay for "thinking"
-          // Faster for E2E to avoid timeouts, moderate for users to perceive turns
-
-          const executeAIMove = () => {
-              // Re-check state to ensure it's still AI's turn (async safety)
-              if ($gameState.game.currentTurn === turnColor) {
-                  const move = ai.computeMove($gameState.game);
-                  if (move) {
-                      console.log(`AI (${turnColor}) doing:`, move);
-                      
-                      if (move.type === 'PASS') {
-                          store.dispatch({ type: 'game/passTurn', payload: { color: turnColor } });
-                      } else if (move.type === 'SALVAGE') {
-                          store.dispatch(salvage({ color: turnColor, cardIds: move.cardIds }));
-                      } else if (move.type === 'RESOLVE_BONUS') {
-                          store.dispatch(resolveBonus({ bonusId: move.bonusId }));
-                      } else if (move.type === 'REPAIR') {
-                          store.dispatch(playCard({
-                              color: turnColor,
-                              playCardId: move.playCardId,
-                              payCardId: move.payCardId,
-                              row: move.row,
-                              col: move.col,
-                          }));
-                      }
-                  }
-              }
-          };
-
-          if (isE2E) {
-              executeAIMove();
-          } else {
-              setTimeout(executeAIMove, 500);
+          const signature = aiStateSignature();
+          if (signature !== lastAIStateSignature) {
+              lastAIStateSignature = signature;
+              aiRunning = true;
+              void executeAIMove(turnColor, player.edge, aiInstances[turnColor])
+                  .finally(() => {
+                      aiPresentation = null;
+                      aiRunning = false;
+                  });
           }
       }
   }
@@ -150,7 +303,8 @@
       id: string;
       startRect: DOMRect;
       endRect: DOMRect;
-      cardData: import('../lib/types').Card | null; // Full card data
+      cardData: Card | null;
+      controlledByAI?: boolean;
   } | null = null;
 
 
@@ -233,6 +387,17 @@
       const fill = owner === 'yellow' ? '#ffd700' : '#ff4d4d';
       return `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="${fill}" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));"><path d="M9 20h-5a1 1 0 0 1 -1 -1c0 -2 3.378 -4.907 4 -6c-1 0 -4 -.5 -4 -2c0 -2 4 -3.5 6 -4c0 -1.5 .5 -4 3 -4s3 2.5 3 4c2 .5 6 2 6 4c0 1.5 -3 2 -4 2c.622 1.093 4 4 4 6a1 1 0 0 1 -1 1h-5c-1 0 -2 -4 -3 -4s-2 4 -3 4z" /></svg>`;
   };
+
+  function aiActionLabel(presentation: AIPresentation) {
+      const prefix = `${presentation.color.toUpperCase()} AI`;
+      if (presentation.stage === 'thinking') return `${prefix} IS THINKING`;
+      if (presentation.stage === 'repair-selection') return `${prefix} CHOOSES A REPAIR`;
+      if (presentation.stage === 'repair-flight') return `${prefix} PLAYS`;
+      if (presentation.stage === 'salvage-selection') return `${prefix} SELECTS TO SALVAGE`;
+      if (presentation.stage === 'salvage-flight') return `${prefix} SALVAGES`;
+      if (presentation.stage === 'bonus') return `${prefix} ACTIVATES A BONUS`;
+      return `${prefix} PASSES`;
+  }
 
   function isValidMove(rowIndex: number, colIndex: number) { 
       return pendingBonuses.length === 0 &&
@@ -447,6 +612,7 @@
   {#if animatingCard}
       <div 
         class="flying-card"
+        class:ai-controlled={animatingCard.controlledByAI}
         style:--start-x="{animatingCard.startRect.left}px"
         style:--start-y="{animatingCard.startRect.top}px"
         style:--end-x="{animatingCard.endRect.left}px"
@@ -467,9 +633,49 @@
       </div>
   {/if}
 
+  {#if aiPresentation}
+      <div
+        class="ai-action-feedback"
+        data-stage={aiPresentation.stage}
+        style:--ai-color={aiPresentation.color === 'yellow' ? '#ffd700' : '#ff4d4d'}
+      >
+          <div class="ai-action-label">{aiActionLabel(aiPresentation)}</div>
+
+          {#if aiPresentation.playCard && aiPresentation.payCard && aiPresentation.stage.startsWith('repair')}
+              <div class="ai-repair-choice {aiPresentation.edge}" class:card-in-flight={aiPresentation.stage === 'repair-flight'}>
+                  <div class="play-choice">
+                      <span>PLAY</span>
+                      <div class="choice-card"><CardDisplay card={aiPresentation.playCard} /></div>
+                  </div>
+                  <div class="pay-choice">
+                      <span>PAY</span>
+                      <div class="choice-card"><CardDisplay card={aiPresentation.payCard} /></div>
+                  </div>
+              </div>
+          {/if}
+      </div>
+  {/if}
+
+  {#each aiSalvageFlights as flight, index (flight.card.id)}
+      <div
+        class="ai-salvage-card"
+        style:--start-x="{flight.startRect.left}px"
+        style:--start-y="{flight.startRect.top}px"
+        style:--end-x="{flight.endRect.left}px"
+        style:--end-y="{flight.endRect.top}px"
+        style:--flight-delay="{index * 120}ms"
+      >
+          <CardDisplay card={flight.card} />
+      </div>
+  {/each}
+
   <!-- Static Overlay Elements (Offer) -->
   <div class="offer-overlay">
-      <Offer />
+      <Offer
+        aiSelectedIds={aiPresentation?.selectedCardIds ?? []}
+        aiLatestSelectedId={aiPresentation?.latestSelectedCardId ?? null}
+        aiActive={Boolean(aiPresentation)}
+      />
   </div>
 
   {#if isE2E}
@@ -689,6 +895,103 @@
       to { opacity: 1; }
   }
 
+  .ai-action-feedback {
+      position: absolute;
+      inset: 0;
+      z-index: 90;
+      pointer-events: none;
+  }
+
+  .ai-action-label {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 16px;
+      border: 2px solid var(--ai-color);
+      border-radius: 999px;
+      background: rgba(18, 18, 18, 0.94);
+      color: var(--ai-color);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--ai-color) 65%, transparent);
+      font-size: 0.85rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+      animation: ai-label-arrival 0.9s ease both;
+  }
+
+  .ai-repair-choice {
+      position: absolute;
+      display: flex;
+      gap: 12px;
+      filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.75));
+  }
+
+  .ai-repair-choice.top {
+      top: 58px;
+      left: 50%;
+      transform: translateX(-50%);
+  }
+
+  .ai-repair-choice.bottom {
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+  }
+
+  .ai-repair-choice.left {
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+  }
+
+  .ai-repair-choice.right {
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+  }
+
+  .play-choice,
+  .pay-choice {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+  }
+
+  .choice-card {
+      width: var(--table-card-width);
+      height: var(--table-card-height);
+      border-radius: 6%;
+      outline: 3px solid var(--ai-color);
+      box-shadow: 0 0 18px var(--ai-color);
+      animation: ai-choice-reveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .pay-choice .choice-card {
+      animation-delay: 0.24s;
+  }
+
+  .ai-repair-choice.card-in-flight .play-choice {
+      visibility: hidden;
+  }
+
+  @keyframes ai-label-arrival {
+      from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+      35% { opacity: 1; }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  @keyframes ai-choice-reveal {
+      from { opacity: 0; transform: translateY(-32px) rotateY(90deg); }
+      45% { opacity: 1; }
+      to { opacity: 1; transform: translateY(0) rotateY(0); }
+  }
+
 
   /* Flying Card Animation */
   .flying-card {
@@ -703,6 +1006,12 @@
       
       /* Identify start and end via vars, animate via keyframes */
       animation: flyAndFlip 0.6s ease-in-out forwards;
+  }
+
+  .flying-card.ai-controlled,
+  .flying-card.ai-controlled .flipper {
+      animation-duration: 1.6s;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .flipper {
@@ -754,6 +1063,41 @@
   @keyframes flipOnly {
       0% { transform: rotateY(0deg); }
       100% { transform: rotateY(180deg); }
+  }
+
+  .ai-salvage-card {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: var(--table-card-width);
+      height: var(--table-card-height);
+      z-index: 100;
+      pointer-events: none;
+      filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.75));
+      animation: ai-salvage-flight 1.6s cubic-bezier(0.4, 0, 0.2, 1) var(--flight-delay) both;
+  }
+
+  @keyframes ai-salvage-flight {
+      0% {
+          opacity: 1;
+          transform: translate(var(--start-x), var(--start-y));
+      }
+      75% { opacity: 1; }
+      100% {
+          opacity: 0.25;
+          transform: translate(var(--end-x), var(--end-y));
+      }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+      .ai-action-label,
+      .choice-card,
+      .flying-card.ai-controlled,
+      .flying-card.ai-controlled .flipper,
+      .ai-salvage-card {
+          animation-duration: 0.01ms;
+          animation-delay: 0ms;
+      }
   }
 
   .played-card {
