@@ -33,6 +33,78 @@ function parseBonus(filename: string): BonusDefinition | null {
     return null;
 }
 
+const REQUIRED_CARD_COLUMNS = [
+    'index',
+    'background',
+    'module_resource_1',
+    'text_module_resource_1',
+    'cube_1',
+    'cube_2',
+    'cube_3',
+    'cube_4',
+    'cube_5',
+    'cube_6',
+];
+
+export function parseCards(source: string): CardData[] {
+    const normalizedSource = source.replace(/^\uFEFF/, '').trim();
+    if (!normalizedSource) throw new Error('Paste a TSV or CSV card set.');
+
+    const lines = normalizedSource.split(/\r?\n/);
+    if (lines.length < 2) throw new Error('The card set must include a header and at least one card.');
+
+    const delimiter = lines[0].includes('\t') ? '\t' : ',';
+    const headers = lines[0].split(delimiter).map((header) => header.trim().replace(/^@/, ''));
+    const missingHeaders = REQUIRED_CARD_COLUMNS.filter((header) => !headers.includes(header));
+    if (missingHeaders.length > 0) {
+        throw new Error(`Missing required columns: ${missingHeaders.join(', ')}`);
+    }
+
+    const cards: CardData[] = [];
+    for (let lineIndex = 1; lineIndex < lines.length; lineIndex++) {
+        if (!lines[lineIndex].trim()) continue;
+
+        const values = lines[lineIndex].split(delimiter);
+        const rawCard: Record<string, string> = {};
+        headers.forEach((header, valueIndex) => {
+            rawCard[header] = values[valueIndex]?.trim() ?? '';
+        });
+
+        if (!rawCard.background) throw new Error(`Row ${lineIndex + 1} is missing a background.`);
+
+        const bonuses: Record<number, BonusDefinition> = {};
+        let maxCubes = 0;
+        for (let slot = 1; slot <= 6; slot++) {
+            const value = rawCard[`cube_${slot}`];
+            if (value) maxCubes++;
+            const bonus = parseBonus(value);
+            if (bonus) bonuses[slot] = bonus;
+        }
+
+        const resource = rawCard.module_resource_1 || '';
+        const colorMatch = resource.match(/^([a-z]+)_/);
+        cards.push({
+            index: rawCard.index,
+            background: rawCard.background,
+            module_resource_1: rawCard.module_resource_1,
+            text_module_resource_1: rawCard.text_module_resource_1,
+            cube_1: rawCard.cube_1,
+            cube_2: rawCard.cube_2,
+            cube_3: rawCard.cube_3,
+            cube_4: rawCard.cube_4,
+            cube_5: rawCard.cube_5,
+            cube_6: rawCard.cube_6,
+            cost: Number.parseInt(rawCard.text_module_resource_1 || '0', 10),
+            color: colorMatch ? colorMatch[1] : 'gray',
+            bonuses,
+            maxCubes,
+        });
+    }
+
+    if (cards.length === 0) throw new Error('The card set must include at least one card.');
+    return cards;
+}
+
 export async function loadCards(): Promise<CardData[]> {
     try {
         const baseUrl = import.meta.env.BASE_URL || '/';
@@ -43,51 +115,7 @@ export async function loadCards(): Promise<CardData[]> {
             console.error(`Failed to load cards.csv from ${url}`);
             return [];
         }
-        const text = await response.text();
-        const lines = text.trim().split('\n');
-        if (lines.length < 2) return [];
-
-        const headers = lines[0].split(',').map(h => h.trim().replace('@', ''));
-
-        const cards: CardData[] = [];
-
-        for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',');
-            if (values.length < 2) continue;
-
-            const card: any = {};
-            headers.forEach((header, index) => {
-                card[header] = values[index]?.trim();
-            });
-
-            // Derive Cost
-            card.cost = parseInt(card.text_module_resource_1 || '0', 10);
-
-            // Derive Color
-            const resource = card.module_resource_1 || '';
-            const match = resource.match(/^([a-z]+)_/);
-            card.color = match ? match[1] : 'gray';
-
-            // Parse Bonuses
-            card.bonuses = {};
-            for (let slot = 1; slot <= 6; slot++) {
-                const key = `cube_${slot}`;
-                const val = card[key];
-                const bonus = parseBonus(val);
-                if (bonus) {
-                    card.bonuses[slot] = bonus;
-                }
-                // Count valid slots
-                let maxCubes = 0;
-                for (let slot = 1; slot <= 6; slot++) {
-                    if (card[`cube_${slot}`]) maxCubes++;
-                }
-                card.maxCubes = maxCubes;
-            }
-
-            cards.push(card as CardData);
-        }
-        return cards;
+        return parseCards(await response.text());
     } catch (e) {
         console.error("Error loading cards:", e);
         return [];
