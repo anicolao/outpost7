@@ -127,10 +127,9 @@
 
 <style>
   main {
-    width: 100vw;
-    height: 100vh;
+    position: fixed;
+    inset: 0;
     overflow: hidden;
     background-color: #1a1a1a;
-    position: relative;
   }
 </style>

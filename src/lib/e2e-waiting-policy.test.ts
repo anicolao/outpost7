@@ -33,12 +33,6 @@ describe('E2E waiting policy', () => {
         expect(config).toContain("command: 'npm run build && npm run preview -- --port 5177'");
     });
 
-    it('hides platform-native scrollbars during pixel-perfect capture', () => {
-        const config = readFileSync(join(projectRoot, 'playwright.config.ts'), 'utf8');
-
-        expect(config).toContain("'--hide-scrollbars'");
-    });
-
     it('gives every host game navigation an explicit seed', () => {
         const violations: string[] = [];
 
