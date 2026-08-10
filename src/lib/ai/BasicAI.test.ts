@@ -289,3 +289,93 @@ describe('BasicAI board strategy', () => {
         });
     });
 });
+
+describe('BasicAI hand and offer planning', () => {
+    it('salvages a matching card that creates a valuable repair instead of the cheapest card', () => {
+        const state = gameState();
+        state.hands.red = [card('foundation', {
+            cost: 4,
+            color: 'blue',
+            maxCubes: 3,
+        })];
+        state.offer = [
+            card('cheap-filler', { cost: 1, color: 'red', maxCubes: 1 }),
+            card('matching-module', {
+                cost: 4,
+                color: 'blue',
+                maxCubes: 3,
+                bonuses: { 1: { type: 'ADD_POPULATION', color: 'blue' } },
+            }),
+        ];
+        const ai = new BasicAI('red', 'future-repair', settings({
+            SALVAGE_MAX_COST: 4,
+            CUBES_PER_OVERPAYMENT: 0,
+        }));
+
+        expect(ai.computeMove(state)).toEqual({
+            type: 'SALVAGE',
+            cardIds: ['matching-module'],
+        });
+    });
+
+    it('evaluates complete affordable subsets to assemble a play and payment pair', () => {
+        const state = gameState();
+        state.hands.red = [];
+        state.offer = [
+            card('cheap-filler', { cost: 1, color: 'red', maxCubes: 1 }),
+            card('blue-module', {
+                cost: 3,
+                color: 'blue',
+                maxCubes: 3,
+                bonuses: { 1: { type: 'ADD_CUBE' } },
+            }),
+            card('blue-payment', { cost: 3, color: 'blue', maxCubes: 3 }),
+            card('standalone-expensive', { cost: 6, color: 'yellow', maxCubes: 3 }),
+        ];
+        const ai = new BasicAI('red', 'offer-combination', settings({
+            SALVAGE_MAX_COST: 6,
+            CUBES_PER_OVERPAYMENT: 0,
+        }));
+
+        expect(ai.computeMove(state)).toEqual({
+            type: 'SALVAGE',
+            cardIds: ['blue-module', 'blue-payment'],
+        });
+    });
+
+    it('uses seeded tie-breaking for equally valuable salvage plans', () => {
+        const selections = Array.from({ length: 64 }, (_, index) => {
+            const state = gameState();
+            state.hands.red = [card('foundation', {
+                cost: 2,
+                color: 'blue',
+                maxCubes: 2,
+            })];
+            state.offer = [
+                card('option-a', { cost: 2, color: 'blue', maxCubes: 2 }),
+                card('option-b', { cost: 2, color: 'blue', maxCubes: 2 }),
+            ];
+
+            return new BasicAI('red', `salvage-tie-${index}`, settings({
+                SALVAGE_MAX_COST: 2,
+                CUBES_PER_OVERPAYMENT: 0,
+            })).computeMove(state);
+        });
+
+        expect(new Set(selections.map(move => JSON.stringify(move)))).toEqual(new Set([
+            JSON.stringify({ type: 'SALVAGE', cardIds: ['option-a'] }),
+            JSON.stringify({ type: 'SALVAGE', cardIds: ['option-b'] }),
+        ]));
+
+        const repeatedState = gameState();
+        repeatedState.hands.red = [card('foundation', { cost: 2, color: 'blue', maxCubes: 2 })];
+        repeatedState.offer = [
+            card('option-a', { cost: 2, color: 'blue', maxCubes: 2 }),
+            card('option-b', { cost: 2, color: 'blue', maxCubes: 2 }),
+        ];
+        const repeatedSettings = settings({ SALVAGE_MAX_COST: 2, CUBES_PER_OVERPAYMENT: 0 });
+
+        expect(new BasicAI('red', 'repeat-salvage', repeatedSettings).computeMove(repeatedState))
+            .toEqual(new BasicAI('red', 'repeat-salvage', repeatedSettings).computeMove(repeatedState));
+    });
+});
