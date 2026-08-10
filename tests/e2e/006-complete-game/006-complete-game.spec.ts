@@ -23,6 +23,7 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
 
     // 2. Settings (2x2)
     await page.click('button[aria-label="Settings"]');
+    await page.getByRole('button', { name: 'Setup rules' }).click();
     const rowsMinus = page.locator('.setting-item:has-text("Grid Rows") button:has-text("-")');
     await rowsMinus.click(); await rowsMinus.click(); await rowsMinus.click(); // 5->2
     const colsMinus = page.locator('.setting-item:has-text("Grid Columns") button:has-text("-")');

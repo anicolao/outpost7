@@ -89,6 +89,7 @@ test.describe('Settings and Cards UI Checks', () => {
                 check: async () => {
                     // Open Settings again
                     await page.locator('.settings-btn.top-left').click();
+                    await page.getByRole('button', { name: 'Setup rules' }).click();
 
                     // Change Grid Rows to 4 (default 5)
                     const rowsRow = page.locator('.setting-item', { hasText: 'Grid Rows' });

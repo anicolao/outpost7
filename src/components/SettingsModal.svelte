@@ -8,6 +8,28 @@
   } from '../lib/settingsStore';
 
   const dispatch = createEventDispatcher();
+  const ACTION_SETTING_KEYS: (keyof GameSettings)[] = [
+    'SALVAGE_MAX_COST',
+    'CUBES_PER_COLOR_MATCH',
+    'CUBES_PER_PLAY',
+    'CUBES_PER_OVERPAYMENT',
+    'ALLOW_ZERO_CUBE_REPAIRS',
+  ];
+  const SETUP_SETTING_KEYS: (keyof GameSettings)[] = [
+    'GRID_ROWS',
+    'GRID_COLS',
+    'MAX_HAND_SIZE',
+    'STARTING_HAND_SIZE',
+    'BURN_CARD_COUNT',
+    'OFFER_SIZE',
+    'OPENING_HAND_VALUE_LIMIT_P1',
+    'OPENING_HAND_VALUE_LIMIT_P2',
+  ];
+  let activeTab: 'actions' | 'setup' = 'actions';
+
+  $: visibleSettingKeys = activeTab === 'actions'
+    ? ACTION_SETTING_KEYS
+    : SETUP_SETTING_KEYS;
 
   function close() {
     dispatch('close');
@@ -38,11 +60,26 @@
         <h2>Game Settings</h2>
         <button class="close-btn" onclick={close}>&times;</button>
     </div>
+
+    <div class="tabs" role="group" aria-label="Settings categories">
+      <button
+        class:active={activeTab === 'actions'}
+        aria-label="Action rules"
+        aria-pressed={activeTab === 'actions'}
+        onclick={() => activeTab = 'actions'}
+      >Actions</button>
+      <button
+        class:active={activeTab === 'setup'}
+        aria-label="Setup rules"
+        aria-pressed={activeTab === 'setup'}
+        onclick={() => activeTab = 'setup'}
+      >Setup</button>
+    </div>
     
     <div class="content">
         <ul class="settings-list">
-        {#each Object.entries(GAME_SETTING_DEFINITIONS) as [key, definition]}
-            {@const settingKey = key as keyof GameSettings}
+        {#each visibleSettingKeys as settingKey}
+            {@const definition = GAME_SETTING_DEFINITIONS[settingKey]}
             {@const value = $settingsStore[settingKey]}
             <li class="setting-item" data-setting-key={settingKey}>
                 <div class="setting-info">
@@ -123,6 +160,29 @@
   .header h2 {
     margin: 0;
     font-size: 1.5rem;
+  }
+
+  .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem 0;
+  }
+
+  .tabs button {
+      padding: 0.5rem;
+      border: 1px solid #555;
+      border-radius: 6px;
+      background: #222;
+      color: #bbb;
+      cursor: pointer;
+      font-weight: bold;
+  }
+
+  .tabs button.active {
+      border-color: #4CAF50;
+      color: white;
+      background: #245c27;
   }
 
   .close-btn {
