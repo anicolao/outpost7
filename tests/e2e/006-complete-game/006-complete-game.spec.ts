@@ -21,25 +21,7 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
         ]
     });
 
-    // 2. Settings (2x2)
-    await page.click('button[aria-label="Settings"]');
-    await page.getByRole('button', { name: 'Setup rules' }).click();
-    const rowsMinus = page.locator('.setting-item:has-text("Grid Rows") button:has-text("-")');
-    await rowsMinus.click(); await rowsMinus.click(); await rowsMinus.click(); // 5->2
-    const colsMinus = page.locator('.setting-item:has-text("Grid Columns") button:has-text("-")');
-    await colsMinus.click(); await colsMinus.click(); await colsMinus.click(); // 5->2
-    await page.locator('.modal .content').evaluate((content) => content.scrollTo(0, 0));
-
-    await tester.step('02-settings-changed', {
-        description: 'Settings Updated to 2x2 Grid',
-        verifications: [
-            { spec: 'Grid Rows is 2', check: async () => await expect(page.locator('.setting-item:has-text("Grid Rows") .value')).toHaveText('2') }
-        ]
-    });
-    await page.click('.close-btn');
-    await expect(page.locator('.backdrop')).toHaveCount(0);
-
-    // 3. Add Players
+    // 2. Add Players
     await page.locator('.edge-control.bottom .add-btn').click();
     await page.locator('.edge-control.bottom .color-btn[title="red"]').click();
     await page.locator('.edge-control.top .add-btn').click();
@@ -47,7 +29,6 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
 
     await tester.step('02b-players-joined', {
         description: 'Players Joined',
-        screenshotTarget: page.locator('.lobby-container'),
         verifications: [
             { spec: 'Start Button Visible', check: async () => await expect(page.locator('.play-btn')).toBeVisible() },
             {
@@ -73,6 +54,24 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
             },
         ]
     });
+
+    // 3. Settings (2x2)
+    await page.click('button[aria-label="Settings"]');
+    await page.getByRole('button', { name: 'Setup rules' }).click();
+    const rowsMinus = page.locator('.setting-item:has-text("Grid Rows") button:has-text("-")');
+    await rowsMinus.click(); await rowsMinus.click(); await rowsMinus.click(); // 5->2
+    const colsMinus = page.locator('.setting-item:has-text("Grid Columns") button:has-text("-")');
+    await colsMinus.click(); await colsMinus.click(); await colsMinus.click(); // 5->2
+    await page.locator('.modal .content').evaluate((content) => content.scrollTo(0, 0));
+
+    await tester.step('02-settings-changed', {
+        description: 'Settings Updated to 2x2 Grid',
+        verifications: [
+            { spec: 'Grid Rows is 2', check: async () => await expect(page.locator('.setting-item:has-text("Grid Rows") .value')).toHaveText('2') }
+        ]
+    });
+    await page.click('.close-btn');
+    await expect(page.locator('.backdrop')).toHaveCount(0);
 
     // 4. Start Game
     await page.click('.play-btn');

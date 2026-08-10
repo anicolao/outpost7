@@ -9,20 +9,20 @@
 **Specs:**
 - Lobby Visible
 
-## Settings Updated to 2x2 Grid
-
-![Settings Updated to 2x2 Grid](screenshots/001-02-settings-changed.png)
-
-**Specs:**
-- Grid Rows is 2
-
 ## Players Joined
 
-![Players Joined](screenshots/002-02b-players-joined.png)
+![Players Joined](screenshots/001-02b-players-joined.png)
 
 **Specs:**
 - Start Button Visible
 - The lobby fills the viewport
+
+## Settings Updated to 2x2 Grid
+
+![Settings Updated to 2x2 Grid](screenshots/002-02-settings-changed.png)
+
+**Specs:**
+- Grid Rows is 2
 
 ## Game Started with 2x2 Grid
 
