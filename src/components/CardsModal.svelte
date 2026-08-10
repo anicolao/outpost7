@@ -32,9 +32,17 @@
 
   onMount(async () => {
     try {
-      const servicesPromise = initializeFirebase();
       bundledCards = await loadCards();
-      const { db } = await servicesPromise;
+      cards = bundledCards;
+      loading = false;
+    } catch (caught) {
+      error = caught instanceof Error ? caught.message : 'Failed to load bundled cards.';
+      loading = false;
+      return;
+    }
+
+    try {
+      const { db } = await initializeFirebase();
       storedSets = await listCardSets(db);
       activeSetId = getActiveCardSetId();
 
@@ -52,8 +60,6 @@
     } catch (caught) {
       error = caught instanceof Error ? caught.message : 'Failed to load card sets.';
       cards = bundledCards;
-    } finally {
-      loading = false;
     }
   });
 
