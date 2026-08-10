@@ -80,9 +80,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute SALVAGE
 
-## Turn 11: YELLOW - SALVAGE (card_19, card_24)
+## Turn 11: YELLOW - SALVAGE (card_24, card_13)
 
-![Turn 11: YELLOW - SALVAGE (card_19, card_24)](screenshots/011-turn-011-yellow.png)
+![Turn 11: YELLOW - SALVAGE (card_24, card_13)](screenshots/011-turn-011-yellow.png)
 
 **Specs:**
 - Execute SALVAGE
@@ -129,23 +129,23 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 18: YELLOW - SALVAGE (card_41, card_48)
+## Turn 18: YELLOW - SALVAGE (card_48, card_41)
 
-![Turn 18: YELLOW - SALVAGE (card_41, card_48)](screenshots/018-turn-018-yellow.png)
-
-**Specs:**
-- Execute SALVAGE
-
-## Turn 19: RED - SALVAGE (card_26, card_28)
-
-![Turn 19: RED - SALVAGE (card_26, card_28)](screenshots/019-turn-019-red.png)
+![Turn 18: YELLOW - SALVAGE (card_48, card_41)](screenshots/018-turn-018-yellow.png)
 
 **Specs:**
 - Execute SALVAGE
 
-## Turn 20: YELLOW - REPAIR (Play card_41 at 3,3)
+## Turn 19: RED - SALVAGE (card_19, card_28)
 
-![Turn 20: YELLOW - REPAIR (Play card_41 at 3,3)](screenshots/020-turn-020-yellow.png)
+![Turn 19: RED - SALVAGE (card_19, card_28)](screenshots/019-turn-019-red.png)
+
+**Specs:**
+- Execute SALVAGE
+
+## Turn 20: YELLOW - REPAIR (Play card_41 at 0,1)
+
+![Turn 20: YELLOW - REPAIR (Play card_41 at 0,1)](screenshots/020-turn-020-yellow.png)
 
 **Specs:**
 - Execute REPAIR
@@ -157,9 +157,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 22: RED - REPAIR (Play card_26 at 4,3)
+## Turn 22: RED - REPAIR (Play card_19 at 1,1)
 
-![Turn 22: RED - REPAIR (Play card_26 at 4,3)](screenshots/022-turn-022-red.png)
+![Turn 22: RED - REPAIR (Play card_19 at 1,1)](screenshots/022-turn-022-red.png)
 
 **Specs:**
 - Execute REPAIR
@@ -171,131 +171,131 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 24: RED - BONUS (bonus_11)
+## Turn 24: YELLOW - SALVAGE (card_26, card_23)
 
-![Turn 24: RED - BONUS (bonus_11)](screenshots/024-turn-024-red.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
-
-## Turn 25: YELLOW - SALVAGE (card_23, card_44)
-
-![Turn 25: YELLOW - SALVAGE (card_23, card_44)](screenshots/025-turn-025-yellow.png)
+![Turn 24: YELLOW - SALVAGE (card_26, card_23)](screenshots/024-turn-024-yellow.png)
 
 **Specs:**
 - Execute SALVAGE
 
-## Turn 26: RED - SALVAGE (card_4, card_43)
+## Turn 25: RED - SALVAGE (card_12, card_4)
 
-![Turn 26: RED - SALVAGE (card_4, card_43)](screenshots/026-turn-026-red.png)
-
-**Specs:**
-- Execute SALVAGE
-
-## Turn 27: YELLOW - REPAIR (Play card_19 at 1,3)
-
-![Turn 27: YELLOW - REPAIR (Play card_19 at 1,3)](screenshots/027-turn-027-yellow.png)
-
-**Specs:**
-- Execute REPAIR
-
-## Turn 28: YELLOW - BONUS (bonus_12)
-
-![Turn 28: YELLOW - BONUS (bonus_12)](screenshots/028-turn-028-yellow.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
-
-## Turn 29: RED - REPAIR (Play card_4 at 3,0)
-
-![Turn 29: RED - REPAIR (Play card_4 at 3,0)](screenshots/029-turn-029-red.png)
-
-**Specs:**
-- Execute REPAIR
-
-## Turn 30: RED - BONUS (bonus_13)
-
-![Turn 30: RED - BONUS (bonus_13)](screenshots/030-turn-030-red.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
-
-## Turn 31: YELLOW - SALVAGE (card_18, card_12)
-
-![Turn 31: YELLOW - SALVAGE (card_18, card_12)](screenshots/031-turn-031-yellow.png)
+![Turn 25: RED - SALVAGE (card_12, card_4)](screenshots/025-turn-025-red.png)
 
 **Specs:**
 - Execute SALVAGE
 
-## Turn 32: RED - SALVAGE (card_40, card_13)
+## Turn 26: YELLOW - REPAIR (Play card_23 at 3,0)
 
-![Turn 32: RED - SALVAGE (card_40, card_13)](screenshots/032-turn-032-red.png)
-
-**Specs:**
-- Execute SALVAGE
-
-## Turn 33: YELLOW - REPAIR (Play card_18 at 4,0)
-
-![Turn 33: YELLOW - REPAIR (Play card_18 at 4,0)](screenshots/033-turn-033-yellow.png)
+![Turn 26: YELLOW - REPAIR (Play card_23 at 3,0)](screenshots/026-turn-026-yellow.png)
 
 **Specs:**
 - Execute REPAIR
 
-## Turn 34: YELLOW - BONUS (bonus_14)
+## Turn 27: YELLOW - BONUS (bonus_11)
 
-![Turn 34: YELLOW - BONUS (bonus_14)](screenshots/034-turn-034-yellow.png)
+![Turn 27: YELLOW - BONUS (bonus_11)](screenshots/027-turn-027-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 35: RED - REPAIR (Play card_40 at 0,3)
+## Turn 28: RED - REPAIR (Play card_4 at 3,4)
 
-![Turn 35: RED - REPAIR (Play card_40 at 0,3)](screenshots/035-turn-035-red.png)
+![Turn 28: RED - REPAIR (Play card_4 at 3,4)](screenshots/028-turn-028-red.png)
 
 **Specs:**
 - Execute REPAIR
 
-## Turn 36: RED - BONUS (bonus_15)
+## Turn 29: RED - BONUS (bonus_12)
 
-![Turn 36: RED - BONUS (bonus_15)](screenshots/036-turn-036-red.png)
+![Turn 29: RED - BONUS (bonus_12)](screenshots/029-turn-029-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 37: YELLOW - SALVAGE (card_21, card_14)
+## Turn 30: YELLOW - SALVAGE (card_44, card_18)
 
-![Turn 37: YELLOW - SALVAGE (card_21, card_14)](screenshots/037-turn-037-yellow.png)
-
-**Specs:**
-- Execute SALVAGE
-
-## Turn 38: RED - SALVAGE (card_25, card_16)
-
-![Turn 38: RED - SALVAGE (card_25, card_16)](screenshots/038-turn-038-red.png)
+![Turn 30: YELLOW - SALVAGE (card_44, card_18)](screenshots/030-turn-030-yellow.png)
 
 **Specs:**
 - Execute SALVAGE
 
-## Turn 39: YELLOW - REPAIR (Play card_21 at 4,4)
+## Turn 31: RED - SALVAGE (card_43, card_40)
 
-![Turn 39: YELLOW - REPAIR (Play card_21 at 4,4)](screenshots/039-turn-039-yellow.png)
+![Turn 31: RED - SALVAGE (card_43, card_40)](screenshots/031-turn-031-red.png)
+
+**Specs:**
+- Execute SALVAGE
+
+## Turn 32: YELLOW - REPAIR (Play card_18 at 3,3)
+
+![Turn 32: YELLOW - REPAIR (Play card_18 at 3,3)](screenshots/032-turn-032-yellow.png)
 
 **Specs:**
 - Execute REPAIR
 
-## Turn 40: YELLOW - BONUS (bonus_16)
+## Turn 33: YELLOW - BONUS (bonus_13)
 
-![Turn 40: YELLOW - BONUS (bonus_16)](screenshots/040-turn-040-yellow.png)
+![Turn 33: YELLOW - BONUS (bonus_13)](screenshots/033-turn-033-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 41: RED - REPAIR (Play card_25 at 3,4)
+## Turn 34: RED - REPAIR (Play card_40 at 4,4)
 
-![Turn 41: RED - REPAIR (Play card_25 at 3,4)](screenshots/041-turn-041-red.png)
+![Turn 34: RED - REPAIR (Play card_40 at 4,4)](screenshots/034-turn-034-red.png)
 
 **Specs:**
 - Execute REPAIR
+
+## Turn 35: RED - BONUS (bonus_14)
+
+![Turn 35: RED - BONUS (bonus_14)](screenshots/035-turn-035-red.png)
+
+**Specs:**
+- Execute RESOLVE_BONUS
+
+## Turn 36: YELLOW - SALVAGE (card_33, card_21)
+
+![Turn 36: YELLOW - SALVAGE (card_33, card_21)](screenshots/036-turn-036-yellow.png)
+
+**Specs:**
+- Execute SALVAGE
+
+## Turn 37: RED - SALVAGE (card_30, card_25)
+
+![Turn 37: RED - SALVAGE (card_30, card_25)](screenshots/037-turn-037-red.png)
+
+**Specs:**
+- Execute SALVAGE
+
+## Turn 38: YELLOW - REPAIR (Play card_21 at 3,1)
+
+![Turn 38: YELLOW - REPAIR (Play card_21 at 3,1)](screenshots/038-turn-038-yellow.png)
+
+**Specs:**
+- Execute REPAIR
+
+## Turn 39: YELLOW - BONUS (bonus_15)
+
+![Turn 39: YELLOW - BONUS (bonus_15)](screenshots/039-turn-039-yellow.png)
+
+**Specs:**
+- Execute RESOLVE_BONUS
+
+## Turn 40: RED - REPAIR (Play card_25 at 4,1)
+
+![Turn 40: RED - REPAIR (Play card_25 at 4,1)](screenshots/040-turn-040-red.png)
+
+**Specs:**
+- Execute REPAIR
+
+## Turn 41: RED - BONUS (bonus_16)
+
+![Turn 41: RED - BONUS (bonus_16)](screenshots/041-turn-041-red.png)
+
+**Specs:**
+- Execute RESOLVE_BONUS
 
 ## Turn 42: RED - BONUS (bonus_17)
 
@@ -304,23 +304,23 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 43: YELLOW - SALVAGE (card_33, card_30)
+## Turn 43: YELLOW - SALVAGE (card_35, card_34)
 
-![Turn 43: YELLOW - SALVAGE (card_33, card_30)](screenshots/043-turn-043-yellow.png)
-
-**Specs:**
-- Execute SALVAGE
-
-## Turn 44: RED - SALVAGE (card_20, card_35)
-
-![Turn 44: RED - SALVAGE (card_20, card_35)](screenshots/044-turn-044-red.png)
+![Turn 43: YELLOW - SALVAGE (card_35, card_34)](screenshots/043-turn-043-yellow.png)
 
 **Specs:**
 - Execute SALVAGE
 
-## Turn 45: YELLOW - REPAIR (Play card_33 at 1,4)
+## Turn 44: RED - SALVAGE (card_20, card_51)
 
-![Turn 45: YELLOW - REPAIR (Play card_33 at 1,4)](screenshots/045-turn-045-yellow.png)
+![Turn 44: RED - SALVAGE (card_20, card_51)](screenshots/044-turn-044-red.png)
+
+**Specs:**
+- Execute SALVAGE
+
+## Turn 45: YELLOW - REPAIR (Play card_35 at 1,3)
+
+![Turn 45: YELLOW - REPAIR (Play card_35 at 1,3)](screenshots/045-turn-045-yellow.png)
 
 **Specs:**
 - Execute REPAIR
@@ -339,9 +339,9 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 48: RED - REPAIR (Play card_20 at 0,4)
+## Turn 48: RED - REPAIR (Play card_20 at 0,3)
 
-![Turn 48: RED - REPAIR (Play card_20 at 0,4)](screenshots/048-turn-048-red.png)
+![Turn 48: RED - REPAIR (Play card_20 at 0,3)](screenshots/048-turn-048-red.png)
 
 **Specs:**
 - Execute REPAIR
@@ -353,23 +353,23 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 50: YELLOW - SALVAGE (card_52, card_34)
+## Turn 50: YELLOW - SALVAGE (card_16, card_52)
 
-![Turn 50: YELLOW - SALVAGE (card_52, card_34)](screenshots/050-turn-050-yellow.png)
-
-**Specs:**
-- Execute SALVAGE
-
-## Turn 51: RED - SALVAGE (card_0, card_42)
-
-![Turn 51: RED - SALVAGE (card_0, card_42)](screenshots/051-turn-051-red.png)
+![Turn 50: YELLOW - SALVAGE (card_16, card_52)](screenshots/050-turn-050-yellow.png)
 
 **Specs:**
 - Execute SALVAGE
 
-## Turn 52: YELLOW - REPAIR (Play card_12 at 1,1)
+## Turn 51: RED - SALVAGE (card_50, card_42)
 
-![Turn 52: YELLOW - REPAIR (Play card_12 at 1,1)](screenshots/052-turn-052-yellow.png)
+![Turn 51: RED - SALVAGE (card_50, card_42)](screenshots/051-turn-051-red.png)
+
+**Specs:**
+- Execute SALVAGE
+
+## Turn 52: YELLOW - REPAIR (Play card_13 at 4,3)
+
+![Turn 52: YELLOW - REPAIR (Play card_13 at 4,3)](screenshots/052-turn-052-yellow.png)
 
 **Specs:**
 - Execute REPAIR
@@ -388,54 +388,54 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 55: RED - REPAIR (Play card_0 at 1,2)
+## Turn 55: YELLOW - BONUS (bonus_23)
 
-![Turn 55: RED - REPAIR (Play card_0 at 1,2)](screenshots/055-turn-055-red.png)
+![Turn 55: YELLOW - BONUS (bonus_23)](screenshots/055-turn-055-yellow.png)
+
+**Specs:**
+- Execute RESOLVE_BONUS
+
+## Turn 56: YELLOW - BONUS (bonus_24)
+
+![Turn 56: YELLOW - BONUS (bonus_24)](screenshots/056-turn-056-yellow.png)
+
+**Specs:**
+- Execute RESOLVE_BONUS
+
+## Turn 57: RED - REPAIR (Play card_42 at 4,0)
+
+![Turn 57: RED - REPAIR (Play card_42 at 4,0)](screenshots/057-turn-057-red.png)
 
 **Specs:**
 - Execute REPAIR
 
-## Turn 56: RED - BONUS (bonus_23)
+## Turn 58: RED - BONUS (bonus_25)
 
-![Turn 56: RED - BONUS (bonus_23)](screenshots/056-turn-056-red.png)
+![Turn 58: RED - BONUS (bonus_25)](screenshots/058-turn-058-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 57: YELLOW - SALVAGE (card_7, card_51)
+## Turn 59: YELLOW - SALVAGE (card_0, card_7)
 
-![Turn 57: YELLOW - SALVAGE (card_7, card_51)](screenshots/057-turn-057-yellow.png)
-
-**Specs:**
-- Execute SALVAGE
-
-## Turn 58: RED - SALVAGE (card_49, card_50)
-
-![Turn 58: RED - SALVAGE (card_49, card_50)](screenshots/058-turn-058-red.png)
+![Turn 59: YELLOW - SALVAGE (card_0, card_7)](screenshots/059-turn-059-yellow.png)
 
 **Specs:**
 - Execute SALVAGE
 
-## Turn 59: YELLOW - REPAIR (Play card_7 at 4,1)
+## Turn 60: RED - SALVAGE (card_49, card_53)
 
-![Turn 59: YELLOW - REPAIR (Play card_7 at 4,1)](screenshots/059-turn-059-yellow.png)
+![Turn 60: RED - SALVAGE (card_49, card_53)](screenshots/060-turn-060-red.png)
+
+**Specs:**
+- Execute SALVAGE
+
+## Turn 61: YELLOW - REPAIR (Play card_0 at 0,4)
+
+![Turn 61: YELLOW - REPAIR (Play card_0 at 0,4)](screenshots/061-turn-061-yellow.png)
 
 **Specs:**
 - Execute REPAIR
-
-## Turn 60: YELLOW - BONUS (bonus_24)
-
-![Turn 60: YELLOW - BONUS (bonus_24)](screenshots/060-turn-060-yellow.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
-
-## Turn 61: YELLOW - BONUS (bonus_25)
-
-![Turn 61: YELLOW - BONUS (bonus_25)](screenshots/061-turn-061-yellow.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
 
 ## Turn 62: YELLOW - BONUS (bonus_26)
 
@@ -444,65 +444,51 @@ A complete game played between two Basic AIs (Red vs Yellow).
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 63: YELLOW - BONUS (bonus_27)
+## Turn 63: RED - REPAIR (Play card_53 at 1,4)
 
-![Turn 63: YELLOW - BONUS (bonus_27)](screenshots/063-turn-063-yellow.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
-
-## Turn 64: YELLOW - BONUS (bonus_28)
-
-![Turn 64: YELLOW - BONUS (bonus_28)](screenshots/064-turn-064-yellow.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
-
-## Turn 65: RED - REPAIR (Play card_50 at 3,1)
-
-![Turn 65: RED - REPAIR (Play card_50 at 3,1)](screenshots/065-turn-065-red.png)
+![Turn 63: RED - REPAIR (Play card_53 at 1,4)](screenshots/063-turn-063-red.png)
 
 **Specs:**
 - Execute REPAIR
 
-## Turn 66: RED - BONUS (bonus_29)
+## Turn 64: RED - BONUS (bonus_27)
 
-![Turn 66: RED - BONUS (bonus_29)](screenshots/066-turn-066-red.png)
-
-**Specs:**
-- Execute RESOLVE_BONUS
-
-## Turn 67: RED - BONUS (bonus_30)
-
-![Turn 67: RED - BONUS (bonus_30)](screenshots/067-turn-067-red.png)
+![Turn 64: RED - BONUS (bonus_27)](screenshots/064-turn-064-red.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
-## Turn 68: YELLOW - SALVAGE (card_53)
+## Turn 65: RED - BONUS (bonus_28)
 
-![Turn 68: YELLOW - SALVAGE (card_53)](screenshots/068-turn-068-yellow.png)
+![Turn 65: RED - BONUS (bonus_28)](screenshots/065-turn-065-red.png)
+
+**Specs:**
+- Execute RESOLVE_BONUS
+
+## Turn 66: YELLOW - SALVAGE (card_14)
+
+![Turn 66: YELLOW - SALVAGE (card_14)](screenshots/066-turn-066-yellow.png)
 
 **Specs:**
 - Execute SALVAGE
 
-## Turn 69: YELLOW - REPAIR (Play card_34 at 0,1)
+## Turn 67: YELLOW - REPAIR (Play card_52 at 1,2)
 
-![Turn 69: YELLOW - REPAIR (Play card_34 at 0,1)](screenshots/069-turn-069-yellow.png)
+![Turn 67: YELLOW - REPAIR (Play card_52 at 1,2)](screenshots/067-turn-067-yellow.png)
 
 **Specs:**
 - Execute REPAIR
 
-## Turn 70: YELLOW - BONUS (bonus_31)
+## Turn 68: YELLOW - BONUS (bonus_29)
 
-![Turn 70: YELLOW - BONUS (bonus_31)](screenshots/070-turn-070-yellow.png)
+![Turn 68: YELLOW - BONUS (bonus_29)](screenshots/068-turn-068-yellow.png)
 
 **Specs:**
 - Execute RESOLVE_BONUS
 
 ## Game Over
 
-![Game Over](screenshots/071-999-game-over.png)
+![Game Over](screenshots/069-999-game-over.png)
 
 **Specs:**
 - Winner Declared

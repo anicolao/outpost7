@@ -145,25 +145,7 @@ export class BasicAI {
     }
 
     private evaluateMove(state: GameState, playCard: Card, payCard: Card, r: number, c: number): number {
-        const cubes = calculateRepairCubes(playCard, payCard, this.settings);
-        let score = cubes * 100;
-
-        // Bonus Analysis (Simple)
-        if (playCard.bonuses) {
-            for (let i = 1; i <= cubes; i++) {
-                if (playCard.bonuses[i]) {
-                    // Bonus triggered!
-                    const type = playCard.bonuses[i].type;
-                    if (type === 'ADD_CUBE') score += 40;
-                    if (type === 'REMOVE_CUBE') score += 40;
-                    if (type === 'ADD_POPULATION') score += 30;
-                }
-            }
-        }
-
-        // A payment card leaves the game. When two payments produce the same
-        // outcome, preserve the more valuable card for a future repair.
-        score -= payCard.cost;
+        let score = this.evaluateRepairOutcome(playCard, payCard);
 
         score += evaluateStrategicPlacement(
             state,
@@ -178,34 +160,107 @@ export class BasicAI {
         return score;
     }
 
-    private findBestSalvageMove(state: GameState, hand: Card[]): MoveAction | null {
-        // Greedy: Take as many cards as possible up to limit 7 and cost 12.
+    private evaluateRepairOutcome(playCard: Card, payCard: Card): number {
+        const cubes = calculateRepairCubes(playCard, payCard, this.settings);
+        let score = cubes * 100;
 
-        const currentHandSize = hand.length;
-        const spaces = 7 - currentHandSize;
-        if (spaces <= 0) return null; // Hand full
-
-        const offer = state.offer;
-        // Sort offer by cost ascending (cheapest first)
-        const sortedOffer = [...offer].sort((a, b) => a.cost - b.cost);
-
-        const toTake: string[] = [];
-        let currentCost = 0;
-
-        for (const card of sortedOffer) {
-            if (toTake.length < spaces && currentCost + card.cost <= 12) {
-                toTake.push(card.id);
-                currentCost += card.cost;
+        if (playCard.bonuses) {
+            for (let i = 1; i <= cubes; i++) {
+                if (playCard.bonuses[i]) {
+                    const type = playCard.bonuses[i].type;
+                    if (type === 'ADD_CUBE') score += 40;
+                    if (type === 'REMOVE_CUBE') score += 40;
+                    if (type === 'ADD_POPULATION') score += 30;
+                }
             }
         }
 
-        if (toTake.length > 0) {
-            return {
-                type: 'SALVAGE',
-                cardIds: toTake
-            };
+        // A payment card leaves the game. When two payments produce the same
+        // outcome, preserve the more valuable card for a future repair.
+        score -= payCard.cost;
+
+        return score;
+    }
+
+    private findBestSalvageMove(state: GameState, hand: Card[]): MoveAction | null {
+        const spaces = 7 - hand.length;
+        if (spaces <= 0) return null;
+
+        let bestPlans: Card[][] = [];
+        let bestScore = Number.NEGATIVE_INFINITY;
+
+        // The offer has at most five cards, so evaluating all 31 non-empty
+        // subsets is both exhaustive and inexpensive.
+        for (let mask = 1; mask < (1 << state.offer.length); mask++) {
+            const cards = state.offer.filter((_, index) => mask & (1 << index));
+            const cost = cards.reduce((total, card) => total + card.cost, 0);
+            if (cards.length > spaces || cost > this.settings.SALVAGE_MAX_COST) continue;
+
+            const futureHand = [...hand, ...cards];
+            const score = this.evaluateHandPlan(futureHand) * 1000
+                + this.countProductiveRepairs(futureHand) * 10
+                - cards.length;
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestPlans = [cards];
+            } else if (score === bestScore) {
+                bestPlans.push(cards);
+            }
         }
 
-        return null; // Cannot take anything?
+        if (bestPlans.length === 0) return null;
+
+        const selected = bestPlans[Math.floor(this.random() * bestPlans.length)];
+        return { type: 'SALVAGE', cardIds: selected.map(card => card.id) };
+    }
+
+    private evaluateHandPlan(hand: Card[]): number {
+        const memo = new Map<number, number>();
+
+        const bestScore = (available: number): number => {
+            if (available === 0) return 0;
+            const cached = memo.get(available);
+            if (cached !== undefined) return cached;
+
+            const first = hand.findIndex((_, index) => available & (1 << index));
+            const withoutFirst = available & ~(1 << first);
+            let best = bestScore(withoutFirst);
+
+            for (let other = first + 1; other < hand.length; other++) {
+                if (!(available & (1 << other))) continue;
+                const remaining = withoutFirst & ~(1 << other);
+
+                if (hand[other].cost >= hand[first].cost) {
+                    best = Math.max(
+                        best,
+                        this.evaluateRepairOutcome(hand[first], hand[other]) + bestScore(remaining),
+                    );
+                }
+                if (hand[first].cost >= hand[other].cost) {
+                    best = Math.max(
+                        best,
+                        this.evaluateRepairOutcome(hand[other], hand[first]) + bestScore(remaining),
+                    );
+                }
+            }
+
+            memo.set(available, best);
+            return best;
+        };
+
+        return bestScore((1 << hand.length) - 1);
+    }
+
+    private countProductiveRepairs(hand: Card[]): number {
+        let count = 0;
+        for (let play = 0; play < hand.length; play++) {
+            for (let pay = 0; pay < hand.length; pay++) {
+                if (play === pay || hand[pay].cost < hand[play].cost) continue;
+                if (this.evaluateRepairOutcome(hand[play], hand[pay]) > 0) count++;
+            }
+        }
+
+        return count;
     }
 }
