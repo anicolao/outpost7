@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { fade, scale } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
   import {
     GAME_SETTING_DEFINITIONS,
     settingsStore,
@@ -33,7 +33,7 @@
 </script>
 
 <div class="backdrop" onclick={close} transition:fade>
-  <div class="modal" onclick={(e) => e.stopPropagation()} transition:scale role="dialog" aria-modal="true">
+  <div class="modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
     <div class="header">
         <h2>Game Settings</h2>
         <button class="close-btn" onclick={close}>&times;</button>
