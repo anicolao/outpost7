@@ -145,6 +145,7 @@
     background-color: #1a1a1a;
     color: white;
     overflow: hidden;
+    overflow: clip;
   }
 
   .center-stage {
