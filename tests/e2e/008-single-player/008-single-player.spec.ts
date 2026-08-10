@@ -1,5 +1,42 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { TestStepHelper, waitForAnimations } from '../helpers/test-step-helper';
+
+async function waitForAiResponse(page: Page) {
+    await page.evaluate(() => {
+        // @ts-ignore
+        const store = window.store;
+        const signal = AbortSignal.timeout(2000);
+
+        return new Promise<void>((resolve, reject) => {
+            let unsubscribe = () => {};
+            const onAbort = () => {
+                unsubscribe();
+                reject(new Error('AI did not complete its turn within 2000ms'));
+            };
+            const check = () => {
+                const game = store.getState().game;
+                const yellowPlayed = game.grid
+                    .flat()
+                    .some((cell: any) => cell?.owner === 'yellow');
+
+                if (
+                    game.turnCount > 1 &&
+                    yellowPlayed &&
+                    game.currentTurn === 'red' &&
+                    game.pendingBonuses.length === 0
+                ) {
+                    signal.removeEventListener('abort', onAbort);
+                    unsubscribe();
+                    resolve();
+                }
+            };
+
+            signal.addEventListener('abort', onAbort, { once: true });
+            unsubscribe = store.subscribe(check);
+            check();
+        });
+    });
+}
 
 test.describe('Single Player Mode', () => {
     test('Start Solo Game and Verify AI Response', async ({ page }, testInfo) => {
@@ -63,62 +100,14 @@ test.describe('Single Player Mode', () => {
 
         // 2. Play Human Move
         await helper.step('002-human-move', {
-            description: 'Human (Red) plays a move',
+            description: 'Human move triggers the AI reply',
             verifications: [
                 {
-                    spec: 'Play Red Card',
+                    spec: 'Red plays a card and Yellow completes its response',
                     check: async () => {
                         // Ensure it's Red's turn
                         await expect(page.locator('.turn-indicator')).toHaveText(/RED TURN/i);
 
-                        // Select Cards (Scripted for speed/stability)
-                        await page.evaluate(() => {
-                            // @ts-ignore
-                            const store = window.store;
-                            const hand = store.getState().game.hands.red;
-                            if (hand.length < 2) throw new Error('Not enough cards');
-
-                            // Just pick first two valid
-                            const playCard = hand[0];
-                            const payCard = hand[1];
-
-                            store.dispatch({
-                                type: 'SELECTION_UPDATE', // Won't work directly, need to set controller selections in component?
-                                // Actually, for local player, we just click UI or dispatch selection update locally if we simulated clicks.
-                                // BUT wait, Board.svelte handles "handleCellClick" using controller selections.
-                                // For local play (no controller), we need to see how selections work.
-                                // Ah, Single Player uses the same Board logic?
-                                // Board.svelte logic:
-                                // Firebase events update controller selections.
-                                // BUT for local interactions, we usually need to set selection via UI or mock it.
-
-                                // Actually, let's just use the `playCard` action directly to simulate the move execution 
-                                // AND update the UI state to look like we selected it, OR just invoke the reducer directly.
-                                // Invoking reducer is safer for E2E logic stability, but less "End-to-End".
-                                // Given we want to test AI response, triggering via reducer is fine.
-
-                                // Actually, let's try to simulate UI clicks if possible.
-                                // Bottom player (Red) -> Face Down Card should appear if selected?
-                                // But selection logic is usually handled by `HandApp` which is in a popup.
-                                // In Single Player, do we have a HandApp?
-                                // The QR code is shown. So yes, we'd need to connect a client.
-
-                                // WAIT. Single Player mode implies I can play on the main screen?
-                                // The prompt says "if a player joins the table...".
-                                // It implies the main screen is the table.
-                                // Players still connect via QR codes?
-                                // "Make the setup so that if a player joins the table they can immediately start..."
-                                // Usually means 1 phone connected, then start.
-                                // So I still need to connect a client to play as Red? 
-                                // YES.
-                                // Checks:
-                                // "QR Zones & Face Down Cards" section in Board.svelte
-                            });
-                        });
-
-                        // Since we didn't connect a real client, we can't easily "play" via UI without opening a popup.
-                        // For this test, let's just cheat and dispatch the move directly to the store to allow the game to progress 
-                        // and see if the AI responds.
                         await page.evaluate(() => {
                             // @ts-ignore
                             const store = window.store;
@@ -160,6 +149,7 @@ test.describe('Single Player Mode', () => {
                                 });
                             }
                         });
+                        await waitForAiResponse(page);
                     }
                 }
             ]
@@ -167,45 +157,13 @@ test.describe('Single Player Mode', () => {
 
         // 3. Verify AI Response
         await helper.step('003-verify-ai-response', {
-            description: 'Wait for AI (Yellow) to play',
+            description: 'AI returns control to the human',
             verifications: [
                 {
-                    spec: 'Wait for Turn Change or Move',
+                    spec: 'Yellow has played, all bonuses are resolved, and it is Red’s turn again',
                     check: async () => {
-                        await page.evaluate(() => {
-                            // @ts-ignore
-                            const store = window.store;
-                            const signal = AbortSignal.timeout(2000);
-
-                            return new Promise<void>((resolve, reject) => {
-                                let unsubscribe = () => {};
-                                const onAbort = () => {
-                                    unsubscribe();
-                                    reject(new Error('AI did not complete its turn within 2000ms'));
-                                };
-                                const check = () => {
-                                    const game = store.getState().game;
-                                    const yellowPlayed = game.grid
-                                        .flat()
-                                        .some((cell: any) => cell?.owner === 'yellow');
-
-                                    if (
-                                        game.turnCount > 1 &&
-                                        yellowPlayed &&
-                                        game.currentTurn === 'red' &&
-                                        game.pendingBonuses.length === 0
-                                    ) {
-                                        signal.removeEventListener('abort', onAbort);
-                                        unsubscribe();
-                                        resolve();
-                                    }
-                                };
-
-                                signal.addEventListener('abort', onAbort, { once: true });
-                                unsubscribe = store.subscribe(check);
-                                check();
-                            });
-                        });
+                        await expect(page.locator('.turn-indicator')).toHaveText(/RED TURN/i);
+                        await expect(page.locator('.played-card')).toHaveCount(2);
                     }
                 }
             ]

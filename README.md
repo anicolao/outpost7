@@ -27,6 +27,15 @@ emulators:
 npm run test:e2e
 ```
 
+### Card sets
+
+From the lobby, open any corner gear and choose **Open Card Library…**. The
+library can preview the bundled cards or any named card set stored in Firebase.
+Choose **Add card set** to paste the tab-separated header and rows copied from a
+spreadsheet. Uploaded sets are immutable and shared with authenticated players;
+**Use this set** selects the cards used when the next game starts. The selection
+is remembered by the browser, with the bundled cards retained as the fallback.
+
 ## Firebase
 
 - Project: `outpost7-20260807`
@@ -34,6 +43,8 @@ npm run test:e2e
 - Database: Cloud Firestore
 - Controller transport: authenticated, append-only events at
   `games/{gameId}/events/{eventId}`
+- Card-set library: authenticated reads and immutable uploads at
+  `cardSets/{cardSetId}`
 
 Firebase browser configuration is public configuration. Authentication and
 Firestore Security Rules provide event attribution and immutable history; no
