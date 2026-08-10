@@ -10,9 +10,17 @@ Cards fill phone and tabletop displays without scrolling or resizing during move
 - The phone page and card area have no horizontal or vertical scrolling
 - Every card is fully visible and at least 100 CSS pixels wide
 
+## Phone actions stay above iOS browser controls
+
+![Phone actions stay above iOS browser controls](screenshots/001-phone-actions-clear-ios-safe-area.png)
+
+**Specs:**
+- Every action button is fully above the simulated iOS bottom inset
+- Reserving the iOS safe area does not introduce page or card scrolling
+
 ## Seven-card hand fills a landscape phone viewport
 
-![Seven-card hand fills a landscape phone viewport](screenshots/001-phone-landscape-fills-viewport.png)
+![Seven-card hand fills a landscape phone viewport](screenshots/002-phone-landscape-fills-viewport.png)
 
 **Specs:**
 - The landscape phone page and card area have no scrolling

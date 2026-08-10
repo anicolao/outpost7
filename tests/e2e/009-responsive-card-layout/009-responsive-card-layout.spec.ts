@@ -115,6 +115,58 @@ test('cards maximize both phone and tabletop displays without resizing', async (
         ],
     });
 
+    const simulatedIOSInset = 54;
+    await phone.page.evaluate((inset) => {
+        document.documentElement.style.setProperty('--simulated-safe-area-inset-bottom', `${inset}px`);
+    }, simulatedIOSInset);
+    await phone.helper.step('phone-actions-clear-ios-safe-area', {
+        description: 'Phone actions stay above iOS browser controls',
+        verifications: [
+            {
+                spec: 'Every action button is fully above the simulated iOS bottom inset',
+                check: async () => {
+                    const geometry = await phone.page.evaluate((inset) => {
+                        const footer = document.querySelector<HTMLElement>('footer.actions')!.getBoundingClientRect();
+                        const buttons = Array.from(document.querySelectorAll<HTMLElement>('footer.actions button'))
+                            .map((button) => button.getBoundingClientRect())
+                            .map(({ top, bottom }) => ({ top, bottom }));
+                        return {
+                            usableBottom: window.innerHeight - inset,
+                            footer: { top: footer.top, bottom: footer.bottom },
+                            buttons,
+                        };
+                    }, simulatedIOSInset);
+
+                    expect(geometry.footer.top).toBeGreaterThanOrEqual(0);
+                    expect(geometry.footer.bottom).toBeLessThanOrEqual(geometry.usableBottom);
+                    expect(geometry.buttons.length).toBeGreaterThan(0);
+                    for (const button of geometry.buttons) {
+                        expect(button.top).toBeGreaterThanOrEqual(0);
+                        expect(button.bottom).toBeLessThanOrEqual(geometry.usableBottom);
+                    }
+                },
+            },
+            {
+                spec: 'Reserving the iOS safe area does not introduce page or card scrolling',
+                check: async () => {
+                    const overflow = await phone.page.evaluate(() => {
+                        const list = document.querySelector<HTMLElement>('.card-list')!;
+                        return {
+                            documentX: document.documentElement.scrollWidth - window.innerWidth,
+                            documentY: document.documentElement.scrollHeight - window.innerHeight,
+                            listX: list.scrollWidth - list.clientWidth,
+                            listY: list.scrollHeight - list.clientHeight,
+                        };
+                    });
+                    expect(overflow).toEqual({ documentX: 0, documentY: 0, listX: 0, listY: 0 });
+                },
+            },
+        ],
+    });
+    await phone.page.evaluate(() => {
+        document.documentElement.style.removeProperty('--simulated-safe-area-inset-bottom');
+    });
+
     await phone.page.setViewportSize({ width: 844, height: 390 });
     await phone.helper.step('phone-landscape-fills-viewport', {
         description: 'Seven-card hand fills a landscape phone viewport',
