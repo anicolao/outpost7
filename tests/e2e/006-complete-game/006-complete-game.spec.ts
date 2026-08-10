@@ -35,6 +35,10 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
                 spec: 'The lobby fills the viewport',
                 check: async () => expect(await page.locator('.lobby-container').evaluate((lobby) => {
                     const bounds = lobby.getBoundingClientRect();
+                    const initialScrollLeft = lobby.scrollLeft;
+                    lobby.scrollLeft = 16;
+                    const scrollLeftAfterAttempt = lobby.scrollLeft;
+                    lobby.scrollLeft = initialScrollLeft;
                     return {
                         x: bounds.x,
                         y: bounds.y,
@@ -42,6 +46,9 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
                         height: bounds.height,
                         viewportWidth: window.innerWidth,
                         viewportHeight: window.innerHeight,
+                        initialScrollLeft,
+                        scrollLeftAfterAttempt,
+                        overflowX: getComputedStyle(lobby).overflowX,
                     };
                 })).toEqual({
                     x: 0,
@@ -50,6 +57,9 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
                     height: 720,
                     viewportWidth: 1280,
                     viewportHeight: 720,
+                    initialScrollLeft: 0,
+                    scrollLeftAfterAttempt: 0,
+                    overflowX: 'clip',
                 }),
             },
         ]
