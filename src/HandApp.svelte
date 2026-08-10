@@ -295,11 +295,16 @@
   }
 
   .hand-container {
+      --hand-safe-area-bottom: max(
+          env(safe-area-inset-bottom, 0px),
+          var(--simulated-safe-area-inset-bottom, 0px)
+      );
       display: flex;
       flex-direction: column;
       height: 100vh;
+      height: 100dvh;
       width: 100vw;
-      padding: 10px;
+      padding: 10px 10px calc(10px + var(--hand-safe-area-bottom));
       box-sizing: border-box;
   }
 
@@ -526,7 +531,7 @@
 
   @media (max-width: 600px) and (orientation: portrait) {
       .hand-container {
-          padding: 8px;
+          padding: 8px 8px calc(8px + var(--hand-safe-area-bottom));
       }
 
       header {
@@ -563,7 +568,10 @@
       }
 
       .card-wrapper {
-          width: min(calc((100vw - 36px) / 3), calc((100dvh - 190px) / 4.2));
+          width: min(
+              calc((100vw - 36px) / 3),
+              calc((100dvh - 190px - var(--hand-safe-area-bottom)) / 4.2)
+          );
       }
 
       footer.actions {
@@ -584,7 +592,7 @@
 
   @media (max-height: 500px) and (orientation: landscape) {
       .hand-container {
-          padding: 6px;
+          padding: 6px 6px calc(6px + var(--hand-safe-area-bottom));
       }
 
       header {
@@ -609,7 +617,10 @@
       }
 
       .card-wrapper {
-          width: min(calc((100vw - 72px) / 7), calc((100dvh - 105px) / 1.4));
+          width: min(
+              calc((100vw - 72px) / 7),
+              calc((100dvh - 105px - var(--hand-safe-area-bottom)) / 1.4)
+          );
       }
 
       footer.actions {
