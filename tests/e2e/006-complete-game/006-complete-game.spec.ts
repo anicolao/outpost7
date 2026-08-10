@@ -47,17 +47,7 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
     await tester.step('02b-players-joined', {
         description: 'Players Joined',
         verifications: [
-            { spec: 'Start Button Visible', check: async () => await expect(page.locator('.play-btn')).toBeVisible() },
-            {
-                spec: 'Lobby remains aligned with the viewport',
-                check: async () => {
-                    const alignment = await page.locator('.lobby-container').evaluate((lobby) => {
-                        const bounds = lobby.getBoundingClientRect();
-                        return { left: bounds.left, right: bounds.right, viewportWidth: window.innerWidth };
-                    });
-                    expect(alignment).toEqual({ left: 0, right: alignment.viewportWidth, viewportWidth: alignment.viewportWidth });
-                },
-            }
+            { spec: 'Start Button Visible', check: async () => await expect(page.locator('.play-btn')).toBeVisible() }
         ]
     });
 

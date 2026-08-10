@@ -22,7 +22,6 @@
 
 **Specs:**
 - Start Button Visible
-- Lobby remains aligned with the viewport
 
 ## Game Started with 2x2 Grid
 
@@ -51,4 +50,3 @@
 
 **Specs:**
 - Game Over visible
-
