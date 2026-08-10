@@ -22,6 +22,7 @@
 
 **Specs:**
 - Start Button Visible
+- The lobby fills the viewport
 
 ## Game Started with 2x2 Grid
 

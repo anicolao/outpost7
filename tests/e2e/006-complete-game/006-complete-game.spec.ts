@@ -47,8 +47,30 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
 
     await tester.step('02b-players-joined', {
         description: 'Players Joined',
+        screenshotTarget: page.locator('.lobby-container'),
         verifications: [
-            { spec: 'Start Button Visible', check: async () => await expect(page.locator('.play-btn')).toBeVisible() }
+            { spec: 'Start Button Visible', check: async () => await expect(page.locator('.play-btn')).toBeVisible() },
+            {
+                spec: 'The lobby fills the viewport',
+                check: async () => expect(await page.locator('.lobby-container').evaluate((lobby) => {
+                    const bounds = lobby.getBoundingClientRect();
+                    return {
+                        x: bounds.x,
+                        y: bounds.y,
+                        width: bounds.width,
+                        height: bounds.height,
+                        viewportWidth: window.innerWidth,
+                        viewportHeight: window.innerHeight,
+                    };
+                })).toEqual({
+                    x: 0,
+                    y: 0,
+                    width: 1280,
+                    height: 720,
+                    viewportWidth: 1280,
+                    viewportHeight: 720,
+                }),
+            },
         ]
     });
 
