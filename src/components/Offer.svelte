@@ -8,6 +8,7 @@
   $: currentTurn = $gameState.game.currentTurn;
   $: currentPlayerHand = $gameState.game.hands[currentTurn] || [];
   $: pendingBonuses = $gameState.game.pendingBonuses || [];
+  $: settings = $gameState.game.settings;
   
   // Selection State
   let selectedIds: Set<string> = new Set();
@@ -33,8 +34,8 @@
   // Derived Validation
   $: selectedCards = offer.filter(c => selectedIds.has(c.id));
   $: totalCost = selectedCards.reduce((acc, c) => acc + c.cost, 0);
-  $: isValidCost = totalCost <= 12;
-  $: isValidHandSize = (currentPlayerHand.length + selectedCards.length) <= 7;
+  $: isValidCost = totalCost <= settings.SALVAGE_MAX_COST;
+  $: isValidHandSize = (currentPlayerHand.length + selectedCards.length) <= settings.MAX_HAND_SIZE;
   $: canSalvage = selectedCards.length > 0 && isValidCost && isValidHandSize && pendingBonuses.length === 0;
 
   function handleSalvage() {
@@ -61,8 +62,8 @@
       <div class="salvage-controls">
           {#if selectedIds.size > 0}
             <div class="stats-pill" class:invalid={!isValidCost || !isValidHandSize}>
-                <span class="cost">Cost: {totalCost}/12</span>
-                <span class="count">Hand: {currentPlayerHand.length + selectedCards.length}/7</span>
+                <span class="cost">Cost: {totalCost}/{settings.SALVAGE_MAX_COST}</span>
+                <span class="count">Hand: {currentPlayerHand.length + selectedCards.length}/{settings.MAX_HAND_SIZE}</span>
             </div>
             <button 
                 class="salvage-btn" 

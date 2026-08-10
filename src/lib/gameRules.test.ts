@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import reducer, { type GameState, playCard, resolveBonus } from './gameSlice';
+import { DEFAULT_GAME_SETTINGS } from './settingsStore';
 
 // Helper to create a minimal valid state
 const createInitialState = (): GameState => ({
     seed: 'test',
+    settings: { ...DEFAULT_GAME_SETTINGS },
     players: [
         { color: 'red', edge: 'bottom', type: 'human' },
         { color: 'yellow', edge: 'top', type: 'human' }
@@ -31,7 +33,8 @@ describe('Limit Checks', () => {
         let state = createInitialState();
 
         // Mock Settings
-        const mockSettings = {
+        state.settings = {
+            ...state.settings,
             CUBES_PER_PLAY: 1,
             CUBES_PER_COLOR_MATCH: 1,
             CUBES_PER_OVERPAYMENT: 1
@@ -74,7 +77,6 @@ describe('Limit Checks', () => {
             payCardId: 'pay_1',
             row: 0,
             col: 0,
-            settings: mockSettings
         });
 
         state = reducer(state, action);

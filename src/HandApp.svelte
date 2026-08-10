@@ -4,6 +4,8 @@
   import type { Card } from './lib/gameSlice';
   import { createActionRepository, type ActionRepository, type HandUpdatedPayload } from './lib/action-repository';
   import { initializeFirebase } from './lib/firebase';
+  import { calculateRepairCubes } from './lib/repairRules';
+  import { DEFAULT_GAME_SETTINGS, type GameSettings } from './lib/settingsStore';
 
   let gameId: string | null = null;
   let playerColor: 'red' | 'yellow' | null = null;
@@ -21,6 +23,7 @@
   let currentTurn: string | null = null;
   let turnCount: number = 0;
   let pendingBonusCardIds: string[] = [];
+  let settings: GameSettings = { ...DEFAULT_GAME_SETTINGS };
 
   onMount(async () => {
     const hash = window.location.hash;
@@ -62,6 +65,7 @@
                 hand = update.hand;
                 currentTurn = update.turn;
                 turnCount = update.turnCount;
+                settings = update.settings ?? settings;
                 pendingBonusCardIds = nextPendingBonusCardIds;
                 if (currentIds !== newIds || bonusActionsStarted) clearSelection();
             },
@@ -101,21 +105,20 @@
       }
   }
 
-  // Over limit based on Hand Count (7) usually.
-  // BUT: "value based hand limit only applies to the first turn"
-  // Red (P1) Limit: 12 on Turn 1
-  // Yellow (P2) Limit: 16 on Turn 2
-  // Note: settingsStore is NOT available on client directly unless we bundle or fetch it.
-  // For now, I will hardcode the defaults or assume they match. Ideally Host sends settings. 
-  // Let's assume standard values as per request: 12 and 16.
-  // If we wanted to be perfect we'd send settings in HAND_UPDATE.
-  
   $: isFirstTurn = (playerColor === 'red' && turnCount === 1) || (playerColor === 'yellow' && turnCount === 2);
-  $: valueLimit = playerColor === 'yellow' ? 16 : 12;
+  $: valueLimit = playerColor === 'yellow'
+      ? settings.OPENING_HAND_VALUE_LIMIT_P2
+      : settings.OPENING_HAND_VALUE_LIMIT_P1;
   
   $: isOverLimit = isFirstTurn 
-      ? (totalCost > valueLimit || handCount > 7) // Does count limit apply on first turn? Usually yes.
-      : (handCount > 7);
+      ? (totalCost > valueLimit || handCount > settings.MAX_HAND_SIZE)
+      : (handCount > settings.MAX_HAND_SIZE);
+
+  function isLegalRepairPair(playCard: Card, payCard: Card) {
+      if (playCard.id === payCard.id || payCard.cost < playCard.cost) return false;
+      return calculateRepairCubes(playCard, payCard, settings) > 0
+          || settings.ALLOW_ZERO_CUBE_REPAIRS;
+  }
   
   function handleCardTap(cardId: string) {
       if (isBonusBlocked) return;
@@ -146,7 +149,7 @@
       if (!playCardId) {
           // Selecting PLAY card
           // Must have at least one OTHER card with cost >= this card's cost
-          const hasValidPayer = hand.some(c => c.id !== cardId && c.cost >= card.cost);
+          const hasValidPayer = hand.some(candidate => isLegalRepairPair(card, candidate));
           if (!hasValidPayer) {
                console.log('Cannot Play: No valid payer in hand');
                return;
@@ -162,8 +165,8 @@
           const playCard = hand.find(c => c.id === playCardId);
           if (!playCard) return;
 
-          if (card.cost < playCard.cost) {
-              console.log('Cannot Pay: Cost too low');
+          if (!isLegalRepairPair(playCard, card)) {
+              console.log('Cannot Pay: This pair would not produce a legal repair');
               return;
           }
 
@@ -191,7 +194,9 @@
   $: remainingHandCount = handCount - discardSelection.size;
   $: remainingCost = totalCost - selectedCost;
 
-  $: remainsValid = !isOverLimit || (isFirstTurn ? (remainingCost <= valueLimit && remainingHandCount <= 7) : (remainingHandCount <= 7));
+  $: remainsValid = !isOverLimit || (isFirstTurn
+      ? (remainingCost <= valueLimit && remainingHandCount <= settings.MAX_HAND_SIZE)
+      : (remainingHandCount <= settings.MAX_HAND_SIZE));
 
   async function confirmDiscard() {
       if (discardSelection.size === 0) return;
@@ -208,7 +213,11 @@
 
 </script>
 
-<div class="hand-container" class:over-limit={isOverLimit}>
+<div
+  class="hand-container"
+  class:over-limit={isOverLimit}
+  style:--maximum-hand-size={Math.max(settings.MAX_HAND_SIZE, 1)}
+>
   <header>
     <div class="info">
         <span class="player-badge" class:is-red={playerColor === 'red'} class:is-yellow={playerColor === 'yellow'}>
@@ -222,8 +231,8 @@
                 {currentTurn === playerColor ? 'YOUR TURN' : 'OPPONENT TURN'}
             </div>
         {/if}
-        <div class="stat" class:danger={remainingHandCount > 7}>
-            Cards: {remainingHandCount}/7
+        <div class="stat" class:danger={remainingHandCount > settings.MAX_HAND_SIZE}>
+            Cards: {remainingHandCount}/{settings.MAX_HAND_SIZE}
         </div>
         <div class="stat" class:danger={isFirstTurn && remainingCost > valueLimit}>
             Value: {remainingCost}{isFirstTurn ? `/${valueLimit}` : ''}
@@ -244,8 +253,9 @@
   <main class="card-list">
       {#each hand as card}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        {@const isPlayable = !isOverLimit && !playCardId && hand.some(c => c.id !== card.id && c.cost >= card.cost)}
-        {@const isPayable = !isOverLimit && playCardId && playCardId !== card.id && (card.cost >= (hand.find(c => c.id === playCardId)?.cost || 99))}
+        {@const isPlayable = !isOverLimit && !playCardId && hand.some(candidate => isLegalRepairPair(card, candidate))}
+        {@const selectedPlayCard = hand.find(candidate => candidate.id === playCardId)}
+        {@const isPayable = !isOverLimit && selectedPlayCard && isLegalRepairPair(selectedPlayCard, card)}
         {@const isDisabled = isBonusBlocked || (!isOverLimit && ((!playCardId && !isPlayable) || (playCardId && playCardId !== card.id && !isPayable)))}
         
         <div 
@@ -618,7 +628,7 @@
 
       .card-wrapper {
           width: min(
-              calc((100vw - 72px) / 7),
+              calc((100vw - 72px) / var(--maximum-hand-size)),
               calc((100dvh - 105px - var(--hand-safe-area-bottom)) / 1.4)
           );
       }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GameSettings } from '../settingsStore';
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from '../settingsStore';
 import type { Card, GameState, PlayerColor } from '../types';
 import { BasicAI } from './BasicAI';
 
@@ -26,14 +26,10 @@ function card(id: string, overrides: Partial<Card> = {}): Card {
 
 function settings(overrides: Partial<GameSettings> = {}): GameSettings {
     return {
-        SALVAGE_MAX_COST: 12,
-        CUBES_PER_COLOR_MATCH: 1,
+        ...DEFAULT_GAME_SETTINGS,
         CUBES_PER_PLAY: 0,
-        CUBES_PER_OVERPAYMENT: 1,
         GRID_ROWS: 2,
         GRID_COLS: 2,
-        STARTING_HAND_LIMIT_P1: 12,
-        STARTING_HAND_LIMIT_P2: 16,
         ...overrides,
     };
 }
@@ -41,6 +37,7 @@ function settings(overrides: Partial<GameSettings> = {}): GameSettings {
 function gameState(currentTurn: PlayerColor = 'red'): GameState {
     return {
         seed: 'test',
+        settings: settings(),
         players: [
             { color: 'red', edge: 'bottom', type: 'ai' },
             { color: 'yellow', edge: 'top', type: 'ai' },

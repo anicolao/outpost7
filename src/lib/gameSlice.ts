@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction, current } from '@reduxjs/toolkit';
 import type { CardData, BonusDefinition } from './cardLoader';
-import type { GameSettings } from './settingsStore';
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from './settingsStore';
 import { createSeededRandom } from './random';
 import type {
     PlayerColor,
@@ -21,6 +21,7 @@ export type { PlayerColor, Edge, Player, Card, PopulationCard, GamePhase, BonusI
 
 const initialState: GameState = {
     seed: '',
+    settings: { ...DEFAULT_GAME_SETTINGS },
     players: [],
     phase: 'lobby',
     orientation: 0,
@@ -56,9 +57,15 @@ const gameSlice = createSlice({
         removePlayer: (state, action: PayloadAction<Edge>) => {
             state.players = state.players.filter(p => p.edge !== action.payload);
         },
-        startGame: (state, action: PayloadAction<{ rows: number, cols: number, deck?: Card[], headers?: Card[], seed: string }>) => {
+        startGame: (state, action: PayloadAction<{
+            deck?: Card[];
+            headers?: Card[];
+            seed: string;
+            settings: GameSettings;
+        }>) => {
             console.log('startGame called. Players:', state.players.length);
             if (state.players.length === 2) {
+                state.settings = { ...action.payload.settings };
                 state.phase = 'playing';
                 state.finishedPlayers = [];
                 state.winner = null;
@@ -82,7 +89,7 @@ const gameSlice = createSlice({
                 else if (hasLeft) state.orientation = 90;
 
                 // Initialize Grid (Empty)
-                const { rows, cols } = action.payload;
+                const { GRID_ROWS: rows, GRID_COLS: cols } = state.settings;
                 state.grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
 
                 // Initialize Headers
@@ -135,18 +142,19 @@ const gameSlice = createSlice({
                     [deckCards[i], deckCards[j]] = [deckCards[j], deckCards[i]];
                 }
 
-                // Burn 10
-                state.discard = deckCards.slice(0, 10);
-                let currentDeck = deckCards.slice(10);
+                const burnCount = state.settings.BURN_CARD_COUNT;
+                const offerSize = state.settings.OFFER_SIZE;
+                const startingHandSize = state.settings.STARTING_HAND_SIZE;
 
-                // Deal Offer (5 cards)
-                state.offer = currentDeck.slice(0, 5);
-                currentDeck = currentDeck.slice(5);
+                state.discard = deckCards.slice(0, burnCount);
+                let currentDeck = deckCards.slice(burnCount);
 
-                // Deal Hands (5 cards each)
-                state.hands.red = currentDeck.slice(0, 5);
-                state.hands.yellow = currentDeck.slice(5, 10);
-                state.deck = currentDeck.slice(10);
+                state.offer = currentDeck.slice(0, offerSize);
+                currentDeck = currentDeck.slice(offerSize);
+
+                state.hands.red = currentDeck.slice(0, startingHandSize);
+                state.hands.yellow = currentDeck.slice(startingHandSize, startingHandSize * 2);
+                state.deck = currentDeck.slice(startingHandSize * 2);
 
                 // Explicitly set Turn 1
                 state.turnCount = 1;
@@ -164,11 +172,37 @@ const gameSlice = createSlice({
             const toDiscard = hand.filter(c => cardIds.includes(c.id));
             const newHand = hand.filter(c => !cardIds.includes(c.id));
 
+            const isOpeningTurn = (color === 'red' && state.turnCount === 1)
+                || (color === 'yellow' && state.turnCount === 2);
+            const valueLimit = color === 'red'
+                ? state.settings.OPENING_HAND_VALUE_LIMIT_P1
+                : state.settings.OPENING_HAND_VALUE_LIMIT_P2;
+            const handValue = hand.reduce((total, card) => total + card.cost, 0);
+            const newHandValue = newHand.reduce((total, card) => total + card.cost, 0);
+            const discardRequired = hand.length > state.settings.MAX_HAND_SIZE
+                || (isOpeningTurn && handValue > valueLimit);
+            const discardSatisfiesRules = newHand.length <= state.settings.MAX_HAND_SIZE
+                && (!isOpeningTurn || newHandValue <= valueLimit);
+
+            if (
+                state.currentTurn !== color
+                || cardIds.length === 0
+                || toDiscard.length !== new Set(cardIds).size
+                || !discardRequired
+                || !discardSatisfiesRules
+            ) return;
+
             state.hands[color] = newHand;
             state.discard.push(...toDiscard);
         },
-        playCard: (state, action: PayloadAction<{ color: 'red' | 'yellow', playCardId: string, payCardId: string | null, row: number, col: number, settings: any }>) => {
-            const { color, playCardId, payCardId, row, col, settings } = action.payload;
+        playCard: (state, action: PayloadAction<{
+            color: PlayerColor;
+            playCardId: string;
+            payCardId: string | null;
+            row: number;
+            col: number;
+        }>) => {
+            const { color, playCardId, payCardId, row, col } = action.payload;
             const hand = state.hands[color];
             const playCardIndex = hand.findIndex(c => c.id === playCardId);
 
@@ -186,7 +220,11 @@ const gameSlice = createSlice({
 
                 // Calculate Cubes
                 // Rule: CUBES_PER_PLAY + (ColorMatch ? CUBES_PER_COLOR_MATCH : 0) + (Overpay * CUBES_PER_OVERPAYMENT)
-                const cubes = calculateRepairCubes(playCard, payCard, settings);
+                const cubes = calculateRepairCubes(playCard, payCard, state.settings);
+                if (cubes === 0 && !state.settings.ALLOW_ZERO_CUBE_REPAIRS) {
+                    console.warn('Invalid Play: Cards played with zero cubes are disabled');
+                    return;
+                }
 
                 // Remove both from hand
                 // Remove both from hand
@@ -198,8 +236,8 @@ const gameSlice = createSlice({
                 // Place play card on grid (Store Full Object + State)
                 const newCard: Card = {
                     ...playCard,
-                    cubes, // How many cubes to place
-                    owner: color
+                    cubes,
+                    owner: cubes > 0 ? color : undefined,
                 };
                 state.grid[row][col] = newCard;
 
@@ -374,7 +412,7 @@ const gameSlice = createSlice({
                 return;
             }
 
-            // Validation 2: Check Cost limit (12)
+            // Validation 2: Check configured cost limit
             const selectedCards = state.offer.filter(c => cardIds.includes(c.id));
             if (selectedCards.length !== cardIds.length) {
                 console.warn('Salvage Failed: Some cards not found in offer');
@@ -382,15 +420,19 @@ const gameSlice = createSlice({
             }
 
             const totalCost = selectedCards.reduce((sum, c) => sum + c.cost, 0);
-            if (totalCost > 12) {
-                console.warn(`Salvage Failed: Total cost ${totalCost} > 12`);
+            if (totalCost > state.settings.SALVAGE_MAX_COST) {
+                console.warn(
+                    `Salvage Failed: Total cost ${totalCost} > ${state.settings.SALVAGE_MAX_COST}`,
+                );
                 return;
             }
 
-            // Validation 3: Check Hand Size Limit (7)
+            // Validation 3: Check configured hand size limit
             const currentHandSize = state.hands[color].length;
-            if (currentHandSize + selectedCards.length > 7) {
-                console.warn(`Salvage Failed: Hand size would exceed 7`);
+            if (currentHandSize + selectedCards.length > state.settings.MAX_HAND_SIZE) {
+                console.warn(
+                    `Salvage Failed: Hand size would exceed ${state.settings.MAX_HAND_SIZE}`,
+                );
                 return;
             }
 
@@ -402,8 +444,8 @@ const gameSlice = createSlice({
             // 2. Remove from Offer
             state.offer = state.offer.filter(c => !cardIds.includes(c.id));
 
-            // 3. Refill Offer (up to 5)
-            const cardsNeeded = 5 - state.offer.length;
+            // 3. Refill the configured offer
+            const cardsNeeded = state.settings.OFFER_SIZE - state.offer.length;
             if (cardsNeeded > 0 && state.deck.length > 0) {
                 const drawn = state.deck.slice(0, cardsNeeded);
                 state.deck = state.deck.slice(cardsNeeded);

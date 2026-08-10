@@ -30,6 +30,14 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
             {
                 spec: 'Add Players and Start',
                 check: async () => {
+                    // This scenario intentionally gives every affordable pair a
+                    // base cube. Configure the game itself so the AI and reducer
+                    // use the same authoritative rule snapshot.
+                    await page.locator('.settings-btn.top-left').click();
+                    await page.locator('[data-setting-key="CUBES_PER_PLAY"] button', { hasText: '+' }).click();
+                    await expect(page.locator('[data-setting-key="CUBES_PER_PLAY"] .value')).toHaveText('1');
+                    await page.locator('.modal .close-btn').click();
+
                     // Add Red
                     await page.locator('.bottom .add-btn').click();
                     await page.locator('.color-picker button[title="red"]').click();
@@ -54,12 +62,10 @@ test('Basic AI vs Basic AI Complete Game', async ({ page }, testInfo) => {
     let turnCount = 1;
     let safeguard = 0; // Prevent infinite loops
 
-    const aiSettings = {
-        SALVAGE_MAX_COST: 12,
-        CUBES_PER_PLAY: 1,
-        CUBES_PER_COLOR_MATCH: 1,
-        CUBES_PER_OVERPAYMENT: 1,
-    };
+    const aiSettings = await page.evaluate(() => {
+        // @ts-ignore E2E store exposure
+        return window.store.getState().game.settings;
+    });
     const aiRed = new BasicAI('red', 'ai_battle_001', aiSettings);
     const aiYellow = new BasicAI('yellow', 'ai_battle_001', aiSettings);
 

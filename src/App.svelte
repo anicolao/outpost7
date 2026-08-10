@@ -87,11 +87,10 @@
           const seed = getGameSeed(window.location.search);
 
           store.dispatch(startGame({ 
-            rows: $settingsStore.GRID_ROWS, 
-            cols: $settingsStore.GRID_COLS,
             deck: deck,
             headers: headerDeck,
-            seed
+            seed,
+            settings: { ...$settingsStore },
           }));
       } else {
           console.error("Deck not loaded yet!");

@@ -53,6 +53,14 @@ test.describe('Single Player Mode', () => {
                         await page.goto('/?seed=e2e_test_solo&gameId=e2e_solo'); // Use simple seed
                         await expect(page.locator('.lobby-container')).toBeVisible();
 
+                        // Keep the historical solo scenario's base-cube rule in
+                        // the host settings snapshot rather than injecting it
+                        // into an individual play action.
+                        await page.locator('.settings-btn.top-left').click();
+                        await page.locator('[data-setting-key="CUBES_PER_PLAY"] button', { hasText: '+' }).click();
+                        await expect(page.locator('[data-setting-key="CUBES_PER_PLAY"] .value')).toHaveText('1');
+                        await page.locator('.modal .close-btn').click();
+
                         // Add Red Player on Bottom
                         await page.locator('.bottom .add-btn').click();
                         await expect(page.locator('.color-picker')).toBeVisible();
@@ -111,13 +119,24 @@ test.describe('Single Player Mode', () => {
                         await page.evaluate(() => {
                             // @ts-ignore
                             const store = window.store;
-                            const hand = store.getState().game.hands.red;
+                            const game = store.getState().game;
+                            const hand = game.hands.red;
                             // Find valid pair
                             let playCard, payCard;
                             for (let i = 0; i < hand.length; i++) {
                                 for (let j = 0; j < hand.length; j++) {
                                     if (i === j) continue;
-                                    if (hand[j].cost >= hand[i].cost) {
+                                    const overpayment = Math.max(0, hand[j].cost - hand[i].cost);
+                                    const colorMatch = hand[j].color === hand[i].color
+                                        ? game.settings.CUBES_PER_COLOR_MATCH
+                                        : 0;
+                                    const cubes = game.settings.CUBES_PER_PLAY
+                                        + colorMatch
+                                        + overpayment * game.settings.CUBES_PER_OVERPAYMENT;
+                                    if (
+                                        hand[j].cost >= hand[i].cost
+                                        && (cubes > 0 || game.settings.ALLOW_ZERO_CUBE_REPAIRS)
+                                    ) {
                                         playCard = hand[i];
                                         payCard = hand[j];
                                         break;
@@ -135,7 +154,6 @@ test.describe('Single Player Mode', () => {
                                     payCardId: payCard.id,
                                     row: 2,
                                     col: 2,
-                                    settings: { CUBES_PER_PLAY: 1, CUBES_PER_COLOR_MATCH: 1, CUBES_PER_OVERPAYMENT: 1 }
                                 }
                             });
 

@@ -9,19 +9,18 @@ import gameReducer, {
     type PlayerColor,
     addPlayer
 } from '../../src/lib/gameSlice';
-import type { GameSettings } from '../../src/lib/settingsStore';
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from '../../src/lib/settingsStore';
 
 // Mock Data
 const MOCK_SETTINGS: GameSettings = {
-    SALVAGE_MAX_COST: 12,
-    CUBES_PER_COLOR_MATCH: 1,
+    ...DEFAULT_GAME_SETTINGS,
     CUBES_PER_PLAY: 1,
-    CUBES_PER_OVERPAYMENT: 1,
-    GRID_ROWS: 5,
-    GRID_COLS: 5,
-    STARTING_HAND_LIMIT_P1: 12,
-    STARTING_HAND_LIMIT_P2: 16
 };
+
+const startWithSettings = (rows = 5, cols = 5, seed = 'test') => startGame({
+    seed,
+    settings: { ...MOCK_SETTINGS, GRID_ROWS: rows, GRID_COLS: cols },
+});
 
 const RED_PLAYER: { color: PlayerColor, edge: Edge } = { color: 'red', edge: 'bottom' };
 const YELLOW_PLAYER: { color: PlayerColor, edge: Edge } = { color: 'yellow', edge: 'top' };
@@ -70,7 +69,7 @@ describe('Bonus Logic', () => {
         let state = gameReducer(undefined, { type: 'unknown' });
         state = gameReducer(state, addPlayer(RED_PLAYER));
         state = gameReducer(state, addPlayer(YELLOW_PLAYER));
-        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'test' }));
+        state = gameReducer(state, startWithSettings());
         return state;
     };
 
@@ -91,7 +90,6 @@ describe('Bonus Logic', () => {
             payCardId: CARD_PAY.id,
             row: 2,
             col: 2,
-            settings: MOCK_SETTINGS
         }));
 
         // Expect card placed
@@ -120,7 +118,6 @@ describe('Bonus Logic', () => {
             payCardId: CARD_PAY.id,
             row: 2,
             col: 2,
-            settings: MOCK_SETTINGS
         }));
 
         expect(nextState.pendingBonuses.length).toBe(0);
@@ -202,7 +199,7 @@ describe('Ownership Evaluation', () => {
         let state = gameReducer(undefined, { type: 'unknown' });
         state = gameReducer(state, addPlayer(RED_PLAYER));
         state = gameReducer(state, addPlayer(YELLOW_PLAYER));
-        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'test' }));
+        state = gameReducer(state, startWithSettings());
         return state;
     };
 
@@ -230,7 +227,6 @@ describe('Ownership Evaluation', () => {
             payCardId: CARD_PAY.id,
             row: 1,
             col: 0,
-            settings: MOCK_SETTINGS
         }));
 
         // Expect Row 0 owner to flip to Red
@@ -258,7 +254,6 @@ describe('Ownership Evaluation', () => {
             payCardId: CARD_PAY.id,
             row: 1,
             col: 0,
-            settings: MOCK_SETTINGS
         }));
 
         expect(nextState.rowHeaders[0].owner).toBe('yellow');
@@ -286,7 +281,6 @@ describe('Ownership Evaluation', () => {
             payCardId: CARD_PAY.id,
             row: 1,
             col: 0,
-            settings: MOCK_SETTINGS
         }));
 
         // Should REMAIN Yellow (Tie doesn't flip)
@@ -313,7 +307,6 @@ describe('Ownership Evaluation', () => {
             payCardId: CARD_PAY.id,
             row: 1,
             col: 0,
-            settings: MOCK_SETTINGS
         }));
 
         expect(nextState.colHeaders[2].owner).toBe('red');
@@ -326,7 +319,7 @@ describe('Game End Logic', () => {
         let state = gameReducer(undefined, { type: 'unknown' });
         state = gameReducer(state, addPlayer(RED_PLAYER));
         state = gameReducer(state, addPlayer(YELLOW_PLAYER));
-        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'test' }));
+        state = gameReducer(state, startWithSettings());
         return state;
     };
 
@@ -359,7 +352,6 @@ describe('Game End Logic', () => {
             payCardId: CARD_PAY.id,
             row: 0,
             col: 0,
-            settings: MOCK_SETTINGS
         }));
 
         // Yellow should be skipped/finished
@@ -394,7 +386,6 @@ describe('Game End Logic', () => {
             payCardId: CARD_PAY.id,
             row: 0,
             col: 0,
-            settings: MOCK_SETTINGS
         }));
 
         // Red hand now empty -> No repair. Offer expensive -> No salvage.
@@ -412,7 +403,7 @@ describe('Grid Initialization', () => {
         state = gameReducer(state, addPlayer(YELLOW_PLAYER));
         
         // Pass 2x2
-        state = gameReducer(state, startGame({ rows: 2, cols: 2, seed: 'test' }));
+        state = gameReducer(state, startWithSettings(2, 2));
 
         expect(state.grid.length).toBe(2);
         expect(state.grid[0].length).toBe(2);
@@ -427,7 +418,7 @@ describe('Grid Initialization', () => {
         state = gameReducer(state, addPlayer(YELLOW_PLAYER));
         
         // Pass 5x5
-        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'test' }));
+        state = gameReducer(state, startWithSettings());
 
         expect(state.colHeaders.length).toBe(5);
         expect(state.rowHeaders.length).toBe(5);
@@ -438,7 +429,7 @@ describe('Grid Initialization', () => {
         state = gameReducer(state, addPlayer(RED_PLAYER));
         state = gameReducer(state, addPlayer(YELLOW_PLAYER));
 
-        state = gameReducer(state, startGame({ rows: 5, cols: 5, seed: 'replayable-game' }));
+        state = gameReducer(state, startWithSettings(5, 5, 'replayable-game'));
 
         expect(state.seed).toBe('replayable-game');
     });

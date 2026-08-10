@@ -9,6 +9,7 @@ import {
     type Unsubscribe,
 } from 'firebase/firestore';
 import type { Card, PlayerColor } from './types';
+import type { GameSettings } from './settingsStore';
 
 export type ControllerEventType =
     | 'host/hand-updated'
@@ -30,6 +31,7 @@ export interface HandUpdatedPayload extends Record<string, unknown> {
     hand: Card[];
     turn: PlayerColor;
     turnCount: number;
+    settings: GameSettings;
     pendingBonusCardIds: string[];
 }
 

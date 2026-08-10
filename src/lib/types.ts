@@ -1,4 +1,5 @@
 import type { CardData, BonusDefinition } from './cardLoader';
+import type { GameSettings } from './settingsStore';
 
 export type PlayerColor = 'red' | 'yellow';
 export type Edge = 'bottom' | 'top' | 'left' | 'right';
@@ -30,6 +31,7 @@ export interface BonusInstance {
 
 export interface GameState {
     seed: string;
+    settings: GameSettings;
     players: Player[];
     phase: GamePhase;
     orientation: number;
