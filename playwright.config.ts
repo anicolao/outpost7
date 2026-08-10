@@ -38,9 +38,6 @@ export default defineConfig({
                         '--disable-skia-runtime-opts',
                         '--disable-system-font-check',
                         '--disable-features=FontAccess',
-                        // Native scrollbars consume 16 CSS pixels on Linux but overlay
-                        // content on macOS. Keep pixel snapshots platform-independent.
-                        '--hide-scrollbars',
                         '--force-device-scale-factor=1',
                         '--disable-accelerated-2d-canvas',
                         '--disable-gpu', // Use software rendering for consistency
