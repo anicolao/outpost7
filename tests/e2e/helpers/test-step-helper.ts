@@ -1,4 +1,4 @@
-import { type Locator, type Page, type TestInfo, expect } from '@playwright/test';
+import { type Page, type TestInfo, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -11,7 +11,6 @@ export interface StepOptions {
     description: string;
     verifications: Verification[];
     page?: Page; // Optional override for multi-page tests
-    screenshotTarget?: Locator;
     skipScreenshot?: boolean;
 }
 
@@ -147,7 +146,7 @@ export class TestStepHelper {
 
         // Assert equality (Pixel Perfect)
         if (!options.skipScreenshot) {
-            await expect(options.screenshotTarget ?? targetPage).toHaveScreenshot(filename);
+            await expect(targetPage).toHaveScreenshot(filename);
         }
 
         // 4. Record for Docs
