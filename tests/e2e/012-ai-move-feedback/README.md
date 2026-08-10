@@ -14,7 +14,7 @@ Slow, staged tabletop animations make the AI’s repair and salvage choices obvi
 ![The AI moves its played card onto the tabletop](screenshots/001-ai-repair-flight.png)
 
 **Specs:**
-- A full-size card visibly travels to the chosen board cell
+- A full-size card rotates to match the board before traveling to its cell
 
 ## The AI marks cards it selects from the offer
 
@@ -28,4 +28,4 @@ Slow, staged tabletop animations make the AI’s repair and salvage choices obvi
 ![The selected offer cards travel toward the AI](screenshots/003-ai-salvage-flight.png)
 
 **Specs:**
-- Every salvaged card remains full-size while moving to the AI edge
+- Every salvaged card rotates to match the AI edge before moving there at full size

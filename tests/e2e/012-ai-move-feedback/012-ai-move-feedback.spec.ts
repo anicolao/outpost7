@@ -2,8 +2,12 @@ import { expect, test, type Page } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 const AI_STAGE_EVENT = 'outpost7:continue-ai-stage';
-const cardDimensions = (box: { width: number; height: number }) =>
-    [Math.min(box.width, box.height), Math.max(box.width, box.height)];
+async function layoutDimensions(page: Page, selector: string) {
+    return page.locator(selector).first().evaluate((element) => {
+        const { offsetWidth: width, offsetHeight: height } = element as HTMLElement;
+        return [Math.min(width, height), Math.max(width, height)];
+    });
+}
 
 async function startSoloGame(page: Page, gameId: string, startingHandSize = 5) {
     await page.goto(`/?seed=${gameId}&gameId=${gameId}`);
@@ -88,6 +92,43 @@ async function longestAnimationMs(page: Page, selector: string) {
     ));
 }
 
+async function flightMotion(page: Page, selector: string) {
+    return page.locator(selector).first().evaluate((element) => {
+        const animation = element.getAnimations().find((candidate) =>
+            candidate.effect?.getKeyframes().some((frame) => Boolean(frame.transform)),
+        );
+        const duration = animation?.effect?.getTiming().duration;
+        if (!animation || typeof duration !== 'number') {
+            throw new Error(`Expected a finite transform animation on ${selector}`);
+        }
+
+        animation.pause();
+        const sample = (progress: number) => {
+            animation.currentTime = duration * progress;
+            const rect = element.getBoundingClientRect();
+            const matrix = new DOMMatrix(getComputedStyle(element).transform);
+            return {
+                centerX: rect.left + rect.width / 2,
+                centerY: rect.top + rect.height / 2,
+                angle: Math.atan2(matrix.b, matrix.a) * 180 / Math.PI,
+            };
+        };
+
+        return {
+            start: sample(0),
+            oriented: sample(0.25),
+            flying: sample(0.6),
+        };
+    });
+}
+
+function distance(
+    first: { centerX: number; centerY: number },
+    second: { centerX: number; centerY: number },
+) {
+    return Math.hypot(first.centerX - second.centerX, first.centerY - second.centerY);
+}
+
 async function waitForHumanTurn(page: Page, condition: (game: any) => boolean) {
     await page.evaluate((conditionSource) => {
         // @ts-ignore exposed by the E2E app
@@ -152,9 +193,10 @@ test('AI repairs and salvages with clear staged feedback', async ({ page }, test
                     await expect(page.locator('.ai-repair-choice')).toContainText('PLAY');
                     await expect(page.locator('.ai-repair-choice')).toContainText('PAY');
                     expect(await longestAnimationMs(page, '.ai-repair-choice')).toBeGreaterThanOrEqual(1200);
-                    const choiceBox = await page.locator('.ai-repair-choice .play-choice .choice-card').boundingBox();
-                    if (!choiceBox) throw new Error('Expected repair-choice card geometry');
-                    repairCardSize = cardDimensions(choiceBox);
+                    repairCardSize = await layoutDimensions(
+                        page,
+                        '.ai-repair-choice .play-choice .choice-card',
+                    );
                     expect(await page.locator('.played-card').count()).toBe(1);
                 },
             },
@@ -167,16 +209,19 @@ test('AI repairs and salvages with clear staged feedback', async ({ page }, test
         description: 'The AI moves its played card onto the tabletop',
         verifications: [
             {
-                spec: 'A full-size card visibly travels to the chosen board cell',
+                spec: 'A full-size card rotates to match the board before traveling to its cell',
                 check: async () => {
                     await expect(page.locator('.flying-card.ai-controlled')).toBeVisible();
                     await expect(page.locator('.ai-action-label')).toContainText('PLAYS');
                     expect(await longestAnimationMs(page, '.flying-card.ai-controlled')).toBeGreaterThanOrEqual(1600);
-                    const flyingBox = await page.locator('.flying-card.ai-controlled').boundingBox();
-                    if (!flyingBox) throw new Error('Expected AI repair-flight geometry');
-                    const flyingSize = cardDimensions(flyingBox);
+                    const flyingSize = await layoutDimensions(page, '.flying-card.ai-controlled');
                     expect(flyingSize[0]).toBeCloseTo(repairCardSize[0], 2);
                     expect(flyingSize[1]).toBeCloseTo(repairCardSize[1], 2);
+                    const motion = await flightMotion(page, '.flying-card.ai-controlled');
+                    expect(Math.abs(motion.start.angle)).toBeLessThan(1);
+                    expect(Math.abs(motion.oriented.angle)).toBeCloseTo(90, 0);
+                    expect(distance(motion.start, motion.oriented)).toBeLessThan(1);
+                    expect(distance(motion.oriented, motion.flying)).toBeGreaterThan(20);
                     expect(await page.locator('.played-card').count()).toBe(1);
                 },
             },
@@ -209,9 +254,10 @@ test('AI repairs and salvages with clear staged feedback', async ({ page }, test
                     await expect(page.locator('.ai-action-label')).toContainText('SELECTS TO SALVAGE');
                     expect(await longestAnimationMs(page, '.offer-container .card-wrapper.ai-selected'))
                         .toBeGreaterThanOrEqual(1100);
-                    const selectedBox = await page.locator('.offer-container .card-wrapper.ai-selected').boundingBox();
-                    if (!selectedBox) throw new Error('Expected selected salvage-card geometry');
-                    salvageCardSize = cardDimensions(selectedBox);
+                    salvageCardSize = await layoutDimensions(
+                        page,
+                        '.offer-container .card-wrapper.ai-selected',
+                    );
                     expect(await page.evaluate(() => {
                         // @ts-ignore exposed by the E2E app
                         return window.store.getState().game.hands.yellow.length;
@@ -227,17 +273,20 @@ test('AI repairs and salvages with clear staged feedback', async ({ page }, test
         description: 'The selected offer cards travel toward the AI',
         verifications: [
             {
-                spec: 'Every salvaged card remains full-size while moving to the AI edge',
+                spec: 'Every salvaged card rotates to match the AI edge before moving there at full size',
                 check: async () => {
                     await expect(page.locator('.ai-salvage-card')).not.toHaveCount(0);
                     await expect(page.locator('.ai-action-label')).toContainText('SALVAGES');
                     expect(await longestAnimationMs(page, '.ai-salvage-card'))
                         .toBeGreaterThanOrEqual(1600);
-                    const flyingBox = await page.locator('.ai-salvage-card').first().boundingBox();
-                    if (!flyingBox) throw new Error('Expected AI salvage-flight geometry');
-                    const flyingSize = cardDimensions(flyingBox);
+                    const flyingSize = await layoutDimensions(page, '.ai-salvage-card');
                     expect(flyingSize[0]).toBeCloseTo(salvageCardSize[0], 2);
                     expect(flyingSize[1]).toBeCloseTo(salvageCardSize[1], 2);
+                    const motion = await flightMotion(page, '.ai-salvage-card');
+                    expect(Math.abs(motion.start.angle)).toBeCloseTo(90, 0);
+                    expect(Math.abs(motion.oriented.angle)).toBeLessThan(1);
+                    expect(distance(motion.start, motion.oriented)).toBeLessThan(1);
+                    expect(distance(motion.oriented, motion.flying)).toBeGreaterThan(20);
                     expect(await page.evaluate(() => {
                         // @ts-ignore exposed by the E2E app
                         return window.store.getState().game.hands.yellow.length;

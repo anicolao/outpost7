@@ -112,6 +112,8 @@
       card: Card;
       startRect: DOMRect;
       endRect: DOMRect;
+      sourceRotation: number;
+      targetRotation: number;
   };
 
   let aiPresentation: AIPresentation | null = null;
@@ -144,19 +146,28 @@
       await waitForStageAnimations(selector);
   }
 
-  function destinationRect(edge: Edge, sourceRect: DOMRect) {
+  function edgeRotation(edge: Edge) {
+      if (edge === 'left') return 90;
+      if (edge === 'right') return -90;
+      return 0;
+  }
+
+  function destinationRect(edge: Edge, cardWidth: number, cardHeight: number) {
       const margin = 20;
+      const sideways = edge === 'left' || edge === 'right';
+      const width = sideways ? cardHeight : cardWidth;
+      const height = sideways ? cardWidth : cardHeight;
       const left = edge === 'left'
           ? margin
           : edge === 'right'
-            ? window.innerWidth - sourceRect.width - margin
-            : (window.innerWidth - sourceRect.width) / 2;
+            ? window.innerWidth - width - margin
+            : (window.innerWidth - width) / 2;
       const top = edge === 'top'
           ? margin
           : edge === 'bottom'
-            ? window.innerHeight - sourceRect.height - margin
-            : (window.innerHeight - sourceRect.height) / 2;
-      return new DOMRect(left, top, sourceRect.width, sourceRect.height);
+            ? window.innerHeight - height - margin
+            : (window.innerHeight - height) / 2;
+      return new DOMRect(left, top, width, height);
   }
 
   function aiStateSignature() {
@@ -223,6 +234,8 @@
               endRect: target.getBoundingClientRect(),
               cardData: play,
               controlledByAI: true,
+              sourceRotation: 0,
+              targetRotation: 90,
           };
           aiPresentation = { ...aiPresentation, stage: 'repair-flight' };
           await presentAIStage('repair-flight', '.flying-card.ai-controlled');
@@ -263,7 +276,13 @@
           );
           if (!source) return [];
           const startRect = source.getBoundingClientRect();
-          return [{ card, startRect, endRect: destinationRect(edge, startRect) }];
+          return [{
+              card,
+              startRect,
+              endRect: destinationRect(edge, source.offsetWidth, source.offsetHeight),
+              sourceRotation: 90,
+              targetRotation: edgeRotation(edge),
+          }];
       });
       aiPresentation = {
           color: turnColor,
@@ -305,6 +324,8 @@
       endRect: DOMRect;
       cardData: Card | null;
       controlledByAI?: boolean;
+      sourceRotation?: number;
+      targetRotation?: number;
   } | null = null;
 
 
@@ -617,6 +638,12 @@
         style:--start-y="{animatingCard.startRect.top}px"
         style:--end-x="{animatingCard.endRect.left}px"
         style:--end-y="{animatingCard.endRect.top}px"
+        style:--start-center-x="{animatingCard.startRect.left + animatingCard.startRect.width / 2}px"
+        style:--start-center-y="{animatingCard.startRect.top + animatingCard.startRect.height / 2}px"
+        style:--end-center-x="{animatingCard.endRect.left + animatingCard.endRect.width / 2}px"
+        style:--end-center-y="{animatingCard.endRect.top + animatingCard.endRect.height / 2}px"
+        style:--source-rotation="{animatingCard.sourceRotation ?? 0}deg"
+        style:--target-rotation="{animatingCard.targetRotation ?? 0}deg"
       >
           <div class="flipper">
               <div class="front">
@@ -663,6 +690,12 @@
         style:--start-y="{flight.startRect.top}px"
         style:--end-x="{flight.endRect.left}px"
         style:--end-y="{flight.endRect.top}px"
+        style:--start-center-x="{flight.startRect.left + flight.startRect.width / 2}px"
+        style:--start-center-y="{flight.startRect.top + flight.startRect.height / 2}px"
+        style:--end-center-x="{flight.endRect.left + flight.endRect.width / 2}px"
+        style:--end-center-y="{flight.endRect.top + flight.endRect.height / 2}px"
+        style:--source-rotation="{flight.sourceRotation}deg"
+        style:--target-rotation="{flight.targetRotation}deg"
         style:--flight-delay="{index * 120}ms"
       >
           <CardDisplay card={flight.card} />
@@ -1014,6 +1047,10 @@
       animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .flying-card.ai-controlled {
+      animation-name: ai-repair-flight;
+  }
+
   .flipper {
       position: relative;
       width: 100%;
@@ -1065,6 +1102,27 @@
       100% { transform: rotateY(180deg); }
   }
 
+  @keyframes ai-repair-flight {
+      0% {
+          transform: translate(
+              calc(var(--start-center-x) - var(--table-card-width) / 2),
+              calc(var(--start-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--source-rotation));
+      }
+      25% {
+          transform: translate(
+              calc(var(--start-center-x) - var(--table-card-width) / 2),
+              calc(var(--start-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--target-rotation));
+      }
+      100% {
+          transform: translate(
+              calc(var(--end-center-x) - var(--table-card-width) / 2),
+              calc(var(--end-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--target-rotation));
+      }
+  }
+
   .ai-salvage-card {
       position: absolute;
       left: 0;
@@ -1080,12 +1138,25 @@
   @keyframes ai-salvage-flight {
       0% {
           opacity: 1;
-          transform: translate(var(--start-x), var(--start-y));
+          transform: translate(
+              calc(var(--start-center-x) - var(--table-card-width) / 2),
+              calc(var(--start-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--source-rotation));
+      }
+      25% {
+          opacity: 1;
+          transform: translate(
+              calc(var(--start-center-x) - var(--table-card-width) / 2),
+              calc(var(--start-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--target-rotation));
       }
       75% { opacity: 1; }
       100% {
           opacity: 0.25;
-          transform: translate(var(--end-x), var(--end-y));
+          transform: translate(
+              calc(var(--end-center-x) - var(--table-card-width) / 2),
+              calc(var(--end-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--target-rotation));
       }
   }
 
