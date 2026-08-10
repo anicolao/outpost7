@@ -2,6 +2,7 @@ import type { GameState, Card, PlayerColor } from '../types';
 import { createSeededRandom, type RandomSource } from '../random';
 import type { GameSettings } from '../settingsStore';
 import { calculateRepairCubes } from '../repairRules';
+import { evaluateStrategicPlacement } from './strategy';
 
 type AISettings = Pick<
     GameSettings,
@@ -74,7 +75,7 @@ export class BasicAI {
         if (hand.length < 2) return null;
 
         let bestMoves: MoveAction[] = [];
-        let maxScore = -1;
+        let maxScore = Number.NEGATIVE_INFINITY;
 
         // Iterate all possible Play/Pay pairs
         for (let i = 0; i < hand.length; i++) {
@@ -163,6 +164,16 @@ export class BasicAI {
         // A payment card leaves the game. When two payments produce the same
         // outcome, preserve the more valuable card for a future repair.
         score -= payCard.cost;
+
+        score += evaluateStrategicPlacement(
+            state,
+            playCard,
+            payCard,
+            r,
+            c,
+            this.playerColor,
+            this.settings,
+        );
 
         return score;
     }
