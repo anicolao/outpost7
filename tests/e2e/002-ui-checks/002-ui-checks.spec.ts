@@ -148,7 +148,7 @@ test.describe('Settings and Cards UI Checks', () => {
                     await expect(page.locator('.board-container')).toBeVisible();
 
                     // Grid should have --rows: 4
-                    const grid = page.locator('.game-layout');
+                    const grid = page.locator('.table-top');
                     await expect(grid).toHaveAttribute('style', /--rows:\s*4/);
 
                     // Cell count should be 4 * 5 = 20

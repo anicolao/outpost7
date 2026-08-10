@@ -1,20 +1,20 @@
 import type { GameState, Card, PlayerColor } from '../types';
 import { createSeededRandom, type RandomSource } from '../random';
-import type { GameSettings } from '../settingsStore';
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from '../settingsStore';
 import { calculateRepairCubes } from '../repairRules';
 import { evaluateStrategicPlacement } from './strategy';
 
 type AISettings = Pick<
     GameSettings,
-    'SALVAGE_MAX_COST' | 'CUBES_PER_PLAY' | 'CUBES_PER_COLOR_MATCH' | 'CUBES_PER_OVERPAYMENT'
+    | 'SALVAGE_MAX_COST'
+    | 'CUBES_PER_PLAY'
+    | 'CUBES_PER_COLOR_MATCH'
+    | 'CUBES_PER_OVERPAYMENT'
+    | 'MAX_HAND_SIZE'
+    | 'ALLOW_ZERO_CUBE_REPAIRS'
 >;
 
-const DEFAULT_AI_SETTINGS: AISettings = {
-    SALVAGE_MAX_COST: 12,
-    CUBES_PER_PLAY: 0,
-    CUBES_PER_COLOR_MATCH: 1,
-    CUBES_PER_OVERPAYMENT: 1,
-};
+const DEFAULT_AI_SETTINGS: AISettings = DEFAULT_GAME_SETTINGS;
 
 // Move Actions
 type MoveAction =
@@ -86,6 +86,8 @@ export class BasicAI {
                 const payCard = hand[j];
 
                 if (payCard.cost < playCard.cost) continue; // Invalid payment
+                const cubes = calculateRepairCubes(playCard, payCard, this.settings);
+                if (cubes === 0 && !this.settings.ALLOW_ZERO_CUBE_REPAIRS) continue;
 
                 // Iterate all Grid Positions
                 for (let r = 0; r < state.grid.length; r++) {
@@ -183,14 +185,14 @@ export class BasicAI {
     }
 
     private findBestSalvageMove(state: GameState, hand: Card[]): MoveAction | null {
-        const spaces = 7 - hand.length;
+        const spaces = this.settings.MAX_HAND_SIZE - hand.length;
         if (spaces <= 0) return null;
 
         let bestPlans: Card[][] = [];
         let bestScore = Number.NEGATIVE_INFINITY;
 
-        // The offer has at most five cards, so evaluating all 31 non-empty
-        // subsets is both exhaustive and inexpensive.
+        // The configurable offer is deliberately bounded, so evaluating every
+        // non-empty subset is both exhaustive and inexpensive.
         for (let mask = 1; mask < (1 << state.offer.length); mask++) {
             const cards = state.offer.filter((_, index) => mask & (1 << index));
             const cost = cards.reduce((total, card) => total + card.cost, 0);

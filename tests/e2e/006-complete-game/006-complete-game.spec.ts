@@ -77,24 +77,12 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
 
         if (playId === payId) throw new Error("Hand too small to play");
 
-        const mockSettings = {
-            GRID_ROWS: 2,
-            GRID_COLS: 2,
-            SALVAGE_MAX_COST: 12,
-            CUBES_PER_COLOR_MATCH: 1,
-            CUBES_PER_PLAY: 1,
-            CUBES_PER_OVERPAYMENT: 1,
-            STARTING_HAND_LIMIT_P1: 12,
-            STARTING_HAND_LIMIT_P2: 16
-        };
-
         const action = playCard({
             color,
             playCardId: playId,
             payCardId: payId,
             row,
             col,
-            settings: mockSettings
         });
 
         // Dispatch

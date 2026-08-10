@@ -7,7 +7,6 @@
   import { createActionRepository, type ActionRepository, type ControllerEvent } from '../lib/action-repository';
   import { initializeFirebase } from '../lib/firebase';
   import type { PlayerColor } from '../lib/types';
-  import { settingsStore } from '../lib/settingsStore';
   import { store } from '../lib/store';
   import Offer from './Offer.svelte';
   import PlayerQR from './PlayerQR.svelte';
@@ -18,8 +17,9 @@
   const isE2E = typeof window !== 'undefined' && (window.E2E_TEST === true || window.E2E_TEST === 'true');
 
   $: orientation = $gameState.game.orientation;
-  $: rows = $settingsStore.GRID_ROWS;
-  $: cols = $settingsStore.GRID_COLS;
+  $: rules = $gameState.game.settings;
+  $: rows = rules.GRID_ROWS;
+  $: cols = rules.GRID_COLS;
   
   // Game State
   $: grid = $gameState.game.grid;
@@ -103,7 +103,7 @@
       
       if (player && player.type === 'ai') {
           if (!aiInstances[turnColor]) {
-              aiInstances[turnColor] = new BasicAI(turnColor, $gameState.game.seed, $settingsStore);
+              aiInstances[turnColor] = new BasicAI(turnColor, $gameState.game.seed, rules);
           }
           
           const ai = aiInstances[turnColor];
@@ -131,7 +131,6 @@
                               payCardId: move.payCardId,
                               row: move.row,
                               col: move.col,
-                              settings: $settingsStore
                           }));
                       }
                   }
@@ -214,6 +213,7 @@
       hand: hands[color],
       turn,
       turnCount,
+      settings: rules,
       pendingBonusCardIds: [...new Set(activeBonuses.map((bonus) => bonus.sourceCardId))],
     };
     const signature = JSON.stringify(payload);
@@ -287,7 +287,6 @@
                   payCardId: pSel.payCardId,
                   row: rowIndex,
                   col: colIndex,
-                  settings: $settingsStore
               }));
               controllerSelections[color] = { playCardId: null, payCardId: null };
           };
@@ -334,11 +333,18 @@
 
 </script>
 
-<div class="table-top" data-transport-status={repositoryStatus}>
+<div
+  class="table-top"
+  data-transport-status={repositoryStatus}
+  style:--rows={rows}
+  style:--cols={cols}
+  style:--vertical-card-count={Math.max(cols, rules.OFFER_SIZE)}
+  style:--row-depth={(1.4 * (rows + 1)).toFixed(1)}
+>
   <!-- Board stage reserves the offer strip; the grid itself is rotated below. -->
   <div class="board-container">
     {#if rows && cols}
-      <div class="game-layout" style:--rows={rows} style:--cols={cols}>
+      <div class="game-layout">
         
         <!-- Top Left Spacer -->
         <!-- Top Left Spacer / Turn Indicator -->
@@ -479,7 +485,10 @@
       height: 100vh;
       overflow: hidden;
       background: #1a1a1a;
-      --table-card-width: min(calc((100vh - 96px) / 5), calc((100vw - 150px) / 8.4));
+      --table-card-width: min(
+          calc((100vh - 96px) / var(--vertical-card-count)),
+          calc((100vw - 150px) / var(--row-depth))
+      );
       --table-card-height: calc(var(--table-card-width) * 1.4);
       --table-header-size: 56px;
       --table-gap: 6px;
@@ -494,11 +503,7 @@
     justify-content: center;
   }
 
-  /* 
-     Grid Layout
-     Columns: 1 (Header) + 5 (Grid)
-     Rows: 1 (Header) + 5 (Grid)
-  */
+  /* The grid has one header row/column plus the configured board dimensions. */
   .game-layout {
     display: grid;
     /* First col is row header, Rest are game cols */

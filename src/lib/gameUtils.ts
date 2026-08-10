@@ -1,20 +1,21 @@
 import type { GameState, PlayerColor } from './types';
+import { calculateRepairCubes } from './repairRules';
 
 // Logic to check if a player has ANY valid moves
 export function hasValidMoves(state: GameState, player: PlayerColor): boolean {
     const hand = state.hands[player];
 
     // 1. Check Salvage
-    // Valid if hand is not full AND offer has at least one card <= 12
-    if (hand.length < 7) {
-        const canPickUpAny = state.offer.some(c => c.cost <= 12); // Rule: Total <= 12. Cheapest card implies possible move.
+    // Valid if hand is not full and at least one offered card is affordable.
+    if (hand.length < state.settings.MAX_HAND_SIZE) {
+        const canPickUpAny = state.offer.some(c => c.cost <= state.settings.SALVAGE_MAX_COST);
         // Actually, if offer is empty, can they salvage?
-        // Rule: "Pickup any combination... from the 5 face up"
+        // Rule: pick up any combination from the configured face-up offer.
         // If deck empty and offer empty -> NO salvage.
         // If deck not empty but offer empty (shouldn't happen with refill logic unless deck empties) -> wait, refill happens immediately.
         // So checking offer is enough.
         if (canPickUpAny) return true;
-        // Even if all cards > 12 (unlikely/impossible given card distribution, but theoretically), if you can pick 0 cards?
+        // Picking zero cards is not a turn, even when every offered card exceeds the configured limit.
         // Rules say "Pick up any combination". Picking 0 is usually not a turn. "Pass" is the action when you can't play.
     }
 
@@ -28,16 +29,18 @@ export function hasValidMoves(state: GameState, player: PlayerColor): boolean {
     if (hand.length < 2) return false; // Need at least pair
 
     // Check if any pair in hand is valid (Pay >= Play)
-    // Sort hand by cost? O(N log N) - hand is small (max 7)
-    // Actually just double loop O(N^2) is fine.
+    // Hands are small, so a direct O(N²) pair check is fine.
 
     let hasValidPair = false;
     for (let i = 0; i < hand.length; i++) {
         for (let j = 0; j < hand.length; j++) {
             if (i === j) continue;
             if (hand[j].cost >= hand[i].cost) {
-                hasValidPair = true;
-                break;
+                const cubes = calculateRepairCubes(hand[i], hand[j], state.settings);
+                if (cubes > 0 || state.settings.ALLOW_ZERO_CUBE_REPAIRS) {
+                    hasValidPair = true;
+                    break;
+                }
             }
         }
         if (hasValidPair) break;

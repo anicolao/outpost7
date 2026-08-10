@@ -1,7 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { fade, scale } from 'svelte/transition';
-  import { settingsStore, SETTINGS_DESCRIPTIONS, type GameSettings } from '../lib/settingsStore';
+  import {
+    GAME_SETTING_DEFINITIONS,
+    settingsStore,
+    type GameSettings,
+  } from '../lib/settingsStore';
 
   const dispatch = createEventDispatcher();
 
@@ -9,15 +13,18 @@
     dispatch('close');
   }
 
-  function updateSetting(key: keyof GameSettings, delta: number) {
-      if (!$settingsStore) return;
+  function updateNumberSetting(key: keyof GameSettings, delta: number) {
+      const definition = GAME_SETTING_DEFINITIONS[key];
       const current = $settingsStore[key];
-      const newValue = current + delta;
-      
-      // Basic validation limits
-      if (newValue < 0) return; 
-      
-      settingsStore.updateSetting(key, newValue);
+      if (definition.type !== 'number' || typeof current !== 'number') return;
+      const next = Math.max(definition.min, Math.min(definition.max, current + delta));
+      settingsStore.updateSetting(key, next);
+  }
+
+  function toggleBooleanSetting(key: keyof GameSettings) {
+      const current = $settingsStore[key];
+      if (typeof current !== 'boolean') return;
+      settingsStore.updateSetting(key, !current);
   }
 
   function openCards() {
@@ -34,16 +41,36 @@
     
     <div class="content">
         <ul class="settings-list">
-        {#each Object.entries($settingsStore) as [key, value]}
-            <li class="setting-item">
+        {#each Object.entries(GAME_SETTING_DEFINITIONS) as [key, definition]}
+            {@const settingKey = key as keyof GameSettings}
+            {@const value = $settingsStore[settingKey]}
+            <li class="setting-item" data-setting-key={settingKey}>
                 <div class="setting-info">
-                    <span class="label">{SETTINGS_DESCRIPTIONS[key as keyof GameSettings] || key}</span>
+                    <span class="label">{definition.label}</span>
                 </div>
-                <div class="controls">
-                    <button class="control-btn" onclick={() => updateSetting(key as keyof GameSettings, -1)}>-</button>
-                    <span class="value">{value}</span>
-                    <button class="control-btn" onclick={() => updateSetting(key as keyof GameSettings, 1)}>+</button>
-                </div>
+                {#if definition.type === 'boolean'}
+                    <button
+                      class="toggle-btn"
+                      class:enabled={value}
+                      onclick={() => toggleBooleanSetting(settingKey)}
+                    >
+                      {value ? 'Allowed' : 'Disallowed'}
+                    </button>
+                {:else}
+                    <div class="controls">
+                        <button
+                          class="control-btn"
+                          disabled={value === definition.min}
+                          onclick={() => updateNumberSetting(settingKey, -1)}
+                        >-</button>
+                        <span class="value">{value}</span>
+                        <button
+                          class="control-btn"
+                          disabled={value === definition.max}
+                          onclick={() => updateNumberSetting(settingKey, 1)}
+                        >+</button>
+                    </div>
+                {/if}
             </li>
         {/each}
         </ul>
@@ -74,8 +101,8 @@
     background: #2a2a2a;
     color: white;
     width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
+    max-width: 960px;
+    max-height: 95dvh;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     display: flex;
@@ -113,7 +140,7 @@
   }
 
   .content {
-    padding: 1.5rem;
+    padding: 1rem 1.5rem;
     overflow-y: auto;
   }
 
@@ -121,14 +148,18 @@
     list-style: none;
     padding: 0;
     margin: 0;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
   }
 
   .setting-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 0;
+    min-height: 48px;
+    padding: 0.5rem 0;
     border-bottom: 1px solid #444;
   }
 
@@ -179,6 +210,11 @@
       background: #666;
   }
 
+  .control-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+  }
+
   .value {
     color: #4CAF50;
     font-weight: bold;
@@ -186,6 +222,22 @@
     font-size: 1.2rem;
     min-width: 3ch;
     text-align: center;
+  }
+
+  .toggle-btn {
+      min-width: 96px;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid #666;
+      border-radius: 6px;
+      background: #444;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+  }
+
+  .toggle-btn.enabled {
+      border-color: #4CAF50;
+      background: #245c27;
   }
 
   .actions {
@@ -209,5 +261,11 @@
   .action-btn:hover {
       background: #444;
       border-color: #666;
+  }
+
+  @media (max-width: 700px) {
+      .settings-list {
+          grid-template-columns: 1fr;
+      }
   }
 </style>
