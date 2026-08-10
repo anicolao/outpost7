@@ -65,6 +65,7 @@ export default defineConfig({
             VITE_FIRESTORE_EMULATOR_PORT: '8187',
             VITE_FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1',
             VITE_FIREBASE_AUTH_EMULATOR_PORT: '9201',
+            VITE_GIT_HASH: 'e2e-test-commit',
         },
     },
 });
