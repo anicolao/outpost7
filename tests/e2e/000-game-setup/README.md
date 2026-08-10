@@ -9,6 +9,7 @@
 **Specs:**
 - Lobby should display 4 edge controls
 - Play button should be hidden or inactive initially
+- The lobby identifies the exact E2E build without masking
 
 ## Lobby - Player 1 Choosing Color
 

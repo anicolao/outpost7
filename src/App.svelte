@@ -20,6 +20,7 @@
   import SettingsModal from './components/SettingsModal.svelte';
   import CardsModal from './components/CardsModal.svelte';
   import GameOver from './components/GameOver.svelte';
+  import BuildMarker from './components/BuildMarker.svelte';
 
   $: phase = $gameState.game.phase;
 
@@ -123,6 +124,8 @@
         on:selectCardSet={handleCardSetSelection}
     />
   {/if}
+
+  <BuildMarker />
 </main>
 
 <style>

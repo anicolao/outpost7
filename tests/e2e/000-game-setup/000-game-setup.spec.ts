@@ -29,6 +29,10 @@ test('Game Setup Flow', async ({ page }, testInfo) => {
             {
                 spec: 'Play button should be hidden or inactive initially',
                 check: async () => await expect(page.locator('.play-btn')).not.toBeVisible() // Or check for waiting message
+            },
+            {
+                spec: 'The lobby identifies the exact E2E build without masking',
+                check: async () => await expect(page.getByTestId('build-marker')).toHaveText('Build e2e-tes')
             }
         ]
     });

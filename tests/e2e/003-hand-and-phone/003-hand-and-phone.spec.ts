@@ -105,6 +105,7 @@ test.describe('Hand and Phone UI', () => {
                         await expect(redPopup.locator('.player-badge')).toHaveText('RED');
                         await expect(redPopup.locator('.status')).toHaveText('Connected');
                         await expect(redPopup.locator('.card-wrapper')).toHaveCount(5);
+                        await expect(redPopup.getByTestId('build-marker')).toHaveText('Build e2e-tes');
                     }
                 }
             ]

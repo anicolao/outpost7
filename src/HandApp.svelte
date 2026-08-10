@@ -6,6 +6,7 @@
   import { initializeFirebase } from './lib/firebase';
   import { calculateRepairCubes } from './lib/repairRules';
   import { DEFAULT_GAME_SETTINGS, type GameSettings } from './lib/settingsStore';
+  import BuildMarker from './components/BuildMarker.svelte';
 
   let gameId: string | null = null;
   let playerColor: 'red' | 'yellow' | null = null;
@@ -293,6 +294,7 @@
       <div class="hint">Tap 1: Play, Tap 2: Pay</div>
     {/if}
   </footer>
+  <BuildMarker />
 </div>
 
 <style>
