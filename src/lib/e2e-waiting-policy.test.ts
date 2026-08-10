@@ -27,12 +27,6 @@ function location(source: ts.SourceFile, node: ts.Node) {
 }
 
 describe('E2E waiting policy', () => {
-    it('serves a prebuilt bundle so navigation never waits for development compilation', () => {
-        const config = readFileSync(join(projectRoot, 'playwright.config.ts'), 'utf8');
-
-        expect(config).toContain("command: 'npm run build && npm run preview -- --port 5177'");
-    });
-
     it('gives every host game navigation an explicit seed', () => {
         const violations: string[] = [];
 

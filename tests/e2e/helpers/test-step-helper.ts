@@ -146,11 +146,7 @@ export class TestStepHelper {
 
         // Assert equality (Pixel Perfect)
         if (!options.skipScreenshot) {
-            const ciFilename = `${filename}-ci`;
-            const ciSnapshot = path.join(screenshotDir, `${ciFilename}.png`);
-            await expect(targetPage).toHaveScreenshot(
-                process.env.CI && fs.existsSync(ciSnapshot) ? ciFilename : filename,
-            );
+            await expect(targetPage).toHaveScreenshot(filename);
         }
 
         // 4. Record for Docs
