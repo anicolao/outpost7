@@ -3,6 +3,10 @@
   import { store } from '../lib/store';
   import { salvage } from '../lib/gameSlice';
   import Card from './Card.svelte';
+
+  export let aiSelectedIds: string[] = [];
+  export let aiLatestSelectedId: string | null = null;
+  export let aiActive = false;
   
   $: offer = $gameState.game.offer;
   $: currentTurn = $gameState.game.currentTurn;
@@ -21,7 +25,7 @@
   }
 
   function toggleSelection(cardId: string) {
-      if (pendingBonuses.length > 0) return; // Disable during bonus resolution
+      if (pendingBonuses.length > 0 || aiActive) return; // Disable during bonus resolution and AI feedback
 
       if (selectedIds.has(cardId)) {
           selectedIds.delete(cardId);
@@ -56,7 +60,12 @@
 
 </script>
 
-<div class="offer-container" class:active={canSalvage}>
+<div
+  class="offer-container"
+  class:active={canSalvage}
+  class:ai-active={aiActive}
+  style:--ai-color={currentTurn === 'yellow' ? '#ffd700' : '#ff4d4d'}
+>
   <header>
       <h3>Offer</h3>
       <div class="salvage-controls">
@@ -81,12 +90,15 @@
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div 
         class="card-wrapper" 
+        data-card-id={card.id}
         class:selected={selectedIds.has(card.id)}
+        class:ai-selected={aiSelectedIds.includes(card.id)}
+        class:ai-new-selection={aiLatestSelectedId === card.id}
         class:disabled={pendingBonuses.length > 0}
         on:click={() => toggleSelection(card.id)}
       >
         <Card {card} />
-        {#if selectedIds.has(card.id)}
+        {#if selectedIds.has(card.id) || aiSelectedIds.includes(card.id)}
             <div class="selection-marker">
                 {@html MeepleIcon(currentTurn)}
             </div>
@@ -116,6 +128,10 @@
   .offer-container.active {
       border-color: #4CAF50;
       box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+  }
+
+  .offer-container.ai-active {
+      pointer-events: none;
   }
 
   header {
@@ -192,6 +208,17 @@
       box-shadow: 0 0 0 2px #4CAF50;
       z-index: 10;
   }
+
+  .card-wrapper.ai-selected {
+      transform: translateY(-8px);
+      outline: 3px solid var(--ai-color);
+      box-shadow: 0 0 18px 5px var(--ai-color);
+      z-index: 10;
+  }
+
+  .card-wrapper.ai-new-selection {
+      animation: ai-offer-selection 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
   
   .card-wrapper.disabled {
       opacity: 0.5;
@@ -218,5 +245,17 @@
   @keyframes popIn {
       from { transform: scale(0); }
       to { transform: scale(1); }
+  }
+
+  @keyframes ai-offer-selection {
+      0% { transform: translateY(0); filter: brightness(1); }
+      35% { transform: translateY(-18px); filter: brightness(1.75); }
+      100% { transform: translateY(-8px); filter: brightness(1.2); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+      .card-wrapper.ai-new-selection {
+          animation-duration: 0.01ms;
+      }
   }
 </style>

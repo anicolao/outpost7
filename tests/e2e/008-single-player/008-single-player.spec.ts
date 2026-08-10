@@ -2,40 +2,60 @@ import { test, expect, type Page } from '@playwright/test';
 import { TestStepHelper, waitForAnimations } from '../helpers/test-step-helper';
 
 async function waitForAiResponse(page: Page) {
-    await page.evaluate(() => {
-        // @ts-ignore
-        const store = window.store;
-        const signal = AbortSignal.timeout(2000);
+    let previousStage: string | null = null;
+    for (let stageCount = 0; stageCount < 16; stageCount++) {
+        const result = await page.evaluate((lastStage) => {
+            // @ts-ignore exposed by the E2E app
+            const store = window.store;
+            const signal = AbortSignal.timeout(2000);
 
-        return new Promise<void>((resolve, reject) => {
-            let unsubscribe = () => {};
-            const onAbort = () => {
-                unsubscribe();
-                reject(new Error('AI did not complete its turn within 2000ms'));
-            };
-            const check = () => {
-                const game = store.getState().game;
-                const yellowPlayed = game.grid
-                    .flat()
-                    .some((cell: any) => cell?.owner === 'yellow');
-
-                if (
-                    game.turnCount > 1 &&
-                    yellowPlayed &&
-                    game.currentTurn === 'red' &&
-                    game.pendingBonuses.length === 0
-                ) {
-                    signal.removeEventListener('abort', onAbort);
+            return new Promise<{ done: boolean; stage: string | null }>((resolve, reject) => {
+                let unsubscribe = () => {};
+                const observer = new MutationObserver(check);
+                const cleanup = () => {
+                    signal.removeEventListener('abort', abort);
+                    observer.disconnect();
                     unsubscribe();
-                    resolve();
-                }
-            };
+                };
+                const finish = (done: boolean, stage: string | null) => {
+                    cleanup();
+                    resolve({ done, stage });
+                };
+                const abort = () => {
+                    cleanup();
+                    reject(new Error(`AI feedback did not advance from ${lastStage ?? 'the human move'} within 2000ms`));
+                };
+                function check() {
+                    const game = store.getState().game;
+                    const yellowPlayed = game.grid
+                        .flat()
+                        .some((cell: any) => cell?.owner === 'yellow');
+                    const stage = document.querySelector('.ai-action-feedback')?.getAttribute('data-stage') ?? null;
 
-            signal.addEventListener('abort', onAbort, { once: true });
-            unsubscribe = store.subscribe(check);
-            check();
-        });
-    });
+                    if (
+                        game.turnCount > 1
+                        && yellowPlayed
+                        && game.currentTurn === 'red'
+                        && game.pendingBonuses.length === 0
+                    ) {
+                        finish(true, stage);
+                    } else if (stage && stage !== lastStage) {
+                        finish(false, stage);
+                    }
+                }
+
+                signal.addEventListener('abort', abort, { once: true });
+                unsubscribe = store.subscribe(check);
+                observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+                check();
+            });
+        }, previousStage);
+
+        if (result.done) return;
+        previousStage = result.stage;
+    }
+
+    throw new Error('AI feedback exceeded 16 event-driven stages');
 }
 
 test.describe('Single Player Mode', () => {
