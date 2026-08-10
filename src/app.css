@@ -13,10 +13,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html {
-  overflow: hidden;
-}
-
 body {
   margin: 0;
   display: flex;
