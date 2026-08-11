@@ -84,6 +84,7 @@
   // Turn management
   
   import { BasicAI } from '../lib/ai/BasicAI';
+  import { isLegalPlacement } from '../lib/placementRules';
   
   // AI Instances
   const aiInstances: Record<string, BasicAI> = {};
@@ -422,7 +423,7 @@
 
   function isValidMove(rowIndex: number, colIndex: number) { 
       return pendingBonuses.length === 0 &&
-          !grid[rowIndex]?.[colIndex] &&
+          isLegalPlacement(grid, rowIndex, colIndex) &&
           hasSelection(currentTurn);
   }
 
@@ -911,17 +912,12 @@
 
   /* Valid Move Highlight */
   .cell.valid {
-      background: rgba(255, 255, 255, 0.15); /* Brighter gray */
-      outline-color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.2);
+      outline-color: rgba(255, 255, 255, 0.55);
       cursor: pointer;
-      box-shadow: inset 0 0 20px rgba(255,255,255,0.1);
-      animation: pulse-valid 2s infinite;
-  }
-  
-  @keyframes pulse-valid {
-      0% { background: rgba(255, 255, 255, 0.15); }
-      50% { background: rgba(255, 255, 255, 0.25); }
-      100% { background: rgba(255, 255, 255, 0.15); }
+      box-shadow:
+          inset 0 0 20px rgba(255, 255, 255, 0.14),
+          0 0 10px rgba(255, 255, 255, 0.18);
   }
 
   @keyframes popIn {

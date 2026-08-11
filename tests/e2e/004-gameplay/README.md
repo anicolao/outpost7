@@ -36,14 +36,14 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bon
 
 **Specs:**
 - Face down card visible at bottom
-- Valid cells highlighted
+- Every cell is a legal first placement with a static glow
 
 ## Click cell to place card
 
 ![Click cell to place card](screenshots/005-005-execute-move.png)
 
 **Specs:**
-- Click target cell (0,0)
+- Click target cell (2,2)
 - Wait for animation and placement
 
 ## Resolve Bonus Phase if Active
@@ -53,4 +53,26 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bon
 **Specs:**
 - Check and Resolve Bonus
 - Verify Final Turn State (Yellow)
+
+## Red selects cards for the next repair
+
+![Red selects cards for the next repair](screenshots/007-007-select-red-repair.png)
+
+**Specs:**
+- Select a legal play and payment pair
+
+## Only spaces next to the station are legal
+
+![Only spaces next to the station are legal](screenshots/008-008-adjacent-placements.png)
+
+**Specs:**
+- Only the four orthogonally adjacent cells have a static glow
+- A distant or diagonal space rejects the card
+
+## A card can be placed next to the station
+
+![A card can be placed next to the station](screenshots/009-009-adjacent-placement-accepted.png)
+
+**Specs:**
+- An adjacent space accepts the card
 

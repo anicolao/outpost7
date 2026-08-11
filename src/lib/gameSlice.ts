@@ -14,6 +14,7 @@ import type {
 } from './types';
 import { hasValidMoves, evaluateOwnership } from './gameUtils';
 import { calculateRepairCubes } from './repairRules';
+import { isLegalPlacement } from './placementRules';
 
 // Export types for potential external use (consistency)
 export type { PlayerColor, Edge, Player, Card, PopulationCard, GamePhase, BonusInstance, GameState };
@@ -212,6 +213,11 @@ const gameSlice = createSlice({
             const payCard = hand.find(c => c.id === payCardId);
 
             if (playCard && payCard) {
+                if (!isLegalPlacement(state.grid, row, col)) {
+                    console.warn(`Invalid Play: Cell ${row},${col} is not next to the space station`);
+                    return;
+                }
+
                 // Validate Rules
                 if (payCard.cost < playCard.cost) {
                     console.warn(`Invalid Play: Pay Cost ${payCard.cost} < Play Cost ${playCard.cost}`);

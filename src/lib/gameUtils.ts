@@ -1,5 +1,6 @@
 import type { GameState, PlayerColor } from './types';
 import { calculateRepairCubes } from './repairRules';
+import { legalPlacements } from './placementRules';
 
 // Logic to check if a player has ANY valid moves
 export function hasValidMoves(state: GameState, player: PlayerColor): boolean {
@@ -48,40 +49,7 @@ export function hasValidMoves(state: GameState, player: PlayerColor): boolean {
 
     if (!hasValidPair) return false;
 
-    // Check if valid spot on grid
-    // Format: First card anywhere. Subsequent: Adjacent.
-    let gridEmpty = true;
-    let validSpots: [number, number][] = [];
-
-    for (let r = 0; r < state.grid.length; r++) {
-        for (let c = 0; c < state.grid[r].length; c++) {
-            if (state.grid[r][c] !== null) {
-                gridEmpty = false;
-            }
-        }
-    }
-
-    if (gridEmpty) return true; // Can place first card anywhere
-
-    // Find empty spots adjacent to existing cards
-    for (let r = 0; r < state.grid.length; r++) {
-        for (let c = 0; c < state.grid[r].length; c++) {
-            if (state.grid[r][c] === null) {
-                // Check neighbors
-                const neighbors = [
-                    state.grid[r - 1]?.[c],
-                    state.grid[r + 1]?.[c],
-                    state.grid[r]?.[c - 1],
-                    state.grid[r]?.[c + 1]
-                ];
-                if (neighbors.some(n => n !== undefined && n !== null)) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
+    return legalPlacements(state.grid).length > 0;
 }
 
 // Helper: Evaluate Ownership

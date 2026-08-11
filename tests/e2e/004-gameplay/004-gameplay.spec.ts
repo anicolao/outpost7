@@ -163,10 +163,17 @@ test.describe('Gameplay Loop', () => {
                     }
                 },
                 {
-                    spec: 'Valid cells highlighted',
+                    spec: 'Every cell is a legal first placement with a static glow',
                     check: async () => {
-                        // All empty cells should be valid
-                        await expect(page.locator('.cell.valid').first()).toBeVisible();
+                        await expect(page.locator('.cell.valid')).toHaveCount(25);
+                        await page.evaluate(() => {
+                            document.querySelectorAll('style').forEach((style) => {
+                                if (style.textContent?.includes('transition-property: none')) style.remove();
+                            });
+                        });
+                        const animationName = await page.locator('.cell.valid').first()
+                            .evaluate((cell) => getComputedStyle(cell).animationName);
+                        expect(animationName).toBe('none');
                     }
                 }
             ]
@@ -177,9 +184,9 @@ test.describe('Gameplay Loop', () => {
             description: 'Click cell to place card',
             verifications: [
                 {
-                    spec: 'Click target cell (0,0)',
+                    spec: 'Click target cell (2,2)',
                     check: async () => {
-                        const target = page.locator('[data-cell-id="0-0"]');
+                        const target = page.locator('[data-cell-id="2-2"]');
                         await target.click();
                     }
                 },
@@ -187,7 +194,7 @@ test.describe('Gameplay Loop', () => {
                     spec: 'Wait for animation and placement',
                     check: async () => {
                         // Verify cell has the card content (CardDisplay)
-                        const cell = page.locator('[data-cell-id="0-0"]');
+                        const cell = page.locator('[data-cell-id="2-2"]');
 
                         await expect(cell.locator('.card-bg')).toBeVisible();
 
@@ -211,8 +218,8 @@ test.describe('Gameplay Loop', () => {
                         if (text === 'BONUS ACTIONS') {
                             console.log('Bonus Actions Active - Resolving...');
 
-                            // Find the interactive cube on the card at 0-0
-                            const cell = page.locator('[data-cell-id="0-0"]');
+                            // Find the interactive cube on the first station card
+                            const cell = page.locator('[data-cell-id="2-2"]');
                             const interactiveCube = cell.locator('.player-cube.interactive');
 
                             await expect(interactiveCube).toBeVisible();
@@ -234,6 +241,72 @@ test.describe('Gameplay Loop', () => {
                     }
                 }
             ]
+        });
+
+        await page.evaluate(() => {
+            // Give the connected player a fresh hand, then return the turn to it.
+            // @ts-ignore exposed by the E2E app
+            const store = window.store;
+            store.dispatch({ type: 'game/dealCards', payload: { count: 5, to: 'red' } });
+            store.dispatch({ type: 'game/passTurn', payload: { color: 'yellow' } });
+        });
+        await expect(redPage.locator('.turn-stat')).toHaveText('YOUR TURN');
+
+        await helper.step('007-select-red-repair', {
+            description: 'Red selects cards for the next repair',
+            page: redPage,
+            verifications: [
+                {
+                    spec: 'Select a legal play and payment pair',
+                    check: async () => {
+                        await expect(redPage.locator('.alert-banner')).toHaveCount(0);
+
+                        const playCard = redPage.locator('.card-wrapper:not(.disabled)').first();
+                        await playCard.click();
+                        const payCard = redPage.locator(
+                            '.card-wrapper:not(.disabled):not(.play-selected)',
+                        ).first();
+                        await payCard.click();
+                        await expect(page.locator('.face-down-card.bottom')).toBeVisible();
+                    },
+                },
+            ],
+        });
+
+        await helper.step('008-adjacent-placements', {
+            description: 'Only spaces next to the station are legal',
+            verifications: [
+                {
+                    spec: 'Only the four orthogonally adjacent cells have a static glow',
+                    check: async () => {
+                        await expect(page.locator('.cell.valid')).toHaveCount(4);
+                        const legalCellIds = await page.locator('.cell.valid').evaluateAll((cells) =>
+                            cells.map((cell) => cell.getAttribute('data-cell-id')),
+                        );
+                        expect(legalCellIds).toEqual(['1-2', '2-1', '2-3', '3-2']);
+                    },
+                },
+                {
+                    spec: 'A distant or diagonal space rejects the card',
+                    check: async () => {
+                        await page.locator('[data-cell-id="0-0"]').click();
+                        await expect(page.locator('[data-cell-id="0-0"] .played-card')).toHaveCount(0);
+                    },
+                },
+            ],
+        });
+
+        await helper.step('009-adjacent-placement-accepted', {
+            description: 'A card can be placed next to the station',
+            verifications: [
+                {
+                    spec: 'An adjacent space accepts the card',
+                    check: async () => {
+                        await page.locator('[data-cell-id="2-3"]').click();
+                        await expect(page.locator('[data-cell-id="2-3"] .played-card')).toBeVisible();
+                    },
+                },
+            ],
         });
 
         helper.generateDocs();

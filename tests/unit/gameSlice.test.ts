@@ -193,6 +193,57 @@ describe('Bonus Logic', () => {
     });
 });
 
+describe('Placement Rules', () => {
+    it('rejects a later card that is not next to the space station', () => {
+        let state = gameReducer(undefined, { type: 'unknown' });
+        state = gameReducer(state, addPlayer(RED_PLAYER));
+        state = gameReducer(state, addPlayer(YELLOW_PLAYER));
+        state = gameReducer(state, startWithSettings());
+        state = {
+            ...state,
+            hands: {
+                red: [
+                    { ...CARD_NO_BONUS, id: 'red-play' },
+                    { ...CARD_PAY, id: 'red-pay' },
+                ],
+                yellow: [
+                    { ...CARD_NO_BONUS, id: 'yellow-play' },
+                    { ...CARD_PAY, id: 'yellow-pay' },
+                ],
+            },
+        };
+
+        const firstPlacement = gameReducer(state, playCard({
+            color: 'red',
+            playCardId: 'red-play',
+            payCardId: 'red-pay',
+            row: 2,
+            col: 2,
+        }));
+        expect(firstPlacement.grid[2][2]?.id).toBe('red-play');
+
+        const rejectedPlacement = gameReducer(firstPlacement, playCard({
+            color: 'yellow',
+            playCardId: 'yellow-play',
+            payCardId: 'yellow-pay',
+            row: 0,
+            col: 0,
+        }));
+        expect(rejectedPlacement.grid[0][0]).toBeNull();
+        expect(rejectedPlacement.hands.yellow).toHaveLength(2);
+        expect(rejectedPlacement.currentTurn).toBe('yellow');
+
+        const adjacentPlacement = gameReducer(firstPlacement, playCard({
+            color: 'yellow',
+            playCardId: 'yellow-play',
+            payCardId: 'yellow-pay',
+            row: 2,
+            col: 3,
+        }));
+        expect(adjacentPlacement.grid[2][3]?.id).toBe('yellow-play');
+    });
+});
+
 describe('Ownership Evaluation', () => {
     // Helper to get a clean state (Immutable)
     const getBaseState = () => {
@@ -306,7 +357,7 @@ describe('Ownership Evaluation', () => {
             playCardId: CARD_NO_BONUS.id,
             payCardId: CARD_PAY.id,
             row: 1,
-            col: 0,
+            col: 2,
         }));
 
         expect(nextState.colHeaders[2].owner).toBe('red');

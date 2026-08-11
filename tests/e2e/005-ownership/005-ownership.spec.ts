@@ -57,9 +57,10 @@ test.describe('Ownership Evaluation', () => {
                             const playYellowMove = (r: number, c: number) => {
                                 const state = store.getState().game;
                                 const hand = state.hands.yellow;
-                                // Strategy: Find pair with MINIMUM cubes > 0.
+                                // Avoid cube-addition bonuses that would inflate this
+                                // ownership fixture, then prefer the smallest repair.
                                 let bestPair = null;
-                                let minCubes = 100;
+                                let bestScore = Number.POSITIVE_INFINITY;
 
                                 for (let i = 0; i < hand.length; i++) {
                                     for (let j = 0; j < hand.length; j++) {
@@ -68,10 +69,18 @@ test.describe('Ownership Evaluation', () => {
                                             // Calculate cubes
                                             const colorMatch = hand[i].color === hand[j].color ? 1 : 0;
                                             const overpay = Math.max(0, hand[j].cost - hand[i].cost);
-                                            const cubes = settings.CUBES_PER_PLAY + colorMatch + (overpay * settings.CUBES_PER_OVERPAYMENT);
+                                            const cubes = Math.min(
+                                                settings.CUBES_PER_PLAY + colorMatch + (overpay * settings.CUBES_PER_OVERPAYMENT),
+                                                hand[i].maxCubes ?? 6,
+                                            );
+                                            const triggeredAddCubeBonuses = Array.from(
+                                                { length: cubes },
+                                                (_, cubeIndex) => hand[i].bonuses?.[cubeIndex + 1],
+                                            ).filter(bonus => bonus?.type === 'ADD_CUBE').length;
+                                            const score = triggeredAddCubeBonuses * 100 + cubes;
 
-                                            if (cubes > 0 && cubes < minCubes) {
-                                                minCubes = cubes;
+                                            if (cubes > 0 && score < bestScore) {
+                                                bestScore = score;
                                                 bestPair = { playIndex: i, payIndex: j };
                                             }
                                         }
@@ -95,33 +104,38 @@ test.describe('Ownership Evaluation', () => {
                                 }
                             };
 
-                            // Ensure Yellow has cards (should have 5)
-                            // Play at (2, 2) -> Row 2
-                            playYellowMove(2, 2);
-
-                            // Deal more cards to ensure hand
-                            store.dispatch({ type: 'game/dealCards', payload: { count: 2, to: 'yellow' } });
-
-                            // Play at (0, 1) -> Col 1
-                            playYellowMove(0, 1);
-
-                            // Resolve any bonuses that might have triggered
-                            // Loop until no pending bonuses
-                            let safety = 0;
-                            while (store.getState().game.pendingBonuses.length > 0 && safety < 10) {
-                                const bonusId = store.getState().game.pendingBonuses[0].id;
-                                store.dispatch({ type: 'game/resolveBonus', payload: { bonusId } });
-                                safety++;
-                            }
-
-                            // Fix Turn Parity if needed (We need RED turn)
-                            if (store.getState().game.currentTurn === 'yellow') {
-                                playYellowMove(4, 4); // Dummy move
-                                // Resolve bonuses again if triggered
-                                while (store.getState().game.pendingBonuses.length > 0) {
+                            const resolveBonuses = () => {
+                                let safety = 0;
+                                while (store.getState().game.pendingBonuses.length > 0 && safety < 10) {
                                     const bonusId = store.getState().game.pendingBonuses[0].id;
                                     store.dispatch({ type: 'game/resolveBonus', payload: { bonusId } });
+                                    safety++;
                                 }
+                            };
+
+                            // Expand the deterministic setup hand so the helper can choose
+                            // small repairs without cube-addition bonuses for the baseline.
+                            store.dispatch({ type: 'game/dealCards', payload: { count: 10, to: 'yellow' } });
+
+                            // Play at (2, 2) -> Row 2
+                            playYellowMove(2, 2);
+                            resolveBonuses();
+
+                            // Build a connected path to Column 1 without occupying the
+                            // (2, 1) intersection where Red will make the flipping move.
+                            store.dispatch({ type: 'game/dealCards', payload: { count: 4, to: 'yellow' } });
+                            playYellowMove(1, 2);
+                            resolveBonuses();
+
+                            store.dispatch({ type: 'game/dealCards', payload: { count: 2, to: 'yellow' } });
+                            playYellowMove(1, 1);
+                            resolveBonuses();
+
+                            // Fix turn parity with another legal connected move if needed.
+                            if (store.getState().game.currentTurn === 'yellow') {
+                                store.dispatch({ type: 'game/dealCards', payload: { count: 2, to: 'yellow' } });
+                                playYellowMove(0, 2);
+                                resolveBonuses();
                             }
                         });
 
@@ -175,6 +189,21 @@ test.describe('Ownership Evaluation', () => {
                             // @ts-ignore
                             const settings = { CUBES_PER_COLOR_MATCH: 1, CUBES_PER_OVERPAYMENT: 1, CUBES_PER_PLAY: 0 };
 
+                            const game = store.getState().game;
+                            const yellowRowCubes = game.grid[2].reduce(
+                                (total: number, card: { owner?: string; cubes?: number } | null) =>
+                                    total + (card?.owner === 'yellow' ? card.cubes || 0 : 0),
+                                0,
+                            );
+                            const yellowColCubes = game.grid.reduce(
+                                (total: number, row: Array<{ owner?: string; cubes?: number } | null>) => {
+                                    const card = row[1];
+                                    return total + (card?.owner === 'yellow' ? card.cubes || 0 : 0);
+                                },
+                                0,
+                            );
+                            const requiredCubes = Math.max(yellowRowCubes, yellowColCubes) + 1;
+
                             const findStrongPair = () => {
                                 const hand = store.getState().game.hands.red;
                                 for (let i = 0; i < hand.length; i++) {
@@ -183,10 +212,12 @@ test.describe('Ownership Evaluation', () => {
                                         if (hand[j].cost >= hand[i].cost) {
                                             const colorMatch = hand[i].color === hand[j].color ? 1 : 0;
                                             const overpay = Math.max(0, hand[j].cost - hand[i].cost);
-                                            const cubes = settings.CUBES_PER_PLAY + colorMatch + (overpay * settings.CUBES_PER_OVERPAYMENT);
+                                            const cubes = Math.min(
+                                                settings.CUBES_PER_PLAY + colorMatch + (overpay * settings.CUBES_PER_OVERPAYMENT),
+                                                hand[i].maxCubes ?? 6,
+                                            );
 
-                                            // We need 3 cubes to beat Yellow (who might have 2).
-                                            if (cubes >= 3) return true;
+                                            if (cubes >= requiredCubes) return true;
                                         }
                                     }
                                 }
@@ -208,7 +239,24 @@ test.describe('Ownership Evaluation', () => {
                                 attempts++;
                             }
 
-                            if (attempts >= 20) throw new Error('Could not find strong pair for Red');
+                            if (attempts >= 20) {
+                                const hand = store.getState().game.hands.red;
+                                let maxAvailableCubes = 0;
+                                for (let i = 0; i < hand.length; i++) {
+                                    for (let j = 0; j < hand.length; j++) {
+                                        if (i === j || hand[j].cost < hand[i].cost) continue;
+                                        const colorMatch = hand[i].color === hand[j].color ? 1 : 0;
+                                        const overpay = hand[j].cost - hand[i].cost;
+                                        maxAvailableCubes = Math.max(
+                                            maxAvailableCubes,
+                                            Math.min(colorMatch + overpay, hand[i].maxCubes ?? 6),
+                                        );
+                                    }
+                                }
+                                throw new Error(
+                                    `Could not find ${requiredCubes}-cube pair for Red; best was ${maxAvailableCubes}`,
+                                );
+                            }
                         });
 
                         // Wait for client to sync
@@ -231,7 +279,21 @@ test.describe('Ownership Evaluation', () => {
                             const store = window.store;
                             // @ts-ignore
                             const settings = { CUBES_PER_COLOR_MATCH: 1, CUBES_PER_OVERPAYMENT: 1, CUBES_PER_PLAY: 0 };
-                            const hand = store.getState().game.hands.red;
+                            const game = store.getState().game;
+                            const hand = game.hands.red;
+                            const yellowRowCubes = game.grid[2].reduce(
+                                (total: number, card: { owner?: string; cubes?: number } | null) =>
+                                    total + (card?.owner === 'yellow' ? card.cubes || 0 : 0),
+                                0,
+                            );
+                            const yellowColCubes = game.grid.reduce(
+                                (total: number, row: Array<{ owner?: string; cubes?: number } | null>) => {
+                                    const card = row[1];
+                                    return total + (card?.owner === 'yellow' ? card.cubes || 0 : 0);
+                                },
+                                0,
+                            );
+                            const requiredCubes = Math.max(yellowRowCubes, yellowColCubes) + 1;
 
                             for (let i = 0; i < hand.length; i++) {
                                 for (let j = 0; j < hand.length; j++) {
@@ -239,8 +301,11 @@ test.describe('Ownership Evaluation', () => {
                                     if (hand[j].cost >= hand[i].cost) {
                                         const colorMatch = hand[i].color === hand[j].color ? 1 : 0;
                                         const overpay = Math.max(0, hand[j].cost - hand[i].cost);
-                                        const cubes = settings.CUBES_PER_PLAY + colorMatch + (overpay * settings.CUBES_PER_OVERPAYMENT);
-                                        if (cubes >= 2) return { playIndex: i, payIndex: j };
+                                        const cubes = Math.min(
+                                            settings.CUBES_PER_PLAY + colorMatch + (overpay * settings.CUBES_PER_OVERPAYMENT),
+                                            hand[i].maxCubes ?? 6,
+                                        );
+                                        if (cubes >= requiredCubes) return { playIndex: i, payIndex: j };
                                     }
                                 }
                             }
