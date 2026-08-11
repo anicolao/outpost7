@@ -1,31 +1,10 @@
 import { evaluateOwnership } from '../gameUtils';
 import { calculateRepairCubes, type RepairSettings } from '../repairRules';
 import type { Card, GameState, PlayerColor, PopulationCard } from '../types';
+import { legalPlacements } from '../placementRules';
 
 function otherPlayer(player: PlayerColor): PlayerColor {
     return player === 'red' ? 'yellow' : 'red';
-}
-
-function validPlacements(state: GameState): Array<{ row: number; col: number }> {
-    const gridEmpty = state.grid.every(row => row.every(cell => cell === null));
-    const placements: Array<{ row: number; col: number }> = [];
-
-    for (let row = 0; row < state.grid.length; row++) {
-        for (let col = 0; col < state.grid[row].length; col++) {
-            if (state.grid[row][col] !== null) continue;
-
-            const isAdjacent = [
-                state.grid[row - 1]?.[col],
-                state.grid[row + 1]?.[col],
-                state.grid[row]?.[col - 1],
-                state.grid[row]?.[col + 1],
-            ].some(cell => cell !== undefined && cell !== null);
-
-            if (gridEmpty || isAdjacent) placements.push({ row, col });
-        }
-    }
-
-    return placements;
 }
 
 function projectPlacement(
@@ -122,7 +101,7 @@ function strongestReply(
 
     const currentScore = positionScore(state, perspective);
     let worstReplyScore = currentScore;
-    for (const placement of validPlacements(state)) {
+    for (const placement of legalPlacements(state.grid)) {
         const reply = projectPlacement(
             state,
             bestCard,

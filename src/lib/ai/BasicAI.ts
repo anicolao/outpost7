@@ -3,6 +3,7 @@ import { createSeededRandom, type RandomSource } from '../random';
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from '../settingsStore';
 import { calculateRepairCubes } from '../repairRules';
 import { evaluateStrategicPlacement } from './strategy';
+import { isLegalPlacement } from '../placementRules';
 
 type AISettings = Pick<
     GameSettings,
@@ -92,7 +93,7 @@ export class BasicAI {
                 // Iterate all Grid Positions
                 for (let r = 0; r < state.grid.length; r++) {
                     for (let c = 0; c < state.grid[r].length; c++) {
-                        if (this.isValidPlacement(state, r, c)) {
+                        if (isLegalPlacement(state.grid, r, c)) {
                             // Evaluate this move
                             const score = this.evaluateMove(state, playCard, payCard, r, c);
                             if (score > maxScore) {
@@ -122,28 +123,6 @@ export class BasicAI {
         if (bestMoves.length === 0) return null;
 
         return bestMoves[Math.floor(this.random() * bestMoves.length)];
-    }
-
-    private isValidPlacement(state: GameState, r: number, c: number): boolean {
-        // Spot must be empty
-        if (state.grid[r][c] !== null) return false;
-
-        // Must be adjacent to existing OR grid is empty
-        let gridEmpty = true;
-        for (let row of state.grid) {
-            for (let cell of row) {
-                if (cell) gridEmpty = false;
-            }
-        }
-        if (gridEmpty) return true;
-
-        const neighbors = [
-            state.grid[r - 1]?.[c],
-            state.grid[r + 1]?.[c],
-            state.grid[r]?.[c - 1],
-            state.grid[r]?.[c + 1]
-        ];
-        return neighbors.some(n => n !== undefined && n !== null);
     }
 
     private evaluateMove(state: GameState, playCard: Card, payCard: Card, r: number, c: number): number {
