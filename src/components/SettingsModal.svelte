@@ -24,6 +24,7 @@
     'OFFER_SIZE',
     'OPENING_HAND_VALUE_LIMIT_P1',
     'OPENING_HAND_VALUE_LIMIT_P2',
+    'RANDOMIZE_BORDER_COLORS',
   ];
   let activeTab: 'actions' | 'setup' = 'actions';
 
@@ -47,6 +48,14 @@
       const current = $settingsStore[key];
       if (typeof current !== 'boolean') return;
       settingsStore.updateSetting(key, !current);
+  }
+
+  function updateSelectSetting(key: keyof GameSettings, event: Event) {
+      const definition = GAME_SETTING_DEFINITIONS[key];
+      if (definition.type !== 'select') return;
+      const next = Number((event.currentTarget as HTMLSelectElement).value);
+      if (!definition.options.includes(next)) return;
+      settingsStore.updateSetting(key, next as never);
   }
 
   function openCards() {
@@ -93,6 +102,17 @@
                     >
                       {value ? 'Allowed' : 'Disallowed'}
                     </button>
+                {:else if definition.type === 'select'}
+                    <select
+                      class="value select-control"
+                      aria-label={definition.label}
+                      value={value}
+                      onchange={(event) => updateSelectSetting(settingKey, event)}
+                    >
+                      {#each definition.options as option}
+                        <option value={option}>{option}</option>
+                      {/each}
+                    </select>
                 {:else}
                     <div class="controls">
                         <button
@@ -294,6 +314,18 @@
   .toggle-btn.enabled {
       border-color: #4CAF50;
       background: #245c27;
+  }
+
+  .select-control {
+      min-width: 96px;
+      padding: 0.55rem 2rem 0.55rem 0.75rem;
+      border: 1px solid #666;
+      border-radius: 6px;
+      background: #222;
+      color: white;
+      font: inherit;
+      font-weight: bold;
+      text-align: center;
   }
 
   .actions {

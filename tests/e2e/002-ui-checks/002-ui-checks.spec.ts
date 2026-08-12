@@ -64,6 +64,21 @@ test.describe('Settings and Cards UI Checks', () => {
                     const cardHeader = page.locator('.header h2', { hasText: 'Card Library' });
                     await expect(cardHeader).toBeVisible();
                     await expect(page.locator('.card-grid')).toBeVisible();
+
+                    const sixSlotLayout = await page.locator('.card-preview').evaluateAll((cards) => {
+                        const card = cards.find((candidate) =>
+                            candidate.querySelectorAll('.slot-icon').length === 6,
+                        );
+                        if (!card) throw new Error('Expected a six-slot card in the bundled library');
+                        const cardRect = card.getBoundingClientRect();
+                        const slotsRect = card.querySelector('.slots-container')!.getBoundingClientRect();
+                        return {
+                            widthRatio: slotsRect.width / cardRect.width,
+                            bottomRatio: (slotsRect.bottom - cardRect.top) / cardRect.height,
+                        };
+                    });
+                    expect(sixSlotLayout.widthRatio).toBeGreaterThanOrEqual(0.34);
+                    expect(sixSlotLayout.bottomRatio).toBeGreaterThanOrEqual(0.85);
                 }
             }]
         });
@@ -94,11 +109,10 @@ test.describe('Settings and Cards UI Checks', () => {
                     // Change Grid Rows to 4 (default 5)
                     const rowsRow = page.locator('.setting-item', { hasText: 'Grid Rows' });
                     const rowsVal = rowsRow.locator('.value');
-                    const minusBtn = rowsRow.locator('button', { hasText: '-' });
 
-                    await expect(rowsVal).toHaveText('5');
-                    await minusBtn.click();
-                    await expect(rowsVal).toHaveText('4');
+                    await expect(rowsVal).toHaveValue('5');
+                    await rowsVal.selectOption('4');
+                    await expect(rowsVal).toHaveValue('4');
 
                     // Close Settings
                     await page.locator('.close-btn').click();

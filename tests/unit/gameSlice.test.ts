@@ -191,6 +191,42 @@ describe('Bonus Logic', () => {
         // Expect opponent cubes reduced
         expect(nextState.grid[3][2]?.cubes).toBe(1);
     });
+
+    it('counts matching coloured border cards for population bonuses', () => {
+        const baseState = getBaseState();
+        const grid = baseState.grid.map(row => [...row]);
+        grid[2][2] = { ...CARD_NO_BONUS, id: 'source', color: 'blue', owner: 'red' };
+        grid[2][3] = { ...CARD_NO_BONUS, id: 'row-match', color: 'blue', owner: 'red' };
+        grid[3][2] = { ...CARD_NO_BONUS, id: 'col-miss', color: 'green', owner: 'red' };
+
+        const state = {
+            ...baseState,
+            grid,
+            rowHeaders: baseState.rowHeaders.map((header, index) => ({
+                ...header,
+                count: index === 2 ? 2 : header.count,
+                color: index === 2 ? 'blue' : undefined,
+            })),
+            colHeaders: baseState.colHeaders.map((header, index) => ({
+                ...header,
+                count: index === 2 ? 2 : header.count,
+                color: index === 2 ? 'blue' : undefined,
+            })),
+            pendingBonuses: [{
+                id: 'population-bonus',
+                definition: { type: 'ADD_POPULATION' as const, color: 'blue' },
+                sourceCardId: 'source',
+                sourceRow: 2,
+                sourceCol: 2,
+                cubeSlot: 1,
+            }],
+        };
+
+        const nextState = gameReducer(state, resolveBonus({ bonusId: 'population-bonus' }));
+
+        expect(nextState.rowHeaders[2].count).toBe(5);
+        expect(nextState.colHeaders[2].count).toBe(4);
+    });
 });
 
 describe('Placement Rules', () => {

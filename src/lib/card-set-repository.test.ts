@@ -28,7 +28,7 @@ describe('card-set validation', () => {
     it('accepts enough module and header cards to initialize a game', () => {
         const cards = [
             ...Array.from({ length: 25 }, (_, index) => card(`blue_module_${index}.pdf`)),
-            ...Array.from({ length: 10 }, (_, index) => card(`start_${index}.pdf`)),
+            ...Array.from({ length: 12 }, (_, index) => card(`start_${index}.pdf`)),
         ];
 
         expect(() => validatePlayableCardSet(cards)).not.toThrow();
@@ -36,13 +36,13 @@ describe('card-set validation', () => {
 
     it('rejects sets that cannot deal the opening game state', () => {
         const modules = Array.from({ length: 25 }, (_, index) => card(`blue_module_${index}.pdf`));
-        const headers = Array.from({ length: 10 }, (_, index) => card(`start_${index}.pdf`));
+        const headers = Array.from({ length: 12 }, (_, index) => card(`start_${index}.pdf`));
 
         expect(() => validatePlayableCardSet([...modules.slice(1), ...headers])).toThrow(
             'at least 25 module cards',
         );
         expect(() => validatePlayableCardSet([...modules, ...headers.slice(1)])).toThrow(
-            'at least 10 start cards',
+            'at least 12 start cards',
         );
     });
 });

@@ -116,6 +116,7 @@ async function flightMotion(page: Page, selector: string) {
 
         return {
             start: sample(0),
+            rotating: sample(0.125),
             oriented: sample(0.25),
             flying: sample(0.6),
         };
@@ -219,6 +220,8 @@ test('AI repairs and salvages with clear staged feedback', async ({ page }, test
                     expect(flyingSize[1]).toBeCloseTo(repairCardSize[1], 2);
                     const motion = await flightMotion(page, '.flying-card.ai-controlled');
                     expect(Math.abs(motion.start.angle)).toBeLessThan(1);
+                    expect(Math.abs(motion.rotating.angle)).toBeGreaterThan(20);
+                    expect(Math.abs(motion.rotating.angle)).toBeLessThan(70);
                     expect(Math.abs(motion.oriented.angle)).toBeCloseTo(90, 0);
                     expect(distance(motion.start, motion.oriented)).toBeLessThan(1);
                     expect(distance(motion.oriented, motion.flying)).toBeGreaterThan(20);

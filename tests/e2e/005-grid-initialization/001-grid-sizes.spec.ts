@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Grid Initialization', () => {
-    test('Verify Grid Sizes from 2x2 to 5x5', async ({ page }, testInfo) => {
+    test('Verify selectable Grid Sizes from 2x2 to 6x6', async ({ page }, testInfo) => {
         test.setTimeout(90_000);
         const tester = new TestStepHelper(page, testInfo);
 
@@ -12,7 +12,7 @@ test.describe('Grid Initialization', () => {
         );
 
         // Define sizes to test
-        const sizes = [2, 3, 4, 5];
+        const sizes = [2, 3, 4, 5, 6];
 
         for (const size of sizes) {
             await test.step(`Testing ${size}x${size} Grid`, async () => {
@@ -34,40 +34,11 @@ test.describe('Grid Initialization', () => {
                 await expect(page.locator('.modal')).toBeVisible();
                 await page.getByRole('button', { name: 'Setup rules' }).click();
 
-                // 3. Set Grid Size
-                // We assume default is 5. We need to reach 'size'.
-                // Ideally, we read the current value.
-                // Rows
-                const rowValueEl = page.locator('.setting-item:has(.label:text("Grid Rows")) .value');
-                let currentRowStr = await rowValueEl.innerText();
-                let currentRow = parseInt(currentRowStr, 10);
-
-                while (currentRow > size) {
-                    await page.click('.setting-item:has(.label:text("Grid Rows")) .control-btn:text("-")');
-                    currentRow--;
-                    await expect(rowValueEl).toHaveText(String(currentRow));
-                }
-                while (currentRow < size) {
-                    await page.click('.setting-item:has(.label:text("Grid Rows")) .control-btn:text("+")');
-                    currentRow++;
-                    await expect(rowValueEl).toHaveText(String(currentRow));
-                }
-
-                // Cols
-                const colValueEl = page.locator('.setting-item:has(.label:text("Grid Columns")) .value');
-                let currentColStr = await colValueEl.innerText();
-                let currentCol = parseInt(currentColStr, 10);
-
-                while (currentCol > size) {
-                    await page.click('.setting-item:has(.label:text("Grid Columns")) .control-btn:text("-")');
-                    currentCol--;
-                    await expect(colValueEl).toHaveText(String(currentCol));
-                }
-                while (currentCol < size) {
-                    await page.click('.setting-item:has(.label:text("Grid Columns")) .control-btn:text("+")');
-                    currentCol++;
-                    await expect(colValueEl).toHaveText(String(currentCol));
-                }
+                // 3. Select Grid Size
+                const rowValueEl = page.locator('[data-setting-key="GRID_ROWS"] .value');
+                const colValueEl = page.locator('[data-setting-key="GRID_COLS"] .value');
+                await rowValueEl.selectOption(String(size));
+                await colValueEl.selectOption(String(size));
 
                 await page.locator('.modal .content').evaluate((element) => {
                     element.scrollTop = 0;
@@ -78,11 +49,11 @@ test.describe('Grid Initialization', () => {
                     verifications: [
                         {
                             spec: `Rows set to ${size}`,
-                            check: async () => await expect(rowValueEl).toHaveText(String(size))
+                            check: async () => await expect(rowValueEl).toHaveValue(String(size))
                         },
                         {
                             spec: `Cols set to ${size}`,
-                            check: async () => await expect(colValueEl).toHaveText(String(size))
+                            check: async () => await expect(colValueEl).toHaveValue(String(size))
                         }
                     ]
                 });

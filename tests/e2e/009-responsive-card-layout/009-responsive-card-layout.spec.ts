@@ -243,18 +243,50 @@ test('cards maximize both phone and tabletop displays without resizing', async (
     await hostPage.locator('[data-cell-id="0-0"]').click();
     const flyingCard = hostPage.locator('.flying-card');
     await expect(flyingCard).toBeVisible();
-    const flyingRect = await hostPage.evaluate(() => {
+    const flight = await hostPage.evaluate(() => {
         const card = document.querySelector<HTMLElement>('.flying-card')!;
-        for (const animation of card.getAnimations({ subtree: true })) {
-            animation.pause();
-            animation.currentTime = 300;
+        const animation = card.getAnimations().find((candidate) =>
+            candidate.effect?.getKeyframes().some((frame) => Boolean(frame.transform)),
+        );
+        const duration = animation?.effect?.getTiming().duration;
+        if (!animation || typeof duration !== 'number') {
+            throw new Error('Expected a finite card-flight transform animation');
         }
-        const rect = card.getBoundingClientRect();
-        return { width: rect.width, height: rect.height };
+        animation.pause();
+        const sample = (progress: number) => {
+            animation.currentTime = duration * progress;
+            const rect = card.getBoundingClientRect();
+            const matrix = new DOMMatrix(getComputedStyle(card).transform);
+            return {
+                width: rect.width,
+                height: rect.height,
+                centerX: rect.left + rect.width / 2,
+                centerY: rect.top + rect.height / 2,
+                angle: Math.atan2(matrix.b, matrix.a) * 180 / Math.PI,
+            };
+        };
+        const start = sample(0);
+        const rotating = sample(0.175);
+        const oriented = sample(0.35);
+        const flying = sample(0.7);
+        for (const activeAnimation of card.getAnimations({ subtree: true })) activeAnimation.finish();
+        return { start, rotating, oriented, flying };
     });
 
-    expect(dimensions(flyingRect)[0]).toBeCloseTo(dimensions(sourceRect)[0], 0);
-    expect(dimensions(flyingRect)[1]).toBeCloseTo(dimensions(sourceRect)[1], 0);
+    expect(dimensions(flight.oriented)[0]).toBeCloseTo(dimensions(sourceRect)[0], 0);
+    expect(dimensions(flight.oriented)[1]).toBeCloseTo(dimensions(sourceRect)[1], 0);
+    expect(Math.abs(flight.start.angle)).toBeLessThan(1);
+    expect(Math.abs(flight.rotating.angle)).toBeGreaterThan(20);
+    expect(Math.abs(flight.rotating.angle)).toBeLessThan(70);
+    expect(Math.abs(flight.oriented.angle)).toBeCloseTo(90, 0);
+    expect(Math.hypot(
+        flight.start.centerX - flight.oriented.centerX,
+        flight.start.centerY - flight.oriented.centerY,
+    )).toBeLessThan(1);
+    expect(Math.hypot(
+        flight.oriented.centerX - flight.flying.centerX,
+        flight.oriented.centerY - flight.flying.centerY,
+    )).toBeGreaterThan(20);
 
     const playedCard = hostPage.locator('[data-cell-id="0-0"] .played-card .card-preview');
     await expect(playedCard).toBeVisible();

@@ -53,8 +53,8 @@ export function validatePlayableCardSet(cards: CardData[]) {
     if (moduleCards.length < 25) {
         throw new Error('A playable set needs at least 25 module cards.');
     }
-    if (startCards.length < 10) {
-        throw new Error('A playable set needs at least 10 start cards.');
+    if (startCards.length < 12) {
+        throw new Error('A playable set needs at least 12 start cards.');
     }
     if (moduleCards.some(({ cost }) => !Number.isFinite(cost) || cost < 0)) {
         throw new Error('Every module card must have a numeric cost.');

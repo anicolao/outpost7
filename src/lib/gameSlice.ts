@@ -121,11 +121,15 @@ const gameSlice = createSlice({
                 // Draw required number of headers
                 const requiredHeaders = rows + cols;
                 const drawnHeaders = availableHeaders.slice(0, requiredHeaders);
+                const borderColors = ['blue', 'green', 'purple'] as const;
 
                 // Assign Owners
                 const headersWithOwners: PopulationCard[] = drawnHeaders.map((d, i) => ({
                     ...d,
-                    owner: (i % 2 === 0) ? 'red' : 'yellow'
+                    owner: (i % 2 === 0) ? 'red' : 'yellow',
+                    color: state.settings.RANDOMIZE_BORDER_COLORS
+                        ? borderColors[Math.floor(rng() * borderColors.length)]
+                        : undefined,
                 }));
 
                 // Split into Cols (Top) and Rows (Left)
@@ -373,6 +377,7 @@ const gameSlice = createSlice({
                         const cell = state.grid[sourceRow][c];
                         if (cell && cell.color === targetColor) rowCount++;
                     }
+                    if (state.rowHeaders[sourceRow]?.color === targetColor) rowCount++;
                     if (state.rowHeaders[sourceRow]) state.rowHeaders[sourceRow].count += rowCount;
 
                     let colCount = 0;
@@ -380,6 +385,7 @@ const gameSlice = createSlice({
                         const cell = state.grid[r][sourceCol];
                         if (cell && cell.color === targetColor) colCount++;
                     }
+                    if (state.colHeaders[sourceCol]?.color === targetColor) colCount++;
                     if (state.colHeaders[sourceCol]) state.colHeaders[sourceCol].count += colCount;
                 }
             }

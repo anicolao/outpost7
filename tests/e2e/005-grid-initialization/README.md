@@ -102,3 +102,28 @@
 - Correct number of column headers (5)
 - Correct number of row headers (5)
 
+## Load Game for 6x6 Test
+
+![Load Game for 6x6 Test](screenshots/012-load-page-6.png)
+
+**Specs:**
+- Lobby is visible
+
+## Update Settings to 6x6
+
+![Update Settings to 6x6](screenshots/013-settings-updated-6.png)
+
+**Specs:**
+- Rows set to 6
+- Cols set to 6
+
+## Verify 6x6 Board Layout
+
+![Verify 6x6 Board Layout](screenshots/014-board-verified-6.png)
+
+**Specs:**
+- Board container is visible
+- Correct number of cells (36)
+- Correct number of column headers (6)
+- Correct number of row headers (6)
+
