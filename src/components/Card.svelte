@@ -132,8 +132,8 @@
   .slots-container {
     position: absolute;
     top: 6%;
-    right: 8%;
-    width: 30%;
+    right: 5%;
+    width: 35%;
     display: flex;
     flex-direction: column;
     gap: 4px;

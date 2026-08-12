@@ -68,16 +68,14 @@ test('Complete Game Walkthrough', async ({ page }, testInfo) => {
     // 3. Settings (2x2)
     await page.click('button[aria-label="Settings"]');
     await page.getByRole('button', { name: 'Setup rules' }).click();
-    const rowsMinus = page.locator('.setting-item:has-text("Grid Rows") button:has-text("-")');
-    await rowsMinus.click(); await rowsMinus.click(); await rowsMinus.click(); // 5->2
-    const colsMinus = page.locator('.setting-item:has-text("Grid Columns") button:has-text("-")');
-    await colsMinus.click(); await colsMinus.click(); await colsMinus.click(); // 5->2
+    await page.locator('[data-setting-key="GRID_ROWS"] .value').selectOption('2');
+    await page.locator('[data-setting-key="GRID_COLS"] .value').selectOption('2');
     await page.locator('.modal .content').evaluate((content) => content.scrollTo(0, 0));
 
     await tester.step('02-settings-changed', {
         description: 'Settings Updated to 2x2 Grid',
         verifications: [
-            { spec: 'Grid Rows is 2', check: async () => await expect(page.locator('.setting-item:has-text("Grid Rows") .value')).toHaveText('2') }
+            { spec: 'Grid Rows is 2', check: async () => await expect(page.locator('[data-setting-key="GRID_ROWS"] .value')).toHaveValue('2') }
         ]
     });
     await page.click('.close-btn');

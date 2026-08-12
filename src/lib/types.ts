@@ -16,6 +16,7 @@ export interface PopulationCard {
     card: string; // filename
     count: number;
     owner?: PlayerColor;
+    color?: string;
 }
 
 export type GamePhase = 'lobby' | 'playing' | 'game_over';

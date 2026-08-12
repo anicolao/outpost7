@@ -8,8 +8,8 @@ const NUMBER_SETTINGS = {
     CUBES_PER_OVERPAYMENT: 0,
     GRID_ROWS: 3,
     GRID_COLS: 4,
-    MAX_HAND_SIZE: 4,
-    STARTING_HAND_SIZE: 4,
+    MAX_HAND_SIZE: 7,
+    STARTING_HAND_SIZE: 7,
     BURN_CARD_COUNT: 2,
     OFFER_SIZE: 3,
     OPENING_HAND_VALUE_LIMIT_P1: 0,
@@ -66,23 +66,37 @@ test('one settings snapshot governs setup, tabletop, and private hands', async (
     await expect(page.locator('.modal')).toBeVisible();
 
     await page.getByRole('button', { name: 'Setup rules' }).click();
-    for (const key of SETUP_SETTING_KEYS) {
+    await page.locator('[data-setting-key="GRID_ROWS"] .value').selectOption(String(NUMBER_SETTINGS.GRID_ROWS));
+    await page.locator('[data-setting-key="GRID_COLS"] .value').selectOption(String(NUMBER_SETTINGS.GRID_COLS));
+    for (const key of SETUP_SETTING_KEYS.filter((key) => key !== 'GRID_ROWS' && key !== 'GRID_COLS')) {
         await setNumber(page.locator(`[data-setting-key="${key}"]`), NUMBER_SETTINGS[key]);
     }
+    await page.locator('[data-setting-key="RANDOMIZE_BORDER_COLORS"] .toggle-btn').click();
 
     await helper.step('setup-rules-configured', {
         description: 'Every setup constant has a visible control',
         verifications: [
             {
-                spec: 'All eight setup settings are represented',
-                check: async () => await expect(page.locator('[data-setting-key]')).toHaveCount(8),
+                spec: 'All nine setup settings are represented',
+                check: async () => await expect(page.locator('[data-setting-key]')).toHaveCount(9),
             },
             ...SETUP_SETTING_KEYS.map((key) => ({
                 spec: `${key} is set to ${NUMBER_SETTINGS[key]}`,
-                check: async () => await expect(
-                    page.locator(`[data-setting-key="${key}"] .value`),
-                ).toHaveText(String(NUMBER_SETTINGS[key])),
+                check: async () => {
+                    const value = page.locator(`[data-setting-key="${key}"] .value`);
+                    if (key === 'GRID_ROWS' || key === 'GRID_COLS') {
+                        await expect(value).toHaveValue(String(NUMBER_SETTINGS[key]));
+                    } else {
+                        await expect(value).toHaveText(String(NUMBER_SETTINGS[key]));
+                    }
+                },
             })),
+            {
+                spec: 'Random border resource colours can be enabled',
+                check: async () => await expect(
+                    page.locator('[data-setting-key="RANDOMIZE_BORDER_COLORS"] .toggle-btn'),
+                ).toHaveText('Allowed'),
+            },
         ],
     });
 
@@ -144,12 +158,17 @@ test('one settings snapshot governs setup, tabletop, and private hands', async (
                         };
                     });
                     expect(setup).toEqual({
-                        settings: { ...NUMBER_SETTINGS, ALLOW_ZERO_CUBE_REPAIRS: true },
+                        settings: {
+                            ...NUMBER_SETTINGS,
+                            ALLOW_ZERO_CUBE_REPAIRS: true,
+                            RANDOMIZE_BORDER_COLORS: true,
+                        },
                         discard: 2,
                         offer: 3,
-                        red: 4,
-                        yellow: 4,
+                        red: 7,
+                        yellow: 7,
                     });
+                    await expect(page.locator('.header-resource-icon')).toHaveCount(7);
                 },
             },
         ],
@@ -163,7 +182,7 @@ test('one settings snapshot governs setup, tabletop, and private hands', async (
                 spec: 'Salvage displays the configured value and hand-size limits',
                 check: async () => {
                     await expect(page.locator('.stats-pill .cost')).toContainText('/2');
-                    await expect(page.locator('.stats-pill .count')).toContainText('/4');
+                    await expect(page.locator('.stats-pill .count')).toContainText('/7');
                     await expect(page.locator('.salvage-btn')).toBeDisabled();
                 },
             },
@@ -177,16 +196,16 @@ test('one settings snapshot governs setup, tabletop, and private hands', async (
         page: redPage,
         verifications: [
             {
-                spec: 'The configured four-card hand is synchronized',
+                spec: 'The configured seven-card hand is synchronized',
                 check: async () => {
                     await expect(redPage.locator('.status')).toHaveText('Connected');
-                    await expect(redPage.locator('.card-wrapper')).toHaveCount(4);
+                    await expect(redPage.locator('.card-wrapper')).toHaveCount(7);
                 },
             },
             {
                 spec: 'The private UI displays the configured hand and opening-value limits',
                 check: async () => {
-                    await expect(redPage.locator('.stat', { hasText: 'Cards:' })).toContainText('/4');
+                    await expect(redPage.locator('.stat', { hasText: 'Cards:' })).toContainText('/7');
                     await expect(redPage.locator('.stat', { hasText: 'Value:' })).toContainText('/0');
                     await expect(redPage.locator('.alert-banner')).toBeVisible();
                 },

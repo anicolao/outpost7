@@ -5,6 +5,7 @@
   import { dealCards, playerDiscard, resolveBonus, salvage, type BonusInstance } from '../lib/gameSlice';
   import { createActionRepository, type ActionRepository, type ControllerEvent } from '../lib/action-repository';
   import { initializeFirebase } from '../lib/firebase';
+  import { getAssetUrl } from '../lib/cardLoader';
   import type { Card, Edge, PlayerColor } from '../lib/types';
   import { store } from '../lib/store';
   import Offer from './Offer.svelte';
@@ -462,7 +463,9 @@
               id: pSel.playCardId,
               startRect,
               endRect,
-              cardData: card || null
+              cardData: card || null,
+              sourceRotation: edge ? edgeRotation(edge) : 0,
+              targetRotation: 90,
           };
 
           // Dispatch Logic
@@ -482,7 +485,8 @@
           if (window.E2E_TEST) {
               performDispatch();
           } else {
-              setTimeout(performDispatch, 600);
+              await waitForStageAnimations('.flying-card');
+              performDispatch();
           }
       }
     }
@@ -506,7 +510,7 @@
         // 2. Wait for animation
         // @ts-ignore
         if (!window.E2E_TEST) {
-             await new Promise(r => setTimeout(r, 600));
+             await waitForStageAnimations('.player-cube.executing');
         }
 
         // 3. Resolve State (Store updates persistence)
@@ -551,6 +555,9 @@
         <!-- Column Headers (Top) -->
         {#each colHeaders as header, i}
           <div class="header-cell top-header">
+             {#if header.color}
+               <img class="header-resource-icon" src={getAssetUrl(`${header.color}_resource.svg`)} alt={`${header.color} resource`} />
+             {/if}
              <div class="population-badge">
                  {@html MeepleIcon(header.owner || 'gray')}
                  <span class="pop-count">{header.count}</span>
@@ -563,6 +570,9 @@
            <!-- Row Header (Left) -->
            <div class="header-cell row-header">
               {#if rowHeaders[rowIndex]}
+                {#if rowHeaders[rowIndex].color}
+                  <img class="header-resource-icon" src={getAssetUrl(`${rowHeaders[rowIndex].color}_resource.svg`)} alt={`${rowHeaders[rowIndex].color} resource`} />
+                {/if}
                 <div class="population-badge">
                     {@html MeepleIcon(rowHeaders[rowIndex].owner || 'gray')} 
                     <span class="pop-count">{rowHeaders[rowIndex].count}</span>
@@ -811,6 +821,21 @@
     height: 100%;
   }
 
+  .header-resource-icon {
+      position: absolute;
+      right: 3px;
+      bottom: 3px;
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      z-index: 2;
+      filter: drop-shadow(0 1px 2px #000);
+  }
+
+  .row-header .header-resource-icon {
+      transform: rotate(-90deg);
+  }
+
   /* Counter-rotate Row Headers (Visually Top Strip) to be Horizontal */
   /* Row Headers are Left Grid Column -> Visually Top Strip when board is 90deg */
   .row-header .population-badge {
@@ -1035,7 +1060,7 @@
       pointer-events: none;
       
       /* Identify start and end via vars, animate via keyframes */
-      animation: flyAndFlip 0.6s ease-in-out forwards;
+      animation: human-repair-flight 0.6s ease-in-out forwards;
   }
 
   .flying-card.ai-controlled,
@@ -1082,15 +1107,24 @@
       transform: rotateY(180deg);
   }
 
-  @keyframes flyAndFlip {
+  @keyframes human-repair-flight {
       0% {
-          transform: translate(var(--start-x), var(--start-y));
+          transform: translate(
+              calc(var(--start-center-x) - var(--table-card-width) / 2),
+              calc(var(--start-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--source-rotation));
       }
-      50% {
-          transform: translate(calc(var(--start-x) + (var(--end-x) - var(--start-x)) * 0.5), calc(var(--start-y) + (var(--end-y) - var(--start-y)) * 0.5));
+      35% {
+          transform: translate(
+              calc(var(--start-center-x) - var(--table-card-width) / 2),
+              calc(var(--start-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--target-rotation));
       }
       100% {
-          transform: translate(var(--end-x), var(--end-y));
+          transform: translate(
+              calc(var(--end-center-x) - var(--table-card-width) / 2),
+              calc(var(--end-center-y) - var(--table-card-height) / 2)
+          ) rotate(var(--target-rotation));
       }
   }
 
@@ -1160,6 +1194,8 @@
   @media (prefers-reduced-motion: reduce) {
       .ai-action-label,
       .choice-card,
+      .flying-card,
+      .flying-card .flipper,
       .flying-card.ai-controlled,
       .flying-card.ai-controlled .flipper,
       .ai-salvage-card {

@@ -7,15 +7,16 @@
 ![Every setup constant has a visible control](screenshots/000-setup-rules-configured.png)
 
 **Specs:**
-- All eight setup settings are represented
+- All nine setup settings are represented
 - GRID_ROWS is set to 3
 - GRID_COLS is set to 4
-- MAX_HAND_SIZE is set to 4
-- STARTING_HAND_SIZE is set to 4
+- MAX_HAND_SIZE is set to 7
+- STARTING_HAND_SIZE is set to 7
 - BURN_CARD_COUNT is set to 2
 - OFFER_SIZE is set to 3
 - OPENING_HAND_VALUE_LIMIT_P1 is set to 0
 - OPENING_HAND_VALUE_LIMIT_P2 is set to 1
+- Random border resource colours can be enabled
 
 ## Every action constant has a visible control
 
@@ -49,5 +50,5 @@
 ![The private hand receives the game rules snapshot](screenshots/004-private-hand-rules-applied.png)
 
 **Specs:**
-- The configured four-card hand is synchronized
+- The configured seven-card hand is synchronized
 - The private UI displays the configured hand and opening-value limits

@@ -14,6 +14,7 @@ export interface GameSettings {
     OPENING_HAND_VALUE_LIMIT_P1: number;
     OPENING_HAND_VALUE_LIMIT_P2: number;
     ALLOW_ZERO_CUBE_REPAIRS: boolean;
+    RANDOMIZE_BORDER_COLORS: boolean;
 }
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
@@ -30,12 +31,14 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
     OPENING_HAND_VALUE_LIMIT_P1: 12,
     OPENING_HAND_VALUE_LIMIT_P2: 16,
     ALLOW_ZERO_CUBE_REPAIRS: false,
+    RANDOMIZE_BORDER_COLORS: false,
 };
 
 type SettingDefinition = {
     label: string;
 } & (
     | { type: 'number'; min: number; max: number }
+    | { type: 'select'; options: readonly number[] }
     | { type: 'boolean' }
 );
 
@@ -66,15 +69,13 @@ export const GAME_SETTING_DEFINITIONS: Record<keyof GameSettings, SettingDefinit
     },
     GRID_ROWS: {
         label: 'Grid Rows',
-        type: 'number',
-        min: 2,
-        max: 6,
+        type: 'select',
+        options: [2, 3, 4, 5, 6],
     },
     GRID_COLS: {
         label: 'Grid Columns',
-        type: 'number',
-        min: 2,
-        max: 6,
+        type: 'select',
+        options: [2, 3, 4, 5, 6],
     },
     MAX_HAND_SIZE: {
         label: 'Maximum Cards in Hand',
@@ -114,6 +115,10 @@ export const GAME_SETTING_DEFINITIONS: Record<keyof GameSettings, SettingDefinit
     },
     ALLOW_ZERO_CUBE_REPAIRS: {
         label: 'Allow cards played with zero cubes',
+        type: 'boolean',
+    },
+    RANDOMIZE_BORDER_COLORS: {
+        label: 'Random resource colours on border cards',
         type: 'boolean',
     },
 };

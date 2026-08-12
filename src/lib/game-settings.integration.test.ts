@@ -65,6 +65,7 @@ describe('authoritative game settings', () => {
             OPENING_HAND_VALUE_LIMIT_P1: 12,
             OPENING_HAND_VALUE_LIMIT_P2: 16,
             ALLOW_ZERO_CUBE_REPAIRS: false,
+            RANDOMIZE_BORDER_COLORS: false,
         });
     });
 
@@ -74,7 +75,7 @@ describe('authoritative game settings', () => {
             GRID_COLS: 4,
             BURN_CARD_COUNT: 2,
             OFFER_SIZE: 3,
-            STARTING_HAND_SIZE: 4,
+            STARTING_HAND_SIZE: 7,
         });
         const state = startedGame(rules);
 
@@ -83,9 +84,28 @@ describe('authoritative game settings', () => {
         expect(state.grid.every(row => row.length === 4)).toBe(true);
         expect(state.discard).toHaveLength(2);
         expect(state.offer).toHaveLength(3);
-        expect(state.hands.red).toHaveLength(4);
-        expect(state.hands.yellow).toHaveLength(4);
-        expect(state.deck).toHaveLength(27);
+        expect(state.hands.red).toHaveLength(7);
+        expect(state.hands.yellow).toHaveLength(7);
+        expect(state.deck).toHaveLength(21);
+    });
+
+    it('assigns seeded random resource colours to border cards only when enabled', () => {
+        const enabledRules = settings({
+            GRID_ROWS: 3,
+            GRID_COLS: 4,
+            RANDOMIZE_BORDER_COLORS: true,
+        });
+        const first = startedGame(enabledRules);
+        const replay = startedGame(enabledRules);
+        const colours = [...first.colHeaders, ...first.rowHeaders].map(({ color }) => color);
+
+        expect(colours).toHaveLength(7);
+        expect(colours.every((color) => ['blue', 'green', 'purple'].includes(color ?? ''))).toBe(true);
+        expect([...replay.colHeaders, ...replay.rowHeaders].map(({ color }) => color)).toEqual(colours);
+
+        const disabled = startedGame(settings({ GRID_ROWS: 3, GRID_COLS: 4 }));
+        expect([...disabled.colHeaders, ...disabled.rowHeaders].every(({ color }) => color === undefined))
+            .toBe(true);
     });
 
     it('enforces custom salvage cost and hand-size limits in valid moves and the reducer', () => {
