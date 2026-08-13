@@ -2,7 +2,44 @@ import { test, expect, type Page } from '@playwright/test';
 import { TestStepHelper } from '../helpers/test-step-helper';
 
 test.describe('Hand and Phone UI', () => {
-    test('should connect players and sync hands', async ({ page }, testInfo) => {
+    test('should connect players and sync hands', async ({ page, context }, testInfo) => {
+        await context.addInitScript(() => {
+            const testWindow = window as typeof window & {
+                __wakeLockRequests: number;
+                __wakeLockReleases: number;
+                __setTestVisibility: (visibility: DocumentVisibilityState) => void;
+            };
+            testWindow.__wakeLockRequests = 0;
+            testWindow.__wakeLockReleases = 0;
+            testWindow.__setTestVisibility = (nextVisibility) => {
+                Object.defineProperty(document, 'visibilityState', {
+                    configurable: true,
+                    get: () => nextVisibility,
+                });
+                document.dispatchEvent(new Event('visibilitychange'));
+            };
+            Object.defineProperty(navigator, 'wakeLock', {
+                configurable: true,
+                value: {
+                    request: async () => {
+                        testWindow.__wakeLockRequests += 1;
+                        const sentinel = new EventTarget() as EventTarget & {
+                            released: boolean;
+                            release: () => Promise<void>;
+                        };
+                        sentinel.released = false;
+                        sentinel.release = async () => {
+                            if (sentinel.released) return;
+                            sentinel.released = true;
+                            testWindow.__wakeLockReleases += 1;
+                            sentinel.dispatchEvent(new Event('release'));
+                        };
+                        return sentinel;
+                    },
+                },
+            });
+        });
+
         page.on('console', msg => console.log('PAGE LOG:', msg.text()));
         page.on('pageerror', exception => console.log(`PAGE ERROR: ${exception}`));
 
@@ -155,6 +192,75 @@ test.describe('Hand and Phone UI', () => {
                             await expect(redPopup.locator('.alert-banner')).not.toBeVisible();
                             await expect(redPopup.locator('.card-wrapper')).toHaveCount(6);
                         }
+                    }
+                }
+            ]
+        });
+
+        await clientHelper.step('004-keep-awake', {
+            description: 'Keep the connected private hand awake',
+            verifications: [
+                {
+                    spec: 'Wake lock is opt-in and reports when it is active',
+                    check: async () => {
+                        const wakeLockButton = redPopup.locator('.wake-lock-btn');
+                        await expect(wakeLockButton).toHaveText('Keep awake');
+                        await expect(wakeLockButton).toHaveAttribute('data-state', 'inactive');
+                        await wakeLockButton.click();
+                        await expect(wakeLockButton).toHaveAttribute('data-state', 'active');
+                        await expect(wakeLockButton).toHaveText('Keeping awake');
+                        expect(await redPopup.evaluate(() => (
+                            window as typeof window & { __wakeLockRequests: number }
+                        ).__wakeLockRequests)).toBe(1);
+                    }
+                },
+                {
+                    spec: 'Wake lock releases while hidden and returns when the hand is visible again',
+                    check: async () => {
+                        await redPopup.evaluate(() => (
+                            window as typeof window & {
+                                __setTestVisibility: (visibility: DocumentVisibilityState) => void;
+                            }
+                        ).__setTestVisibility('hidden'));
+                        expect(await redPopup.evaluate(() => document.visibilityState)).toBe('hidden');
+                        await expect(redPopup.locator('.wake-lock-btn')).toHaveAttribute('data-state', 'inactive');
+                        expect(await redPopup.evaluate(() => (
+                            window as typeof window & { __wakeLockReleases: number }
+                        ).__wakeLockReleases)).toBe(1);
+
+                        await redPopup.evaluate(() => (
+                            window as typeof window & {
+                                __setTestVisibility: (visibility: DocumentVisibilityState) => void;
+                            }
+                        ).__setTestVisibility('visible'));
+                        await expect(redPopup.locator('.wake-lock-btn')).toHaveAttribute('data-state', 'active');
+                        expect(await redPopup.evaluate(() => (
+                            window as typeof window & { __wakeLockRequests: number }
+                        ).__wakeLockRequests)).toBe(2);
+                    }
+                }
+            ]
+        });
+
+        await clientHelper.step('005-wake-lock-unavailable', {
+            description: 'Continue normally when wake lock is unavailable',
+            verifications: [
+                {
+                    spec: 'Unsupported browsers show a disabled fallback without disrupting the hand',
+                    check: async () => {
+                        await redPopup.addInitScript(() => {
+                            Object.defineProperty(navigator, 'wakeLock', {
+                                configurable: true,
+                                value: undefined,
+                            });
+                        });
+                        await redPopup.reload();
+                        await expect(redPopup.locator('.status')).toHaveText('Connected');
+                        expect(await redPopup.locator('.card-wrapper').count()).toBeGreaterThan(0);
+                        const wakeLockButton = redPopup.locator('.wake-lock-btn');
+                        await expect(wakeLockButton).toBeDisabled();
+                        await expect(wakeLockButton).toHaveAttribute('data-state', 'unavailable');
+                        await expect(wakeLockButton).toHaveText('Wake lock unavailable');
                     }
                 }
             ]
