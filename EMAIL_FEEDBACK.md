@@ -2,7 +2,7 @@
 
 This document compares the “Customizability for Outpost 7” email thread
 (December 27, 2025–January 2, 2026) with the repository including the changes in
-this PR, based on `main` commit `fa5aa3e` on August 13, 2026. It reflects the
+this PR, based on `main` commit `adc62a2` on August 13, 2026. It reflects the
 implementation and tests, not a fresh
 browser-compatibility test of the production deployment.
 
@@ -38,7 +38,7 @@ settings-to-rules mapping, selectable grid dimensions, optional coloured border
 cards, the requested card-art sizing, persistent public game counts, and
 colour-preserving unavailable-card feedback have also been addressed. The
 largest remaining items are direct removal-lock regression coverage and the
-Safari/device-sleep platform feedback.
+Safari tab-restoration report.
 
 ## Card rendering and card-set customization
 
@@ -89,7 +89,7 @@ rules received by a Firebase-connected private hand.
 | **Closed** | Show deck size and each player's hand size; Alex also proposed discard-pile size. | Persistent tabletop counters beside the offer show deck, discard, red-hand, and yellow-hand counts directly from synchronized game state. Gameplay E2E coverage verifies their initial values and updates after a repair, while responsive coverage keeps all four counters inside the no-scroll tabletop. | None. |
 | **Closed** | Disabled cards are so grey that their resource colour is hard to read. | Disabled private cards are dimmed to 55% opacity without grayscale, so their artwork and resource colours remain readable without an intrusive label. Mobile gameplay coverage verifies the computed treatment and captures the mixed enabled/disabled hand. | None. |
 | **Open** | Safari on macOS showed a black game screen for 1–5 seconds after returning to the tab. | There is no Safari/WebKit E2E project, visibility-change handling, or recorded workaround. | Reproduce in current Safari, determine whether canvas/compositing, backdrop filtering, or page restoration is responsible, and add WebKit coverage where practical. |
-| **Open** | A phone displaying a hand went to sleep during play. | The application does not use the Screen Wake Lock API or provide a keep-awake control. Stefan's test used a separate laptop window, so the original phone scenario was not narrowed down further in the thread. | Add an opt-in wake lock for the private hand while connected, with release/reacquisition on visibility changes and a graceful unsupported-browser state. |
+| **Closed** | A phone displaying a hand went to sleep during play. | Connected private hands now offer an opt-in Screen Wake Lock control. The lock releases while the page is hidden or disconnected, returns when an opted-in hand becomes visible and connected again, and degrades to a disabled explanatory control in unsupported browsers. Documented E2E coverage exercises the complete supported lifecycle and fallback state. | None. |
 | **Closed (later work)** | Keep the private phone hand non-scrolling and usable around mobile browser chrome. | Later responsive-layout work uses `100dvh`, safe-area padding, and visual tests for mobile card size and bottom-button accessibility. | Continue to preserve this behavior when changing disabled-card styling or discard controls. |
 
 ## AI feedback
@@ -131,7 +131,7 @@ simulation remains an optional strategy improvement.
 
 ## Prioritized open actions
 
-1. **Investigate platform behavior.** Re-test Safari tab restoration and add an
-   opt-in wake lock for phone controllers.
+1. **Investigate platform behavior.** Re-test Safari tab restoration and add
+   focused WebKit coverage once the black-screen behavior can be reproduced.
 2. **Strengthen regression coverage.** Add direct tests for protected removal and
    the original low-capacity/invisible-cube removal scenario.

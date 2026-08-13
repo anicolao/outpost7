@@ -35,3 +35,18 @@ Verify Firebase controller connection and hand syncing
 - Force draw to exceed limit
 - Select and discard cards
 
+## Keep the connected private hand awake
+
+![Keep the connected private hand awake](screenshots/002-004-keep-awake.png)
+
+**Specs:**
+- Wake lock is opt-in and reports when it is active
+- Wake lock releases while hidden and returns when the hand is visible again
+
+## Continue normally when wake lock is unavailable
+
+![Continue normally when wake lock is unavailable](screenshots/003-005-wake-lock-unavailable.png)
+
+**Specs:**
+- Unsupported browsers show a disabled fallback without disrupting the hand
+

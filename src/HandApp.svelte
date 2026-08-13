@@ -13,6 +13,11 @@
   let repository: ActionRepository | undefined;
   let unsubscribe: (() => void) | undefined;
   let selectionSignature = '';
+  let connected = false;
+  let keepAwakeRequested = false;
+  let wakeLockRequestPending = false;
+  let wakeLockError = '';
+  let wakeLock: WakeLockSentinel | null = null;
 
   let hand: Card[] = [];
   let status = 'Initializing...';
@@ -26,7 +31,72 @@
   let pendingBonusCardIds: string[] = [];
   let settings: GameSettings = { ...DEFAULT_GAME_SETTINGS };
 
+  $: wakeLockSupported = typeof navigator !== 'undefined'
+      && typeof navigator.wakeLock?.request === 'function';
+  $: wakeLockState = !wakeLockSupported
+      ? 'unavailable'
+      : wakeLockError
+        ? 'error'
+        : wakeLock
+          ? 'active'
+          : 'inactive';
+
+  async function releaseWakeLock() {
+    const activeWakeLock = wakeLock;
+    wakeLock = null;
+    await activeWakeLock?.release();
+  }
+
+  async function requestWakeLock() {
+    if (
+      !wakeLockSupported
+      || !keepAwakeRequested
+      || !connected
+      || document.visibilityState !== 'visible'
+      || wakeLock
+      || wakeLockRequestPending
+    ) return;
+
+    wakeLockRequestPending = true;
+    wakeLockError = '';
+    try {
+      const requestedWakeLock = await navigator.wakeLock.request('screen');
+      if (!keepAwakeRequested || !connected || document.visibilityState !== 'visible') {
+        await requestedWakeLock.release();
+        return;
+      }
+
+      wakeLock = requestedWakeLock;
+      requestedWakeLock.addEventListener('release', () => {
+        if (wakeLock === requestedWakeLock) wakeLock = null;
+      }, { once: true });
+    } catch (error) {
+      wakeLockError = error instanceof Error ? error.message : String(error);
+    } finally {
+      wakeLockRequestPending = false;
+    }
+  }
+
+  async function toggleWakeLock() {
+    keepAwakeRequested = !keepAwakeRequested;
+    wakeLockError = '';
+    if (keepAwakeRequested) {
+      await requestWakeLock();
+    } else {
+      await releaseWakeLock();
+    }
+  }
+
+  async function handleVisibilityChange() {
+    if (document.visibilityState === 'visible') {
+      await requestWakeLock();
+    } else {
+      await releaseWakeLock();
+    }
+  }
+
   onMount(async () => {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     const hash = window.location.hash;
     const queryPart = hash.split('?')[1];
     const urlParams = new URLSearchParams(queryPart);
@@ -71,19 +141,28 @@
                 if (currentIds !== newIds || bonusActionsStarted) clearSelection();
             },
             (error) => {
+                connected = false;
+                void releaseWakeLock();
                 status = `Connection Error: ${error.message}`;
             },
             (firebaseStatus) => {
-                status = firebaseStatus === 'offline' ? 'Reconnecting...' : 'Connected';
+                connected = firebaseStatus !== 'offline';
+                status = connected ? 'Connected' : 'Reconnecting...';
+                if (connected) void requestWakeLock();
+                else void releaseWakeLock();
             },
         );
         await repository.append('player/registered', { color: playerColor });
     } catch (error) {
+        connected = false;
         status = `Connection Error: ${error instanceof Error ? error.message : String(error)}`;
     }
   });
 
   onDestroy(() => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    keepAwakeRequested = false;
+    void releaseWakeLock();
     unsubscribe?.();
   });
 
@@ -225,6 +304,23 @@
             {playerColor ? playerColor.toUpperCase() : 'UNKNOWN'}
         </span>
         <span class="status">{status}</span>
+        <button
+          class="wake-lock-btn"
+          class:active={wakeLockState === 'active'}
+          data-state={wakeLockState}
+          aria-pressed={wakeLockState === 'active'}
+          disabled={!connected || !wakeLockSupported || wakeLockRequestPending}
+          title={wakeLockError || (wakeLockSupported
+            ? 'Prevent this device from sleeping while the hand is connected'
+            : 'Screen wake lock is not supported by this browser')}
+          on:click={toggleWakeLock}
+        >
+          {wakeLockState === 'active'
+            ? 'Keeping awake'
+            : wakeLockSupported
+              ? 'Keep awake'
+              : 'Wake lock unavailable'}
+        </button>
     </div>
     <div class="stats">
         {#if currentTurn}
@@ -345,6 +441,18 @@
   .stats {
       display: flex;
       gap: 15px;
+  }
+
+  .wake-lock-btn {
+      margin-left: 10px;
+      padding: 4px 8px;
+      background: #444;
+      color: white;
+      font-size: 0.75rem;
+  }
+
+  .wake-lock-btn.active {
+      background: #1f7a3f;
   }
 
   .stat {
@@ -560,6 +668,11 @@
 
       .status {
           font-size: 0.75rem;
+      }
+
+      .wake-lock-btn {
+          margin-left: 6px;
+          padding: 4px 6px;
       }
 
       .stats {
