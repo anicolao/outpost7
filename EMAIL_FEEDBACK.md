@@ -2,7 +2,7 @@
 
 This document compares the “Customizability for Outpost 7” email thread
 (December 27, 2025–January 2, 2026) with the repository including the changes in
-this PR, based on `main` commit `66c76c5` on August 12, 2026. It reflects the
+this PR, based on `main` commit `fa5aa3e` on August 13, 2026. It reflects the
 implementation and tests, not a fresh
 browser-compatibility test of the production deployment.
 
@@ -35,9 +35,10 @@ then identified four main areas for further work:
 The card-set workflow and the three proposed AI improvements are now substantial
 features. Cube capacity, tied ownership, the stray discard control, the
 settings-to-rules mapping, selectable grid dimensions, optional coloured border
-cards, and the requested card-art sizing have also been addressed. The largest
-remaining items are direct removal-lock regression coverage and the
-platform/legibility feedback.
+cards, the requested card-art sizing, persistent public game counts, and
+colour-preserving unavailable-card feedback have also been addressed. The
+largest remaining items are direct removal-lock regression coverage and the
+Safari/device-sleep platform feedback.
 
 ## Card rendering and card-set customization
 
@@ -85,8 +86,8 @@ rules received by a Firebase-connected private hand.
 | Status | Feedback or decision | Current state | Remaining action |
 | --- | --- | --- | --- |
 | **Closed (later work)** | AI turns were too instantaneous to understand; show which cards it takes and the effect/order of bonuses. | AI turns now have deliberately slow, staged labels and animations for thinking, repair choices, card flights, individual salvage selections, salvage flights, bonus activation, and passing. Cards smoothly rotate to their destination orientation before travelling, and dispatch waits for animation completion events. Documented E2E coverage checks the visible stages and intermediate rotation angles. | None for the reported feedback. A persistent action history remains an optional enhancement. |
-| **Partial** | Show deck size and each player's hand size; Alex also proposed discard-pile size. | A private controller shows its own `Cards: n/configured maximum`. The offer shows the active player's prospective hand count only while cards are selected. Deck count, discard count, persistent tabletop hand counts, and the opponent's hand count are absent. | Add tabletop counters for deck, discard, red hand, and yellow hand; keep private card identities hidden. |
-| **Open** | Disabled cards are so grey that their resource colour is hard to read. | Disabled private cards still use `opacity: 0.3` and `filter: grayscale(1)`, which directly preserves the reported problem. | Replace grayscale with a colour-preserving disabled treatment such as an overlay, border, lock mark, or reduced brightness. Add mobile visual coverage for mixed enabled/disabled hands. |
+| **Closed** | Show deck size and each player's hand size; Alex also proposed discard-pile size. | Persistent tabletop counters beside the offer show deck, discard, red-hand, and yellow-hand counts directly from synchronized game state. Gameplay E2E coverage verifies their initial values and updates after a repair, while responsive coverage keeps all four counters inside the no-scroll tabletop. | None. |
+| **Closed** | Disabled cards are so grey that their resource colour is hard to read. | Disabled private cards retain full-colour artwork and resource icons beneath a dark translucent `Unavailable` overlay with a contrasting border and label. Mobile gameplay coverage verifies the computed treatment and captures the mixed enabled/disabled hand. | None. |
 | **Open** | Safari on macOS showed a black game screen for 1–5 seconds after returning to the tab. | There is no Safari/WebKit E2E project, visibility-change handling, or recorded workaround. | Reproduce in current Safari, determine whether canvas/compositing, backdrop filtering, or page restoration is responsible, and add WebKit coverage where practical. |
 | **Open** | A phone displaying a hand went to sleep during play. | The application does not use the Screen Wake Lock API or provide a keep-awake control. Stefan's test used a separate laptop window, so the original phone scenario was not narrowed down further in the thread. | Add an opt-in wake lock for the private hand while connected, with release/reacquisition on visibility changes and a graceful unsupported-browser state. |
 | **Closed (later work)** | Keep the private phone hand non-scrolling and usable around mobile browser chrome. | Later responsive-layout work uses `100dvh`, safe-area padding, and visual tests for mobile card size and bottom-button accessibility. | Continue to preserve this behavior when changing disabled-card styling or discard controls. |
@@ -130,9 +131,7 @@ simulation remains an optional strategy improvement.
 
 ## Prioritized open actions
 
-1. **Finish beta-test legibility work.** Add deck/discard/both-hand counts and
-   preserve colour on disabled cards.
-2. **Investigate platform behavior.** Re-test Safari tab restoration and add an
+1. **Investigate platform behavior.** Re-test Safari tab restoration and add an
    opt-in wake lock for phone controllers.
-3. **Strengthen regression coverage.** Add direct tests for protected removal and
+2. **Strengthen regression coverage.** Add direct tests for protected removal and
    the original low-capacity/invisible-cube removal scenario.

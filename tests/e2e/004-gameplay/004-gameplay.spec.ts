@@ -33,6 +33,21 @@ test.describe('Gameplay Loop', () => {
 
                         await page.locator('.play-btn').click({ force: true });
                         await expect(page.locator('.board-container')).toBeVisible();
+                        const counts = await page.evaluate(() => {
+                            // @ts-ignore exposed by the E2E app
+                            const game = window.store.getState().game;
+                            return {
+                                deck: game.deck.length,
+                                discard: game.discard.length,
+                                red: game.hands.red.length,
+                                yellow: game.hands.yellow.length,
+                            };
+                        });
+                        for (const [pile, count] of Object.entries(counts)) {
+                            await expect(page.locator(
+                                `.game-count[data-pile="${pile}"] .count-value`,
+                            )).toHaveText(String(count));
+                        }
                     }
                 }
             ]
@@ -203,6 +218,26 @@ test.describe('Gameplay Loop', () => {
                         // Wait for update - Should enter BONUS ACTIONS or YELLOW TURN
                         await expect(page.locator('.turn-indicator')).toHaveText(/BONUS ACTIONS|YELLOW TURN/);
                     }
+                },
+                {
+                    spec: 'Public deck, discard, and hand counts update after the repair',
+                    check: async () => {
+                        const counts = await page.evaluate(() => {
+                            // @ts-ignore exposed by the E2E app
+                            const game = window.store.getState().game;
+                            return {
+                                deck: game.deck.length,
+                                discard: game.discard.length,
+                                red: game.hands.red.length,
+                                yellow: game.hands.yellow.length,
+                            };
+                        });
+                        for (const [pile, count] of Object.entries(counts)) {
+                            await expect(page.locator(
+                                `.game-count[data-pile="${pile}"] .count-value`,
+                            )).toHaveText(String(count));
+                        }
+                    },
                 }
             ]
         });
@@ -261,13 +296,43 @@ test.describe('Gameplay Loop', () => {
                     check: async () => {
                         await expect(redPage.locator('.alert-banner')).toHaveCount(0);
 
-                        const playCard = redPage.locator('.card-wrapper:not(.disabled)').first();
-                        await playCard.click();
+                        const cards = redPage.locator('.card-wrapper');
+                        const cardStates = await cards.evaluateAll((elements) => elements.map((card, index) => ({
+                            index,
+                            disabled: card.classList.contains('disabled'),
+                            cost: Number(card.querySelector('.card-value')?.textContent),
+                        })));
+                        const playCard = cardStates
+                            .filter(card => !card.disabled && cardStates.some(other => other.cost < card.cost))
+                            .sort((left, right) => right.cost - left.cost)[0];
+                        expect(playCard, 'Expected a playable card with a lower-cost card to disable').toBeTruthy();
+                        await cards.nth(playCard.index).click();
                         const payCard = redPage.locator(
                             '.card-wrapper:not(.disabled):not(.play-selected)',
                         ).first();
                         await payCard.click();
                         await expect(page.locator('.face-down-card.bottom')).toBeVisible();
+                    },
+                },
+                {
+                    spec: 'Unavailable cards retain their colour beneath an explicit overlay',
+                    check: async () => {
+                        const disabledCards = redPage.locator('.card-wrapper.disabled');
+                        await expect(disabledCards).not.toHaveCount(0);
+                        const disabledTreatment = await disabledCards.first().evaluate((card) => ({
+                            filter: getComputedStyle(card).filter,
+                            opacity: getComputedStyle(card).opacity,
+                            resourceFilter: getComputedStyle(
+                                card.querySelector('.resource-icon') as HTMLElement,
+                            ).filter,
+                        }));
+                        expect(disabledTreatment).toEqual({
+                            filter: 'none',
+                            opacity: '1',
+                            resourceFilter: 'none',
+                        });
+                        await expect(disabledCards.first().locator('.unavailable-overlay'))
+                            .toContainText('Unavailable');
                     },
                 },
             ],

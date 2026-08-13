@@ -13,6 +13,10 @@
   $: currentPlayerHand = $gameState.game.hands[currentTurn] || [];
   $: pendingBonuses = $gameState.game.pendingBonuses || [];
   $: settings = $gameState.game.settings;
+  $: deckCount = $gameState.game.deck.length;
+  $: discardCount = $gameState.game.discard.length;
+  $: redHandCount = $gameState.game.hands.red.length;
+  $: yellowHandCount = $gameState.game.hands.yellow.length;
   
   // Selection State
   let selectedIds: Set<string> = new Set();
@@ -68,6 +72,24 @@
 >
   <header>
       <h3>Offer</h3>
+      <div class="game-counts" aria-label="Public game counts">
+          <span class="game-count" data-pile="deck">
+              <span class="count-label">Deck</span>
+              <strong class="count-value">{deckCount}</strong>
+          </span>
+          <span class="game-count" data-pile="discard">
+              <span class="count-label">Discard</span>
+              <strong class="count-value">{discardCount}</strong>
+          </span>
+          <span class="game-count" data-pile="red">
+              <span class="count-label">Red</span>
+              <strong class="count-value">{redHandCount}</strong>
+          </span>
+          <span class="game-count" data-pile="yellow">
+              <span class="count-label">Yellow</span>
+              <strong class="count-value">{yellowHandCount}</strong>
+          </span>
+      </div>
       <div class="salvage-controls">
           {#if selectedIds.size > 0}
             <div class="stats-pill" class:invalid={!isValidCost || !isValidHandSize}>
@@ -139,6 +161,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
       margin-bottom: 6px;
   }
 
@@ -146,6 +169,42 @@
       margin: 0;
       font-size: 1.1rem;
       color: #aaa;
+  }
+
+  .game-counts {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex: 1;
+  }
+
+  .game-count {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 3px;
+      padding: 2px 5px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #292929;
+      color: #aaa;
+      font-size: 0.65rem;
+      line-height: 1;
+      white-space: nowrap;
+  }
+
+  .game-count[data-pile='red'] {
+      border-bottom-color: #ef4444;
+  }
+
+  .game-count[data-pile='yellow'] {
+      border-bottom-color: #facc15;
+  }
+
+  .count-value {
+      color: #fff;
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
   }
 
   .salvage-controls {

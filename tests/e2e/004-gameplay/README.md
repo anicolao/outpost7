@@ -45,6 +45,7 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bon
 **Specs:**
 - Click target cell (2,2)
 - Wait for animation and placement
+- Public deck, discard, and hand counts update after the repair
 
 ## Resolve Bonus Phase if Active
 
@@ -60,6 +61,7 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bon
 
 **Specs:**
 - Select a legal play and payment pair
+- Unavailable cards retain their colour beneath an explicit overlay
 
 ## Only spaces next to the station are legal
 
