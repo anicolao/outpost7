@@ -61,7 +61,7 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bon
 
 **Specs:**
 - Select a legal play and payment pair
-- Unavailable cards retain their colour beneath an explicit overlay
+- Unavailable cards are dimmed without losing their colour
 
 ## Only spaces next to the station are legal
 
@@ -77,4 +77,3 @@ Verify full gameplay cycle: Selection -> Visuals -> Placement -> Interactive Bon
 
 **Specs:**
 - An adjacent space accepts the card
-
