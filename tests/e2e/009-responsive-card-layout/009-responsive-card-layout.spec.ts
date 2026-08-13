@@ -324,6 +324,19 @@ test('cards maximize both phone and tabletop displays without resizing', async (
                     expect(overflow).toEqual({ x: 0, y: 0 });
                 },
             },
+            {
+                spec: 'Deck, discard, and both hidden hand counts remain visible beside the offer',
+                check: async () => {
+                    await expect(hostPage.locator('.game-count')).toHaveCount(4);
+                    const offer = await hostPage.locator('.offer-container').boundingBox();
+                    const counts = await hostPage.locator('.game-counts').boundingBox();
+                    if (!offer || !counts) throw new Error('Expected offer count geometry');
+                    expect(counts.x).toBeGreaterThanOrEqual(offer.x);
+                    expect(counts.x + counts.width).toBeLessThanOrEqual(offer.x + offer.width);
+                    expect(counts.y).toBeGreaterThanOrEqual(offer.y);
+                    expect(counts.y + counts.height).toBeLessThanOrEqual(offer.y + offer.height);
+                },
+            },
         ],
     });
 

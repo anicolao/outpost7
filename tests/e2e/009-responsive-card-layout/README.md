@@ -36,3 +36,4 @@ Cards fill phone and tabletop displays without scrolling or resizing during move
 - The placed card is at least 120 by 168 CSS pixels
 - Offer cards exactly match placed board cards
 - The tabletop remains contained within the display
+- Deck, discard, and both hidden hand counts remain visible beside the offer
