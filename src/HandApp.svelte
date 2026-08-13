@@ -269,11 +269,6 @@
           on:click={() => !isDisabled && handleCardTap(card.id)}
         >
             <CardDisplay {card} />
-            {#if isDisabled}
-                <div class="unavailable-overlay" aria-hidden="true">
-                    <span>Unavailable</span>
-                </div>
-            {/if}
             {#if !isOverLimit && playCardId === card.id}
                 <div class="selected-overlay play">✓</div>
             {/if}
@@ -449,34 +444,8 @@
   }
 
   .card-wrapper.disabled {
+      opacity: 0.55;
       cursor: not-allowed;
-  }
-
-  .unavailable-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 15;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-sizing: border-box;
-      border: 2px solid rgba(255, 255, 255, 0.7);
-      border-radius: 8px;
-      background: rgba(0, 0, 0, 0.32);
-      pointer-events: none;
-  }
-
-  .unavailable-overlay span {
-      padding: 0.25em 0.45em;
-      border-radius: 4px;
-      background: rgba(20, 20, 20, 0.9);
-      color: #fff;
-      font-size: clamp(0.55rem, 2.5vw, 0.8rem);
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      line-height: 1;
-      text-transform: uppercase;
-      text-shadow: 0 1px 2px #000;
   }
   
   .selected-overlay {

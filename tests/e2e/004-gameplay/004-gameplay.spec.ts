@@ -315,7 +315,7 @@ test.describe('Gameplay Loop', () => {
                     },
                 },
                 {
-                    spec: 'Unavailable cards retain their colour beneath an explicit overlay',
+                    spec: 'Unavailable cards are dimmed without losing their colour',
                     check: async () => {
                         const disabledCards = redPage.locator('.card-wrapper.disabled');
                         await expect(disabledCards).not.toHaveCount(0);
@@ -328,11 +328,11 @@ test.describe('Gameplay Loop', () => {
                         }));
                         expect(disabledTreatment).toEqual({
                             filter: 'none',
-                            opacity: '1',
+                            opacity: '0.55',
                             resourceFilter: 'none',
                         });
                         await expect(disabledCards.first().locator('.unavailable-overlay'))
-                            .toContainText('Unavailable');
+                            .toHaveCount(0);
                     },
                 },
             ],
